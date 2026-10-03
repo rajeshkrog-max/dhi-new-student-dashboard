@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "DHI",
+      "hasCanvas": false,
+      "bodyTextLen": 206,
+      "bodyTextHash": "8b0cca7c31d22574ffe1f71d6a778a6304112365eb4f909bb360a5cf437c91ee",
+      "bodyTextPrefix": "DHI Sign in Welcome back. Your house is waiting. Sign in Invite ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "DHI",
+      "hasCanvas": false,
+      "bodyTextLen": 206,
+      "bodyTextHash": "8b0cca7c31d22574ffe1f71d6a778a6304112365eb4f909bb360a5cf437c91ee",
+      "bodyTextPrefix": "DHI Sign in Welcome back. Your house is waiting. Sign in Invite ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
