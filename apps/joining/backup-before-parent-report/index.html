@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dhirise · Manas Darpan</title>
+<link rel="icon" href="assets/dhirise-logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Yatra+One&family=Mukta:wght@300;400;500;600;700&family=Tiro+Devanagari+Sanskrit&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <img src="assets/dhirise-logo.svg" alt="">
+      <div class="wm"><b>Dhirise</b><small>Manas Darpan · <span class="skt">मनस् दर्पण</span></small></div>
+    </div>
+  </header>
+  <div class="rail" id="rail" hidden>
+    <div class="segs" id="segs"></div>
+    <div class="railmeta"><span class="ch" id="chLabel"></span><span class="tn" id="count"></span></div>
+  </div>
+  <main class="stage" id="stage" aria-live="polite"></main>
+</div>
+
+<!-- host-only controls: opened with H or the faint gear in the corner -->
+<button class="gear" id="gear" type="button" aria-label="Host menu" title="Host menu">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+</button>
+<div class="hostmenu" id="hostmenu" hidden>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="hmTitle">
+    <h3 id="hmTitle"><span>Host menu</span><span id="hmCount"></span></h3>
+    <button class="item" type="button" data-act="panel">Interviewer panel <kbd>I</kbd></button>
+    <button class="item" type="button" data-act="fullscreen">Full screen <kbd>F</kbd></button>
+    <button class="item" type="button" data-act="new">New student</button>
+    <hr>
+    <button class="item" type="button" data-act="csv">Export sessions (CSV)</button>
+    <button class="item danger" type="button" data-act="reset">Reset counts</button>
+    <hr>
+    <button class="item" type="button" data-act="close">Close <kbd>Esc</kbd></button>
+    <p class="keys">Student keys: 1–4 choose · → / Enter next · ← back · H this menu</p>
+  </div>
+</div>
+
+<!-- A4 summary used by Ctrl+P on the report -->
+<div class="print-only" id="printSheet"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
