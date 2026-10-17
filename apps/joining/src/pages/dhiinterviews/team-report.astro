@@ -1,0 +1,46 @@
+---
+// The team's report viewer (spec 0008), in the shared site frame (spec 0009): shows one student's saved PDF inside this page, with
+// Download and Sign out. The Sheet link points here: team-report.html?s=<reference code>. A signed out visitor signs in with Google
+// and comes back to the same report. For named Google accounts only (TEAM_EMAILS). No Guard (a team member has no student
+// profile). src/lib/team.ts does the work. The page is never indexed or cached (public/_headers). The page marker the script reads
+// is `page="report"`, written by the frame as data-page on <body>.
+import Frame from "../../layouts/Frame.astro";
+---
+<Frame title="Team report" description="One student's saved report, for the DhiRise team." noindex wide page="report">
+  <link slot="head" rel="stylesheet" href="/dhiinterviews/css/team.css">
+  <link slot="head" rel="stylesheet" href="/dhiinterviews/css/avatar.css">
+  <div class="tt">
+    <div class="tt-bar">
+      <h1>Saved report</h1>
+      <button type="button" class="tt-btn" id="signOut" hidden>Sign out</button>
+    </div>
+
+    <p class="tt-msg" id="msg" role="status" aria-live="polite">Checking your sign in…</p>
+
+    <section id="signInBox" hidden>
+      <p class="tt-note">This page is for the DhiRise team. Please sign in with your Google account.</p>
+      <button type="button" class="tt-btn main" id="signIn">Sign in with Google</button>
+    </section>
+
+    <section id="viewerBox" hidden>
+      <div class="tt-whobar" id="who" hidden></div>
+      <div class="tt-toolbar">
+        <a class="tt-btn" href="team.html">← All saved reports</a>
+        <span class="tt-spacer"></span>
+        <a class="tt-btn" id="fullscreen" target="_blank" rel="noopener">Open full screen</a>
+        <button type="button" class="tt-btn main" id="download">Download</button>
+      </div>
+      <iframe class="tt-pdf" id="pdf" title="Saved report"></iframe>
+      <p class="tt-hint">If the report does not show on your phone, tap Download.</p>
+    </section>
+
+    <section id="backBox" hidden>
+      <p><a class="tt-btn" href="team.html">All saved reports</a></p>
+    </section>
+  </div>
+
+  <script is:inline src="/dhiinterviews/js/avatar.js"></script>
+  <script>
+    import "../../lib/team";
+  </script>
+</Frame>
