@@ -53,7 +53,15 @@ Stored in `docs/specs/`. Format: `docs/specs/NNNN-title.md`. Handover docs live 
 
 ## Agent skills
 
-None installed. Skipped for now; candidates to review later: none needed for plain HTML/JS, optionally a Google Apps Script or Google Sheets skill for `tools/lead-sheet.gs`.
+Installed in `.claude/skills/` (mirrored in `.agents/skills/`), pinned in `skills-lock.json`. Load only the one a task needs.
+
+- [convex and 32 more `convex-*`](.claude/skills/convex/): `get-convex/agent-skills`, backend work under `convex/` (start with `convex`, `convex-expert`, `convex-reviewer`, `convex-test`)
+- [astro](.claude/skills/astro/): `astrolicious/agent-skills`, pages and build
+- [better-auth-best-practices](.claude/skills/better-auth-best-practices/), [better-auth-security-best-practices](.claude/skills/better-auth-security-best-practices/): `better-auth/skills`, sign in
+- [workers-best-practices](.claude/skills/workers-best-practices/), [wrangler](.claude/skills/wrangler/): `cloudflare/skills`, Pages Functions and deploys
+- [playwright-cli](.claude/skills/playwright-cli/): `microsoft/playwright-cli`, browser tests in `e2e/`
+- [gws-sheets](.claude/skills/gws-sheets/), [gws-sheets-read](.claude/skills/gws-sheets-read/): `googleworkspace/cli`, the team Google Sheet
+- [posthog-instrumentation](.claude/skills/posthog-instrumentation/): `posthog/posthog-for-claude`, analytics events
 
 ## Context files
 
