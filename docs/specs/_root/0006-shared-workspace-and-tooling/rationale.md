@@ -96,17 +96,23 @@ CI follows from the data: this is a GA tier project with minors' data, and the r
 | Type check | `tsc --noEmit` | `pnpm exec tsc --noEmit` (no script) |
 | Dev ports | 8080 | 4321 |
 | CI and hooks | none | none |
-| Node | no engines field, `@types/node` 22 | `engines.node >=22.12.0` |
+| Node | no engines field, `@types/node` 22 | `engines.node >=22.12.0` (corrected to `>=22.19.0`, see below) |
 
 Machine: Node 24.18, npm 11.18, pnpm 12.10.1, bun 1.3.14, corepack 0.35.
 
 ### Facts that decided specific points (checked 2026-10-17)
 
 - pnpm documents `catalog:` in `pnpm-workspace.yaml` for one shared version list, and `minimumReleaseAge` with `minimumReleaseAgeExclude` for the release age rule. Recursive commands exclude the root project unless `includeWorkspaceRoot` is true.
-- Build script approval is `allowBuilds` in pnpm's settings. Its exact syntax and relation to older names was not confirmed, so the first install is the test.
-- Pinning pnpm: sources disagree between `packageManager` and `devEngines.packageManager`, so the build confirms which the installed version writes.
+- Build script approval is `allowBuilds` in pnpm's settings. Its exact syntax and relation to older names was not confirmed, so the first install is the test. (Resolved at build: pnpm 12.10.1 accepts `allowBuilds` in `pnpm-workspace.yaml`, and an unapproved script fails the install.)
+- Pinning pnpm: sources disagree between `packageManager` and `devEngines.packageManager`, so the build confirms which the installed version writes. (Resolved: `packageManager` is used, and `pnpm/action-setup` read it in CI.)
 - `pnpm/action-setup` reads the pinned pnpm version when `version` is omitted, and does not set up Node. `actions/setup-node` documents `cache: pnpm`. pnpm's own CI page also shows a newer `pnpm/setup` action and says a frozen install is automatic in CI. The spec uses `pnpm/action-setup` and an explicit frozen install, which is harmless.
 - Bun: workspaces, `--filter`, catalogs, `minimumReleaseAge` in `bunfig.toml` and `trustedDependencies` are documented. Windows stability and tool compatibility were not confirmed.
+
+### Found while building (2026-10-17 and 18)
+
+- The funnel's runtime dependency `undici@8.11.2` needs Node `>=22.19.0`. Every other `engines.node` floor in the lockfile is at most 22.13, so 22.19.0 is the true minimum. The funnel's `>=22.12.0` was never accurate (it was built on Node 24). Found by the first CI run on pull request #1.
+- A fresh lockfile for the whole workspace moved many funnel packages to newer versions than the live app was built on. Seeding the new lockfile from the funnel's old one kept all 14 direct dependencies and all 496 old package versions (one transitive peer, `react`, moved 19.3.0 to 19.3.1).
+- On a clean checkout 18 house script tests failed: 8 need gitignored sandbox files, 8 were not independent of the project's own `site.json`, and 2 hit a Windows shell problem with paths that contain spaces.
 
 ## References
 
@@ -132,4 +138,4 @@ Machine: Node 24.18, npm 11.18, pnpm 12.10.1, bun 1.3.14, corepack 0.35.
 - [actions/setup-node, advanced usage](https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md): the pnpm cache option
 - [Bun workspaces](https://bun.com/docs/pm/workspaces), [bun install](https://bun.com/docs/pm/cli/install), [Bun lifecycle scripts](https://bun.com/docs/pm/lifecycle), [Bun installation](https://bun.com/docs/installation): the alternative that was checked
 
-Not confirmed by the checks: the exact `allowBuilds` syntax, the pnpm pin field for version 12, whether Corepack is still the recommended route on Node 24, Bun on Windows, and Bun's support for Convex, Wrangler, Astro and Playwright.
+Not confirmed by the checks (the first two were resolved at build: `allowBuilds` and the `packageManager` pin both work in pnpm 12.10.1): the exact `allowBuilds` syntax, the pnpm pin field for version 12, whether Corepack is still the recommended route on Node 24, Bun on Windows, and Bun's support for Convex, Wrangler, Astro and Playwright.
