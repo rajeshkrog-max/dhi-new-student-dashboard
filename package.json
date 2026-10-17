@@ -1,32 +1,36 @@
 {
-  "name": "app-builder-workspace",
+  "name": "dhi-house",
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "overrides": {
-    "nf3": "0.3.17"
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "node scripts/with-app-env.mjs vite dev --host 0.0.0.0 --port 8080",
-    "build": "node scripts/with-app-env.mjs vite build && npm run db:migrate",
+    "dev:joining": "pnpm --filter dhirise dev",
+    "build": "node scripts/with-app-env.mjs vite build && node scripts/migrate.mjs",
+    "build:all": "pnpm build && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run build",
     "db:migrate": "node scripts/migrate.mjs",
     "build:dev": "node scripts/with-app-env.mjs vite build --mode development",
     "preview": "node scripts/with-app-env.mjs vite preview",
     "preview:restart": "node scripts/preview.mjs restart",
     "preview:stop": "node scripts/preview.mjs stop",
-    "typecheck": "tsc --noEmit",
+    "typecheck:house": "tsc --noEmit",
+    "typecheck": "pnpm typecheck:house && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run typecheck",
     "check:auth": "node scripts/check-auth-invariant.mjs",
-    "test": "node --test 'scripts/**/*.test.mjs' && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "test:house": "node --test \"scripts/**/*.test.mjs\" && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
+    "test": "pnpm test:house && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run test",
+    "test:e2e": "pnpm --filter dhirise test:e2e",
+    "lint:house": "eslint src scripts server vite.config.ts eslint.config.mjs",
+    "lint": "pnpm lint:house && node scripts/check-catalog.mjs && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run lint",
+    "format": "prettier --write src scripts server vite.config.ts eslint.config.mjs",
+    "format:check": "prettier --check src scripts server vite.config.ts eslint.config.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",
     "@hookform/resolvers": "^5.7.0",
-    "better-auth": "~1.6.30",
-    "jose": "6.2.9",
-    "kysely": "^0.28.5",
-    "pg": "^8.16.3",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -54,14 +58,18 @@
     "@tanstack/react-start": "^1.168.0",
     "@tanstack/react-table": "^8.21.0",
     "@tanstack/router-plugin": "^1.168.0",
+    "better-auth": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.0.0",
+    "jose": "6.2.9",
+    "kysely": "^0.28.5",
     "lucide-react": "^0.510.0",
-    "react": "^19.2.0",
+    "pg": "^8.16.3",
+    "react": "^19.3.1",
     "react-day-picker": "^9.14.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "^19.3.1",
     "react-hook-form": "^7.54.0",
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.13.0",
@@ -77,8 +85,8 @@
     "@eslint/js": "^9.20.0",
     "@types/node": "^22.16.5",
     "@types/pg": "^8.11.10",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.1.1",
@@ -92,6 +100,6 @@
     "prettier": "^3.4.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.2.0"
+    "vite": "catalog:"
   }
 }

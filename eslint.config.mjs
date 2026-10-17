@@ -15,6 +15,9 @@ export default tseslint.config(
       ".nitro/**",
       "node_modules/**",
       "src/routeTree.gen.ts",
+      // Other parts of the workspace own their own checks (spec 0006): never lint them from here.
+      "apps/**",
+      "packages/**",
     ],
   },
   js.configs.recommended,

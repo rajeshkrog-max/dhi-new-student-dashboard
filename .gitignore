@@ -17,3 +17,7 @@ attachments
 coverage
 .cache
 *.tsbuildinfo
+
+# One package manager (pnpm, spec 0006): keep another tool from bringing a second lockfile back
+package-lock.json
+yarn.lock

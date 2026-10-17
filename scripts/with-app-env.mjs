@@ -111,7 +111,10 @@ function main(argv) {
     process.exit(2);
   }
   const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  // On Windows a bare command name (`vite`, `pnpm`) is a .cmd shim, which Node can only start through
+  // a shell. A full path to a real program (node.exe, often in a folder with spaces) must not use one.
+  const useShell = process.platform === "win32" && !/[\\/]|\.exe$/i.test(command);
+  const child = spawn(command, args, { stdio: "inherit", env, shell: useShell });
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));

@@ -21,6 +21,11 @@ import { renderInstallPage } from "./grok-pwa-plugin.mjs";
 
 const TEMPLATE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+// These tests assert the default (template) identity. Without a `cwd` the plugin reads the real
+// src/lib/og/site.json of the directory the run starts in, so the project's own branding ("DHI")
+// would leak in. node:test runs each test file in its own process, so start this one in an empty directory.
+process.chdir(mkdtempSync(join(tmpdir(), "grok-pwa-empty-")));
+
 test("injects before </head>", () => {
   const out = injectGrokPwaHead("<html><head><title>x</title></head><body></body></html>");
   assert.match(out, /rel="manifest"/);

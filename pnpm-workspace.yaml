@@ -1,0 +1,31 @@
+# One pnpm workspace for the whole repo (spec 0006). The house is the root project, the funnel is apps/joining,
+# and shared packages (spec 0002) go under packages/. Repo wide settings live here, in one place.
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# One version list for the libraries both parts use (spec 0005). A part refers to it with "catalog:".
+# `typescript` and `@types/node` are not here yet: the house and the funnel differ, and spec 0005's
+# first thin thread settles them. scripts/check-catalog.mjs keeps this list honest.
+catalog:
+  better-auth: ~1.6.33
+  vite: 8.3.3
+
+# Do not accept a release younger than one day. This is the value the funnel already ran on by default;
+# it is written down here so it never depends on a default.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  # Astro 7.3.7 was published inside the window and is the version the funnel is built and tested on.
+  - astro@7.3.7
+
+# Only these packages may run install scripts. Add an entry, with a reason, when an install asks.
+allowBuilds:
+  esbuild: true # Vite and Astro build tool, downloads its native binary
+  workerd: true # Cloudflare Workers runtime used by Wrangler
+
+# The house pinned nf3 while Nitro stays (spec 0005 removes Nitro). Moved here from package.json,
+# because pnpm reads overrides from this file.
+overrides:
+  nf3: 0.3.17
+
+engineStrict: true

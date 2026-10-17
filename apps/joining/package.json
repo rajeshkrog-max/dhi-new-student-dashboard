@@ -13,6 +13,7 @@
     "astro": "astro",
     "deploy:pages": "convex deploy --cmd-url-env-var-name PUBLIC_CONVEX_URL --cmd \"pnpm build\" && wrangler pages deploy dist --project-name dhirise --branch main",
     "preview:pages": "pnpm build && wrangler pages dev dist",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "verify:pages": "node scripts/verify-pages.mjs"
@@ -21,7 +22,7 @@
     "@convex-dev/better-auth": "^0.12.5",
     "@convex-dev/rate-limiter": "^0.4.1",
     "astro": "^7.3.7",
-    "better-auth": "~1.6.33",
+    "better-auth": "catalog:",
     "convex": "^1.46.0",
     "google-auth-library": "^11.1.0"
   },
@@ -31,7 +32,7 @@
     "@types/node": "^26.6.4",
     "convex-test": "^0.0.60",
     "typescript": "^7.0.2",
-    "vite": "8.3.3",
+    "vite": "catalog:",
     "vitest": "^5.0.3",
     "wrangler": "^4.148.0"
   }

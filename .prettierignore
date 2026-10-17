@@ -1,0 +1,20 @@
+# Prettier belongs to the house (spec 0006). Other parts own their formatting, and a run must never
+# rewrite them: the funnel and its packages keep their own style until they opt in.
+apps/
+packages/
+
+# Prose, markup and data files are not formatted by `pnpm format` (code files only, spec 0006)
+*.md
+*.mdx
+*.html
+migrations/
+docs/
+package.json
+pnpm-workspace.yaml
+
+# Generated or locked files nobody edits by hand
+src/routeTree.gen.ts
+pnpm-lock.yaml
+node_modules/
+dist/
+.output/
