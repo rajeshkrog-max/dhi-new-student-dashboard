@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { entryTarget, type EntryMe } from "./entry.ts";
+import { entryTarget, interviewUrl, referralParam, type EntryMe } from "./entry.ts";
 
 const signedIn = { isLoading: false, isAuthenticated: true };
 const finished: EntryMe = { state: "ready", check: { completedAt: 1_700_000_000_000 } };
@@ -31,4 +31,17 @@ test("spec 0008: an account that began the check but has not finished goes back 
 
 test("spec 0008: an account that finished the check goes to the dashboard", () => {
   assert.equal(entryTarget(signedIn, finished), "dashboard");
+});
+
+test("spec 0008: a referral code in the address is kept only when it looks like one", () => {
+  assert.equal(referralParam("ABC1234"), "ABC1234");
+  assert.equal(referralParam(" abc1234 "), "ABC1234", "trimmed and in capitals, as the funnel's landing page reads it");
+  for (const bad of [undefined, null, 12, "", "ab", "A".repeat(17), "ABC 123", "ABC-123", "<script>", "ABC1234&x=1", "../x"]) {
+    assert.equal(referralParam(bad), undefined, String(bad));
+  }
+});
+
+test("spec 0008: the interview address carries the referral code, or none", () => {
+  assert.equal(interviewUrl(), "/dhiinterviews/landing.html");
+  assert.equal(interviewUrl("ABC1234"), "/dhiinterviews/landing.html?ref=ABC1234");
 });

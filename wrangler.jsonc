@@ -1,11 +1,40 @@
-// The house as a Cloudflare Worker (spec 0007, AC-12; host decision in spec 0001). Built by `pnpm build` through
-// @cloudflare/vite-plugin and served locally with `vite preview`. There is no deploy script on purpose: the house is not deployed
-// by this row, and it never gets an /api/* handler of its own (spec 0001 keeps /api/* for the funnel).
+// The house as a Cloudflare Worker (spec 0004, spec 0007 AC-12, spec 0008). Built by `pnpm build` through @cloudflare/vite-plugin, served
+// locally with `vite preview`, and deployed with `pnpm deploy:house` (scripts/deploy-house.mjs), never with a bare `wrangler deploy`.
+// The house never gets an /api/* handler of its own: /api/* stays with the funnel (spec 0001), and on dhirise.com /api/auth already reaches
+// the shared backend through the funnel's forwarder.
+//
+// ROUTES. The funnel stays on its Cloudflare Pages project (custom domain dhirise.com). The house takes only the paths it serves, so every
+// other path (/dhiinterviews*, /s/*, /api/*, /_astro/* and anything unknown) still reaches the funnel exactly as before. This is the list of
+// the house's own paths: `/`, its three pages, its built files under /assets, and the picture folders of public/. A new top level folder
+// in public/ must be added here, or it will be served by the funnel (a 404). To take the house off the domain, delete the Worker
+// (`pnpm exec wrangler delete --name dhirise-house`): the funnel's own `/` redirect to the interview is still in public/_redirects.
 // Public values only. Secrets are never put here.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dhi-house",
+  "name": "dhirise-house",
   "main": "@tanstack/react-start/server-entry",
   "compatibility_date": "2026-10-01",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  // No second public copy of the house: only the dhirise.com routes below.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "dhirise.com/", "zone_name": "dhirise.com" },
+    // Cloudflare refuses a query string in a route pattern (error 10022), and `dhirise.com/` alone does not match `/?ref=ABC1234`. So a root
+    // address with a query string (referral links, campaign links) is not the house's: it takes the funnel's own `/` redirect in
+    // public/_redirects, which keeps the query string and lands on the interview with the code intact. That is what those links need.
+    { "pattern": "dhirise.com/enter*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/dashboard*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/home*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/assets/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/__grok/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/desk/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/habits/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/landing/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/meals/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/mood/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/study/*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/favicon.svg", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/og.jpg", "zone_name": "dhirise.com" }
+  ]
 }

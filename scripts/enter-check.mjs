@@ -24,6 +24,20 @@ if (envFile.includes(PRODUCTION_DEPLOYMENT) || process.env.PUBLIC_CONVEX_URL?.in
   process.exit(2);
 }
 
+// The funnel's built files are served from apps/joining/dist. A production deploy leaves a build there that points at the production backend,
+// and this script must never run against that.
+const distAstro = "apps/joining/dist/_astro";
+if (existsSync(distAstro)) {
+  const { readdirSync } = await import("node:fs");
+  const builtForProduction = readdirSync(distAstro)
+    .filter((f) => f.endsWith(".js"))
+    .some((f) => readFileSync(`${distAstro}/${f}`, "utf8").includes(PRODUCTION_DEPLOYMENT));
+  if (builtForProduction) {
+    console.error("enter-check: apps/joining/dist was built for production. Run `pnpm --filter dhirise build` (it uses the development backend) and try again.");
+    process.exit(2);
+  }
+}
+
 const failures = [];
 let steps = 0;
 async function step(label, run) {
@@ -60,6 +74,16 @@ async function runStudent(browser, { label, name, age, cls, minor }) {
     expect(!(await page.locator("body").innerText()).includes(name), "a student name is on the signed out screen");
   });
 
+  await step("the root address shows the Enter screen, and a referral link goes to the interview with the code kept", async () => {
+    await page.goto("/");
+    await page.getByTestId("landing-signin").waitFor({ timeout: 20_000 });
+    await page.goto("/?ref=ABC1234");
+    await page.waitForURL((url) => url.pathname.startsWith("/dhiinterviews/"), { timeout: 20_000 });
+    expect(new URL(page.url()).searchParams.get("ref") === "ABC1234", "the referral code was lost on the way to the interview");
+    await page.goto("/enter");
+    await page.getByTestId("landing-signin").waitFor({ timeout: 20_000 });
+  });
+
   await step("a brand new account goes to the interview", async () => {
     await page.getByTestId("landing-email").fill(email);
     await page.getByTestId("landing-password").fill("enter-check-pass-1");
@@ -92,6 +116,14 @@ async function runStudent(browser, { label, name, age, cls, minor }) {
     await page.getByText(name).first().waitFor({ timeout: 20_000 });
     expect(!(await page.locator("body").innerText()).includes("Suzzy"), "the demo name is on the dashboard");
     await page.getByText(cls).first().waitFor({ timeout: 10_000 }); // the profile card of the side menu (desktop width)
+    expect(await page.getByTestId("sample-note").isVisible(), "the sample data note is missing on the dashboard");
+  });
+
+  await step("the root address and the old /home address both lead a finished student to the dashboard", async () => {
+    await page.goto("/");
+    await waitForPath(page, "/dashboard");
+    await page.goto("/home");
+    await waitForPath(page, "/dashboard");
   });
 
   await step("the report ends with a button to the dashboard, and it leads there", async () => {
