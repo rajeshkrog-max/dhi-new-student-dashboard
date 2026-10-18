@@ -117,6 +117,12 @@ async function runStudent(browser, { label, name, age, cls, minor }) {
     expect(!(await page.locator("body").innerText()).includes("Suzzy"), "the demo name is on the dashboard");
     await page.getByText(cls).first().waitFor({ timeout: 10_000 }); // the profile card of the side menu (desktop width)
     expect(await page.getByTestId("sample-note").isVisible(), "the sample data note is missing on the dashboard");
+    // The greeting card must show all of its content: it once shrank to a strip and clipped its text in the scrolling column (found 2026-10-18).
+    const clipped = await page.evaluate(() => {
+      const card = document.querySelector("section[aria-label=House] article");
+      return card ? card.scrollHeight - card.clientHeight : -1;
+    });
+    expect(clipped >= 0 && clipped <= 2, `the greeting card is clipped (${clipped}px of its content is cut off)`);
   });
 
   await step("the root address and the old /home address both lead a finished student to the dashboard", async () => {
