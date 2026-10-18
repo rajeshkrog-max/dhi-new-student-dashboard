@@ -13,7 +13,8 @@ Node ESM tooling for dev, build, the local proxies and preview QA. Most logic li
 | `auth-proxy.mjs` | The one `/api/auth` proxy options object (target, forwarded host headers, cookie domain), read by `vite.config.ts` as `server.proxy` (spec 0007) |
 | `auth-proxy-preview.mjs` | The same proxy as a preview only Vite plugin, because the Cloudflare plugin answers before `preview.proxy` is reached |
 | `funnel-local.mjs` | Dev only: serves the funnel's built files (`apps/joining/dist`) at `/dhiinterviews`, `/_astro` and `/s`, adds `dashboardUrl` to the funnel's config file, and proxies the funnel's other `/api/*` routes, so the house and the interview share `localhost:8080` (spec 0008) |
-| `enter-check.mjs` | `pnpm enter:check`: real browser proof of the front door for an adult and an under 18 student; refuses production and any non local address |
+| `deploy-house.mjs` | `pnpm deploy:house`: builds the house with the production Convex address and the test sign in off, refuses a build that holds the development address or an enabled test sign in, removes `.dev.vars`, then `wrangler deploy` (extra arguments go to wrangler, e.g. `--dry-run`) |
+| `enter-check.mjs` | `pnpm enter:check`: real browser proof of the front door for an adult and an under 18 student; refuses production, any non local address, and a funnel build (`apps/joining/dist`) made for production |
 | `check-catalog.mjs` | Fails when a library in the `catalog:` list of `pnpm-workspace.yaml` is pinned directly in a part. Its short exception list is a constant in the script. Runs from `pnpm lint` |
 | `responsive-sweep.mjs`, `responsive-verdict.mjs` | Phone, tablet and desktop width sweep of the house rooms (`pnpm responsive:sweep`) and its pure verdict |
 | `preview.mjs` | Owns port 8081 (built output preview); reads `/proc`, so Linux only |

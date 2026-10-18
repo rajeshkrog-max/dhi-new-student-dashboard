@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useRef, useState, Component, type ReactNode } from "react";
 import {
   Calendar,
@@ -36,7 +36,13 @@ import { HOME } from "@/lib/dhi/home-demo";
 import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/home")({ component: StudentHome });
+// `/home` was the demo house. The real dashboard is `/dashboard` (spec 0008), so the old address only hands over to it.
+export const Route = createFileRoute("/home")({
+  beforeLoad: () => {
+    throw redirect({ to: "/dashboard" });
+  },
+  component: StudentHome,
+});
 
 const NAV = [
   { id: "home", label: "Home", icon: HomeIcon },
@@ -150,6 +156,11 @@ export function StudentHome() {
         </aside>
 
         <section className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 lg:h-full lg:pr-1", tab === "dhi" || tab === "hour" ? "lg:overflow-hidden" : "lg:overflow-y-auto")} aria-label="House">
+          {student.signOut && (
+            <p data-testid="sample-note" className="shrink-0 rounded-2xl border border-white/80 bg-white/60 px-4 py-2 text-xs text-mute backdrop-blur-md touch:text-sm">
+              The rooms show sample data for now. Your own marks, meals and notes arrive as each room is built.
+            </p>
+          )}
           <header className="relative z-10 flex flex-wrap items-center gap-3">
             <div className="min-w-0 max-sm:w-full">
               <div className="flex items-center gap-3">
@@ -260,7 +271,8 @@ function HomeBody({ onOpen }: { onOpen: (id: string) => void }) {
   const student = useStudent();
   return (
     <>
-      <article className="flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-white/80 bg-gradient-to-r from-white/80 via-lilac/20 to-peach/30 px-6 py-4 backdrop-blur-xl">
+      {/* shrink-0: the section is a fixed height column that scrolls, and a card with overflow-hidden may otherwise shrink to a strip and clip its text */}
+      <article className="flex shrink-0 flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-white/80 bg-gradient-to-r from-white/80 via-lilac/20 to-peach/30 px-6 py-4 backdrop-blur-xl">
         <div>
           <p className="text-sm text-mute">Good morning</p>
           <h2 className="font-display mt-1 text-3xl font-medium">{student.name}</h2>

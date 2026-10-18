@@ -20,6 +20,18 @@ Which page a student meets after signing in to the house, how the house uses the
 
 The three choices the owner made in the session: the deadline is an optional end date (not deleted); the dashboard shows the student's real name and class (the rest stays demo); the dashboard button is on the final screen and switched by config.
 
+## The house on the root address (decided and built 2026-10-18)
+
+The owner asked for the dashboard on `dhirise.com` and the interview where it is. Built as the house Worker `dhirise-house`, deployed with `pnpm deploy:house` (build with the production Convex address and the test sign in off, refuse a build that holds the development address, then `wrangler deploy`).
+
+- **The funnel stays on its Cloudflare Pages project.** The house takes only the paths it serves, through Worker routes in `wrangler.jsonc`: `/`, `/enter*`, `/dashboard*`, `/home*`, `/assets/*`, `/__grok/*`, `/favicon.svg`, `/og.jpg` and the picture folders of `public/`. Everything else (`/dhiinterviews*`, `/s/*`, `/api/*`, `/_astro/*`, unknown paths) still reaches the funnel. This is narrower than spec 0004's "everything but the funnel's paths" and means the funnel does not have to move to Workers for this. A new top level folder in `public/` must be added to the routes.
+- **`/` is the front door.** Signed in with a finished interview goes to `/dashboard`, new or unfinished to the interview, anyone else sees the Enter screen. `/home` (the old demo house) now redirects to `/dashboard`, and the dashboard shows a "sample data for now" note, because its rooms still run on demo data.
+- **Referral and campaign links.** Cloudflare refuses a query string in a route pattern (error 10022) and a route for `/` does not match `/?ref=ABC1234`. So a root address with a query string is not the house's: it takes the funnel's own `/` redirect (`public/_redirects`), which keeps the query string and lands on the interview with the code intact. The house also forwards `?ref=` when it does see it (local work), but production relies on the redirect.
+- **`www.dhirise.com` is not routed yet** and still takes the funnel's redirect to the interview.
+- **Rollback:** `pnpm exec wrangler delete --name dhirise-house` removes the Worker and its routes. The funnel's own redirect from `/` to the interview is still in `public/_redirects`, so `/` then behaves as it did before.
+- **Not yet seen:** a real Google sign in on `dhirise.com` ending on the dashboard. Google starts correctly (redirect address `https://dhirise.com/api/auth/callback/google`, back to `/enter`), but the owner has not completed the loop with a real account.
+- **No security headers from the house yet.** The funnel's Pages `_headers` (HSTS, `frame-ancestors 'none'`, referrer policy) do not apply to the house Worker. Adding them in the Worker is a follow up.
+
 ## Code area
 
 `src/routes/{enter,dashboard,index}.tsx`, `src/components/dhi/{enter-screen,convex-session}.tsx`, `src/lib/{entry,dhi/student}.ts`, `scripts/funnel-local.mjs`, `vite.config.ts`; the funnel's `public/dhiinterviews/js/{api,challenge,challenge-ui,challenge-config,leaderboard,report-student,funnel-config.example}.js`, `js/engine/reportText.js`, `src/lib/session.ts`, `src/pages/dhiinterviews/{challenge,terms}.astro`; the backend's `challengeRules.ts`, `challenge.ts`, `challengeCore.ts`, `challengeBoard.ts`, `challengeAdmin.ts`, `feedback.ts`, `referral.ts`, `students.ts`, `convex.config.ts`.

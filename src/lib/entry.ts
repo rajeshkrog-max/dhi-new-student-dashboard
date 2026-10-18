@@ -28,3 +28,17 @@ export function entryTarget(auth: EntryAuth, me: EntryMe | undefined): EntryTarg
   if (me.state === "needsProfile") return "interview";
   return me.check.completedAt !== null ? "dashboard" : "interview";
 }
+
+// A referral code in the address (`dhirise.com/?ref=ABC1234`). The funnel's landing page reads `?ref=` itself and checks it against the
+// server, so this only keeps what looks like a code (letters and digits, 3 to 16 long) and drops anything else, so nothing odd is ever
+// copied into the address of the interview.
+export function referralParam(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const code = raw.trim().toUpperCase();
+  return /^[A-Z0-9]{3,16}$/.test(code) ? code : undefined;
+}
+
+// The interview's landing address, with the visitor's referral code kept when there is one.
+export function interviewUrl(referral?: string): string {
+  return referral ? `${INTERVIEW_PATH}?ref=${encodeURIComponent(referral)}` : INTERVIEW_PATH;
+}
