@@ -1,0 +1,15 @@
+# Cloudflare Pages redirects (spec 0009).
+#
+# THE ROOT ADDRESS. The line below is the ONLY place that decides what `/` does. To give the main address to another product,
+# change or replace this one line (or put a page or a function at `/`). Nothing under /dhiinterviews treats `/` as its home, so
+# nothing else moves. Keep it a temporary (302) redirect, and note that Pages keeps the query string (`/?ref=ABC123` arrives intact;
+# `pnpm verify:pages` checks it).
+/ /dhiinterviews/landing 302
+
+# The funnel's own short addresses (these stay whatever the root becomes).
+/dhiinterviews /dhiinterviews/landing 302
+/dhiinterviews/ /dhiinterviews/landing 302
+
+# The private report link (spec 0010). Every /s/<code> address gets the same static page, with status 200 (a rewrite, so the address stays
+# as it is). The page holds no student data; js/shared-boot.js reads the code from the address and fetches the report.
+/s/* /dhiinterviews/shared 200

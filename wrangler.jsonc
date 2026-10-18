@@ -1,0 +1,11 @@
+// The house as a Cloudflare Worker (spec 0007, AC-12; host decision in spec 0001). Built by `pnpm build` through
+// @cloudflare/vite-plugin and served locally with `vite preview`. There is no deploy script on purpose: the house is not deployed
+// by this row, and it never gets an /api/* handler of its own (spec 0001 keeps /api/* for the funnel).
+// Public values only. Secrets are never put here.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dhi-house",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"]
+}

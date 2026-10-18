@@ -1,6 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
+/* touch: a small screen or a coarse pointer. Use it for 44px targets and 12px text (spec house/0001). */
+@custom-variant touch (@media (pointer: coarse), (max-width: 1023.98px));
+
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
@@ -21,7 +24,46 @@
   --radius-pill: 999px;
 }
 
+/* tap: reach a 44 by 44 target on touch screens without changing how it looks on desktop. */
+@utility tap {
+  @media (pointer: coarse), (max-width: 1023.98px) {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
+
 @layer base {
+  /* Slim, rounded scrollbars in the house's muted purple. The mid tone reads on the light rooms
+     and on the dark Study hour and chat panels. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(122 115 137 / 0.38) transparent;
+  }
+
+  *:hover {
+    scrollbar-color: rgb(122 115 137 / 0.62) transparent;
+  }
+
+  /* Older Safari and Chrome ignore the two properties above, so draw the same bar by hand. */
+  @supports not (scrollbar-width: thin) {
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgb(122 115 137 / 0.38);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgb(122 115 137 / 0.62);
+      background-clip: content-box;
+    }
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -70,6 +112,30 @@
   display: inline-block;
   animation: streak-fire 1.7s ease-in-out infinite;
   transform-origin: center bottom;
+}
+
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sheet-from-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sheet-from-bottom {
+  from {
+    transform: translateY(100%);
+  }
 }
 
 .dhi-sit span {

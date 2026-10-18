@@ -1,0 +1,38 @@
+{
+  "name": "dhirise",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "dev": "node scripts/sync-engine.mjs && astro dev --port 4321",
+    "build": "node scripts/sync-engine.mjs && astro build && node scripts/version-assets.mjs",
+    "preview": "astro preview",
+    "astro": "astro",
+    "sync:engine": "node scripts/sync-engine.mjs",
+    "deploy:pages": "wrangler pages deploy dist --project-name dhirise --branch main",
+    "preview:pages": "pnpm build && wrangler pages dev dist",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/sync-engine.mjs && vitest run",
+    "test:e2e": "playwright test",
+    "verify:pages": "node scripts/verify-pages.mjs"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "^0.12.5",
+    "@dhi/backend": "workspace:*",
+    "@dhi/engine": "workspace:*",
+    "astro": "^7.3.7",
+    "better-auth": "catalog:",
+    "convex": "^1.46.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vite": "catalog:",
+    "vitest": "^5.0.3",
+    "wrangler": "^4.148.0"
+  }
+}

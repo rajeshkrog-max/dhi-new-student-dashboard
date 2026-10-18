@@ -2,13 +2,16 @@
  * Blog. A student reads the house, writes with a small set of marks, and may add one photo.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Bold, ImagePlus, Italic, ListOrdered, X } from "lucide-react";
+import { Bold, ImagePlus, Italic, ListOrdered } from "lucide-react";
 import { loadPosts, saveMine, type BlogPost } from "@/lib/dhi/blog/posts";
+import { Sheet } from "@/components/dhi/sheet";
+import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
 
 const TAGS = ["Academic", "Self help", "Mental health", "House"];
 
 export function BlogRoom() {
+  const student = useStudent();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [open, setOpen] = useState<BlogPost | null>(null);
   const [writing, setWriting] = useState(false);
@@ -23,7 +26,7 @@ export function BlogRoom() {
 
   if (open && !writing) {
     return <Reader post={open} onBack={() => setOpen(null)} onComment={(body) => {
-      const next = posts.map((p) => p.id === open.id ? { ...p, comments: [...p.comments, { id: `c-${Date.now()}`, author: "Suzzy Glass", body, at: "Just now" }] } : p);
+      const next = posts.map((p) => p.id === open.id ? { ...p, comments: [...p.comments, { id: `c-${Date.now()}`, author: student.name, body, at: "Just now" }] } : p);
       commit(next);
     }} />;
   }
@@ -33,7 +36,7 @@ export function BlogRoom() {
       <style>{`.blog-body ol{list-style:decimal;margin:.4rem 0 .4rem 1.25rem} .blog-body p{margin:.45rem 0}`}</style>
       <div className="flex items-center justify-between">
         <p className="text-sm text-mute">From the house. Yours and theirs.</p>
-        <button type="button" onClick={() => setWriting(true)} className="h-10 rounded-full bg-home px-4 text-sm text-paper">Write</button>
+        <button type="button" onClick={() => setWriting(true)} className="h-10 rounded-full bg-home px-4 text-sm text-paper touch:h-11">Write</button>
       </div>
 
       <div className="rounded-[28px] bg-gradient-to-br from-[#d7f3ea] via-[#e7e4ff] to-[#f3e7ff] p-4">
@@ -42,11 +45,11 @@ export function BlogRoom() {
             <button key={post.id} type="button" onClick={() => setOpen(post)} className="overflow-hidden rounded-[22px] bg-white text-left shadow-sm">
               {post.photo && <img src={post.photo} alt="" className="aspect-[16/10] w-full object-cover" />}
               <span className="block px-4 pb-4 pt-3">
-                <span className="inline-block rounded-full bg-lilac/40 px-2 py-0.5 text-[11px]">{post.tag}</span>
+                <span className="inline-block rounded-full bg-lilac/40 px-2 py-0.5 text-[11px] touch:text-xs">{post.tag}</span>
                 <span className="mt-2 block text-lg font-semibold leading-snug">{post.title}</span>
                 <span className="mt-2 line-clamp-3 block text-sm text-mute">{plain(post.html)}</span>
                 <span className="mt-4 flex items-center gap-2 text-xs">
-                  <span className="grid size-7 place-items-center rounded-full bg-peach/50 text-[10px]">{post.author.slice(0, 1)}</span>
+                  <span data-decorative className="grid size-7 place-items-center rounded-full bg-peach/50 text-[10px]">{post.author.slice(0, 1)}</span>
                   <span>
                     <span className="block font-medium text-home">{post.author}</span>
                     <span className="text-mute">{post.at}</span>
@@ -79,12 +82,12 @@ function Reader({ post, onBack, onComment }: { post: BlogPost; onBack: () => voi
   return (
     <article className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <style>{`.blog-body ol{list-style:decimal;margin:.4rem 0 .4rem 1.25rem} .blog-body p{margin:.45rem 0}`}</style>
-      <button type="button" onClick={onBack} className="h-9 w-fit rounded-full bg-white/80 px-3 text-sm">Back to the house</button>
+      <button type="button" onClick={onBack} className="h-9 w-fit rounded-full bg-white/80 px-3 text-sm touch:h-11">Back to the house</button>
       <div className="overflow-hidden rounded-[28px] bg-white/85">
         {post.photo && <img src={post.photo} alt="" className="max-h-[360px] w-full object-cover" />}
-        <div className="px-6 py-5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-grove">{post.tag}</p>
-          <h2 className="font-display mt-2 text-4xl leading-tight">{post.title}</h2>
+        <div className="px-4 py-5 sm:px-6">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-grove touch:text-xs">{post.tag}</p>
+          <h2 className="font-display mt-2 text-3xl leading-tight sm:text-4xl">{post.title}</h2>
           <p className="mt-2 text-sm text-mute">{post.author} · {post.at}</p>
           <div className="blog-body mt-6 text-[17px] leading-8 text-home" dangerouslySetInnerHTML={{ __html: safeHtml(post.html) }} />
         </div>
@@ -110,6 +113,7 @@ function Reader({ post, onBack, onComment }: { post: BlogPost; onBack: () => voi
 }
 
 function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (post: BlogPost) => void }) {
+  const student = useStudent();
   const body = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState("");
   const [tag, setTag] = useState(TAGS[0]);
@@ -134,52 +138,46 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (pos
       tag,
       html,
       photo,
-      author: "Suzzy Glass",
+      author: student.name,
       at: "Just now",
       comments: [],
     });
   }
 
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-home/30 p-4" onClick={onClose}>
-      <div className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <p className="font-display text-2xl">Write</p>
-          <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-full bg-home-bg" aria-label="Close"><X className="size-4" /></button>
-        </div>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="A title, plainly" className="mt-4 h-12 w-full rounded-2xl bg-home-bg px-4 text-lg outline-none" />
-        <div className="mt-3 flex flex-wrap gap-2">
-          {TAGS.map((t) => (
-            <button key={t} type="button" onClick={() => setTag(t)} className={cn("h-8 rounded-full px-3 text-xs", tag === t ? "bg-home text-paper" : "bg-home-bg")}>{t}</button>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-1">
-          <Tool label="Bold" onClick={() => mark("bold")}><Bold className="size-4" /></Tool>
-          <Tool label="Italic" onClick={() => mark("italic")}><Italic className="size-4" /></Tool>
-          <Tool label="Numbered list" onClick={() => mark("insertOrderedList")}><ListOrdered className="size-4" /></Tool>
-          <label className="grid size-9 cursor-pointer place-items-center rounded-xl bg-home-bg" title="Photo">
-            <ImagePlus className="size-4" />
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
-          </label>
-        </div>
-        {photo && <img src={photo} alt="" className="mt-3 max-h-40 w-full rounded-2xl object-cover" />}
-        <div
-          ref={body}
-          contentEditable
-          role="textbox"
-          aria-label="Piece"
-          data-placeholder="Write as if no one is timing you."
-          className="blog-body mt-3 min-h-40 rounded-2xl bg-home-bg px-4 py-3 text-[16px] leading-7 outline-none empty:before:text-mute empty:before:content-[attr(data-placeholder)]"
-        />
-        <button type="button" onClick={publish} className="mt-4 h-11 w-full rounded-full bg-gold text-sm font-medium text-gold-ink">Put it in the house</button>
+    <Sheet open onOpenChange={(open) => !open && onClose()} side="bottom" title="Write" className="bg-white sm:w-[min(92vw,36rem)]">
+      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="A title, plainly" className="h-12 w-full rounded-2xl bg-home-bg px-4 text-lg outline-none" />
+      <div className="mt-3 flex flex-wrap gap-2">
+        {TAGS.map((t) => (
+          <button key={t} type="button" onClick={() => setTag(t)} className={cn("h-8 rounded-full px-3 text-xs touch:h-11 touch:px-4", tag === t ? "bg-home text-paper" : "bg-home-bg")}>{t}</button>
+        ))}
       </div>
-    </div>
+      <div className="mt-3 flex gap-1">
+        <Tool label="Bold" onClick={() => mark("bold")}><Bold className="size-4" aria-hidden /></Tool>
+        <Tool label="Italic" onClick={() => mark("italic")}><Italic className="size-4" aria-hidden /></Tool>
+        <Tool label="Numbered list" onClick={() => mark("insertOrderedList")}><ListOrdered className="size-4" aria-hidden /></Tool>
+        <label className="grid size-9 cursor-pointer place-items-center rounded-xl bg-home-bg touch:size-11" title="Photo" aria-label="Add a photo">
+          <ImagePlus className="size-4" aria-hidden />
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
+        </label>
+      </div>
+      {photo && <img src={photo} alt="" className="mt-3 max-h-40 w-full rounded-2xl object-cover" />}
+      <div
+        ref={body}
+        contentEditable
+        role="textbox"
+        aria-label="Piece"
+        data-placeholder="Write as if no one is timing you."
+        className="blog-body mt-3 min-h-40 rounded-2xl bg-home-bg px-4 py-3 text-[16px] leading-7 outline-none empty:before:text-mute empty:before:content-[attr(data-placeholder)]"
+      />
+      <button type="button" onClick={publish} className="mt-4 h-11 w-full rounded-full bg-gold text-sm font-medium text-gold-ink">Put it in the house</button>
+    </Sheet>
   );
 }
 
 function Tool({ children, onClick, label }: { children: ReactNode; onClick: () => void; label: string }) {
   return (
-    <button type="button" aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick} className="grid size-9 place-items-center rounded-xl bg-home-bg">
+    <button type="button" aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick} className="grid size-9 place-items-center rounded-xl bg-home-bg touch:size-11">
       {children}
     </button>
   );

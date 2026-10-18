@@ -1,0 +1,21 @@
+{
+  "name": "@dhi/engine",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "description": "The pure code the funnel and the backend share (spec 0001, child 0002): the questions, the scoring engine and the saved result's adapter.",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    "./questions": "./questions.js",
+    "./score": "./score.js",
+    "./result": "./result.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

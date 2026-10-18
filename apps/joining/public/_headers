@@ -1,0 +1,73 @@
+# Cloudflare Pages response headers (spec 0001, domain and headers).
+# The content security policy is added in the sign in spike, once the Convex and PostHog addresses are known.
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  Content-Security-Policy: frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# The site's own scripts, styles and pages are not named by version, and Cloudflare Pages by default lets a browser keep them for 4 hours
+# without asking, so a deploy did not reach a returning visitor for hours (found 2026-10-11 with the Copy link button). `no-cache` makes
+# the browser ask each time and get a quick "not changed" when nothing is new. Fonts (versioned names, below) and the hashed /_astro/ files
+# keep their long cache. Where another rule below sets a stricter Cache-Control for a page, the two values are joined and the stricter one wins.
+/dhiinterviews/js/*
+  Cache-Control: no-cache
+
+/dhiinterviews/css/*
+  Cache-Control: no-cache
+
+/dhiinterviews/:page
+  Cache-Control: no-cache
+
+# The report copy render page (spec 0006): opened only by Cloudflare Browser Run with a signed token in the address fragment.
+/dhiinterviews/report-render
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store
+
+/dhiinterviews/report-render.html
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store
+
+# The team pages (spec 0008): the list and the report viewer, for named Google accounts only. Never indexed, never cached.
+# The content security policy allows only this site's own scripts, its own API calls and the PDF viewer (a blob address).
+# The first rule above (frame-ancestors 'none') still applies to these pages as well.
+/dhiinterviews/team
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'self'
+
+/dhiinterviews/team.html
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'self'
+
+/dhiinterviews/team-report
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'self'
+
+/dhiinterviews/team-report.html
+  X-Robots-Tag: noindex
+  Cache-Control: private, no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'self'
+
+# The private report link (spec 0010): the page served for every /s/<code>. Never indexed, never cached, and the address is not sent on
+# to anything the page opens. The content security policy lets the page load only this site's own files, so nothing from a third party can
+# load on it (the card picture is a blob address; the report's charts are inline SVG with inline styles).
+# The shell's own address is kept out of search results too.
+/s/*
+  X-Robots-Tag: noindex
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+
+/dhiinterviews/shared
+  X-Robots-Tag: noindex
+
+/dhiinterviews/shared.html
+  X-Robots-Tag: noindex
+
+# The hosted fonts (spec 0009). Every file name carries a version (mukta-400.v1.woff2), so a changed font gets a new name (v2)
+# and never reaches a visitor as a stale cached file. Never replace a font file in place.
+/dhiinterviews/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

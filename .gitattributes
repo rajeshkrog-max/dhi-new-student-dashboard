@@ -1,0 +1,7 @@
+# The funnel was built with LF line endings, and its tests read files with newline patterns,
+# so its text files must be checked out as LF even where Git is set to autocrlf (Windows).
+# "text=auto" lets Git detect binary files (images, audio) and leave them untouched.
+# Scoped to apps/joining and packages (the funnel's backend and engine moved there, spec 0001 child 0002, and the funnel's tests read
+# them) so the house keeps its current settings.
+apps/joining/** text=auto eol=lf
+packages/** text=auto eol=lf

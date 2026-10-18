@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,9 +10,9 @@ import {
   Sparkles,
   Square,
   User,
-  X,
 } from "lucide-react";
 import { EXAM_TILES, type ExamTile, type PaperDef } from "@/lib/dhi/papers-demo";
+import { Sheet } from "@/components/dhi/sheet";
 import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "running" | "review" | "submitted";
@@ -204,12 +204,13 @@ function PaperSitting({
             onClick={onBack}
             disabled={attempt.phase === "running"}
             title={attempt.phase === "running" ? "Exam is going on — stop first" : "Back to exams"}
-            className="grid size-10 place-items-center rounded-2xl bg-white/80 disabled:opacity-40"
+            aria-label="Back to exams"
+            className="grid size-10 place-items-center rounded-2xl bg-white/80 disabled:opacity-40 touch:size-11"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-4" aria-hidden />
           </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-mute">{paper.institute}</p>
+          <div className="min-w-[12rem] flex-1">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-mute touch:text-xs">{paper.institute}</p>
             <h2 className="font-display text-2xl font-medium">{paper.subject}</h2>
             <p className="text-sm text-mute">
               {paper.teacher} · {paper.date} · {paper.totalMarks} marks · {paper.durationMin} min
@@ -263,6 +264,9 @@ function PaperSitting({
             <Lock className="size-3.5" /> The house is quiet. Only this paper, until you stop.
           </p>
         )}
+        <p className="mt-2 hidden text-xs text-mute touch:block">
+          {attempt.phase === "running" ? "Back is off while you sit. Stop first. " : ""}The timer never restarts.
+        </p>
       </header>
 
       {attempt.phase === "idle" ? (
@@ -281,7 +285,7 @@ function PaperSitting({
             </span>
           </div>
 
-          <div className="flex min-h-0 flex-1 gap-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row">
             <Milestone
               count={list.length}
               current={qi}
@@ -380,9 +384,9 @@ function ExamCard({
         style={{ height: `${Math.round(fill * 100)}%` }}
       />
       <div className="relative z-10 flex flex-col gap-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.16em] text-mute">{tile.institute}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-mute touch:text-xs">{tile.institute}</p>
             <h2 className="font-display mt-1 text-2xl font-medium">{tile.subject}</h2>
             <p className="mt-1 text-sm text-mute">{tile.title}</p>
           </div>
@@ -396,7 +400,7 @@ function ExamCard({
             <User className="size-4 text-mute" />
           </span>
           <span>
-            <span className="block text-[10px] uppercase tracking-wide text-mute">Teacher</span>
+            <span className="block text-[10px] uppercase tracking-wide text-mute touch:text-xs">Teacher</span>
             {tile.teacher}
           </span>
         </p>
@@ -408,7 +412,7 @@ function ExamCard({
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] text-mute">
+          <p className="text-[11px] text-mute touch:text-xs">
             {submitted
               ? "Offered to the teacher"
               : tone === "red"
@@ -449,7 +453,7 @@ function FlipClock({ dueAt, now }: { dueAt: number; now: number }) {
           <span className="grid h-9 min-w-9 place-items-center rounded-lg bg-home px-1.5 font-display text-sm tabular-nums text-paper">
             {String(u.n).padStart(2, "0")}
           </span>
-          <span className="mt-0.5 text-[8px] uppercase tracking-wider text-mute">{u.label}</span>
+          <span className="mt-0.5 text-[8px] uppercase tracking-wider text-mute touch:text-xs">{u.label}</span>
         </div>
       ))}
     </div>
@@ -461,7 +465,7 @@ function Meta({ icon: Icon, label, value }: { icon: typeof Clock; label: string;
     <div className="flex items-center gap-2 rounded-2xl bg-white/70 px-2 py-2">
       <Icon className="size-3.5 shrink-0 text-mute" />
       <span>
-        <span className="block text-[9px] uppercase tracking-wide text-mute">{label}</span>
+        <span className="block text-[9px] uppercase tracking-wide text-mute touch:text-xs">{label}</span>
         <span className="font-medium">{value}</span>
       </span>
     </div>
@@ -508,7 +512,7 @@ function McqCard({
       <button
         type="button"
         onClick={onHint}
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-lilac/40 px-3 py-1.5 text-xs"
+        className="tap mt-4 inline-flex items-center gap-2 rounded-full bg-lilac/40 px-3 py-1.5 text-xs"
       >
         <Sparkles className="size-3.5" /> Ask DHI to open this question
       </button>
@@ -566,7 +570,7 @@ function WriteCard({
       <button
         type="button"
         onClick={onHint}
-        className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gold/40 px-3 py-1.5 text-xs"
+        className="tap mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gold/40 px-3 py-1.5 text-xs"
       >
         <Sparkles className="size-3.5" /> Ask DHI how to think
       </button>
@@ -584,26 +588,12 @@ function WriteCard({
 
 function HintSlider({ title, body, onClose }: { title: string; body: string; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-40 flex justify-end">
-      <button type="button" className="absolute inset-0 bg-home/20 backdrop-blur-[2px]" onClick={onClose} />
-      <aside className="relative flex h-full w-full max-w-md animate-[slideIn_280ms_ease] flex-col border-l border-white/60 bg-[#f7f1e8]/95 p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <p className="flex items-center gap-2 font-display text-lg">
-            <Sparkles className="size-4 text-gold-ink" /> DHI
-          </p>
-          <button type="button" aria-label="Close DHI" onClick={onClose} className="grid size-10 place-items-center rounded-2xl bg-white">
-            <X className="size-4" />
-          </button>
-        </div>
-        <p className="mt-6 text-xs uppercase tracking-[0.14em] text-mute">A lamp, not an answer</p>
-        <p className="mt-2 text-sm text-mute">{title}</p>
-        <p className="font-display mt-6 text-xl leading-relaxed">{body}</p>
-        <p className="mt-auto pt-8 text-xs text-mute">
-          Sit with the hint. Choose only when the thought is yours.
-        </p>
-      </aside>
-      <style>{`@keyframes slideIn { from { transform: translateX(24px); opacity: 0 } to { transform: none; opacity: 1 } }`}</style>
-    </div>
+    <Sheet open onOpenChange={(open) => !open && onClose()} side="right" title="DHI">
+      <p className="text-xs uppercase tracking-[0.14em] text-mute">A lamp, not an answer</p>
+      <p className="mt-2 text-sm text-mute">{title}</p>
+      <p className="font-display mt-6 text-xl leading-relaxed">{body}</p>
+      <p className="pt-8 text-xs text-mute">Sit with the hint. Choose only when the thought is yours.</p>
+    </Sheet>
   );
 }
 
@@ -619,10 +609,9 @@ function SubmitModal({
   onOffer: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-home/30 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-[28px] border border-white/80 bg-[#f7f1e8] p-6 text-center shadow-2xl">
-        <p className="font-display text-3xl">Good sitting.</p>
-        <p className="mt-3 text-sm text-mute">
+    <Sheet open onOpenChange={(open) => !open && onStay()} side="bottom" title="Good sitting.">
+      <div className="text-center">
+        <p className="text-sm text-mute">
           You touched {done.t} of {done.all} questions ({done.m} MCQ, {done.w} writings). Untouched ones stay empty —
           the teacher reads what you offered, not a punishment.
         </p>
@@ -639,7 +628,7 @@ function SubmitModal({
           </button>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 }
 
@@ -665,7 +654,7 @@ function TimerRing({ frac, ring, leftMs }: { frac: number; ring: string; leftMs:
           strokeDasharray={`${dash} ${c}`}
         />
       </svg>
-      <span className="absolute flex items-center gap-0.5 text-[10px] font-medium">
+      <span className="absolute flex items-center gap-0.5 text-[10px] font-medium touch:text-xs">
         <Clock className="size-2.5" />
         {m}:{String(s).padStart(2, "0")}
       </span>
@@ -684,22 +673,53 @@ function Milestone({
   done: boolean[];
   onPick: (i: number) => void;
 }) {
+  const row = useRef<HTMLDivElement>(null);
+
+  // Keep the current number in view when the jump row scrolls sideways.
+  useEffect(() => {
+    const box = row.current;
+    const btn = box?.children[current] as HTMLElement | undefined;
+    if (!box || !btn) return;
+    box.scrollTo({ left: btn.offsetLeft - (box.clientWidth - btn.offsetWidth) / 2 });
+  }, [current, count]);
+
+  const tone = (i: number) =>
+    i === current ? "bg-home text-paper" : done[i] ? "bg-mint/70 text-grove" : "bg-white/70 text-mute";
   return (
-    <div className="hidden w-12 shrink-0 flex-col gap-1 overflow-y-auto md:flex">
-      {Array.from({ length: count }, (_, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => onPick(i)}
-          className={cn(
-            "grid h-8 w-full place-items-center rounded-xl text-[11px]",
-            i === current ? "bg-home text-paper" : done[i] ? "bg-mint/70 text-grove" : "bg-white/70 text-mute",
-          )}
-        >
-          {i + 1}
-        </button>
-      ))}
-    </div>
+    <>
+      <div
+        ref={row}
+        data-scroll-x
+        role="group"
+        aria-label="Jump to question"
+        className="flex shrink-0 gap-2 overflow-x-auto md:hidden"
+      >
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onPick(i)}
+            aria-label={`Question ${i + 1}`}
+            aria-current={i === current ? "true" : undefined}
+            className={cn("grid size-11 shrink-0 place-items-center rounded-xl text-sm", tone(i))}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+      <div className="hidden w-12 shrink-0 flex-col gap-1 overflow-y-auto md:flex">
+        {Array.from({ length: count }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onPick(i)}
+            className={cn("grid h-8 w-full place-items-center rounded-xl text-[11px] touch:h-11 touch:text-xs", tone(i))}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -708,7 +728,7 @@ function LaneBtn({ on, onClick, children }: { on: boolean; onClick: () => void; 
     <button
       type="button"
       onClick={onClick}
-      className={cn("h-10 rounded-full px-4 text-sm", on ? "bg-home text-paper" : "bg-white/70")}
+      className={cn("h-10 rounded-full px-4 text-sm touch:h-11", on ? "bg-home text-paper" : "bg-white/70")}
     >
       {children}
     </button>

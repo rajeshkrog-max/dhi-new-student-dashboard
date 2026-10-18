@@ -12,16 +12,16 @@
     "strict": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    // `src/lib/db.ts` imports scripts/migration-plan.mjs; checkJs types the
-    // implementation itself instead of a hand-written declaration beside it.
+    // `allowJs` lets src import the `.mjs` helpers in scripts/. `checkJs` is off: the house now reaches the backend's generated API,
+    // which pulls in the shared engine's plain ES5 files (packages/engine/*.js), and those are not written for strict checking.
+    // A helper that wants checking says `// @ts-check` at its top.
     "allowJs": true,
-    "checkJs": true,
+    "checkJs": false,
     "noEmit": true,
     "types": [
       "vite/client",
       "node"
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
@@ -30,7 +30,6 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "src",
-    "server"
+    "src"
   ]
 }

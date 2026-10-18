@@ -4,7 +4,7 @@
  *
  * `dev`, `build` and `preview` all route through this wrapper, so the dev
  * server, the built bundle and the preview server can never disagree about
- * `VITE_AUTH_ENABLED` — a divergence that only shows up as a built-output
+ * a `VITE_` flag — a divergence that only shows up as a built-output
  * mismatch long after the fact. Anything that starts Vite directly bypasses it.
  *
  * Only `VITE_`-prefixed keys are honored: the file is a build flag carrier, not
@@ -12,9 +12,8 @@
  * `process.env` entry always wins, so an explicit override still works.
  *
  * That precedence also means the file governs this workspace only. A deployed
- * build runs with the provider's project env, where the deployer sets
- * `VITE_AUTH_ENABLED` itself (today unconditionally `"true"`), so the deployed
- * flag is the platform's, not this file's.
+ * build runs with the provider's project env, so a deployed flag is the
+ * platform's, not this file's.
  *
  * Vite picks the values up because `loadEnv` prefix-matches entries already in
  * `process.env`, which is why the merge has to happen before Vite starts.
@@ -111,7 +110,10 @@ function main(argv) {
     process.exit(2);
   }
   const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  // On Windows a bare command name (`vite`, `pnpm`) is a .cmd shim, which Node can only start through
+  // a shell. A full path to a real program (node.exe, often in a folder with spaces) must not use one.
+  const useShell = process.platform === "win32" && !/[\\/]|\.exe$/i.test(command);
+  const child = spawn(command, args, { stdio: "inherit", env, shell: useShell });
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));

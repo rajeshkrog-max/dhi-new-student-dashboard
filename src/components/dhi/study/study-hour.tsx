@@ -5,9 +5,11 @@
  * DND — no people, no chat. Lamp and pomodoro. Alone.
  */
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, Clock, Lock, MessageCircle, Mic, MicOff, Pause, PhoneOff, Play, Search, Send, Video, VideoOff, X } from "lucide-react";
+import { ArrowLeft, Clock, Lock, MessageCircle, Mic, MicOff, Pause, PhoneOff, Play, Search, Send, Video, VideoOff } from "lucide-react";
 import { LIVE, LOCKED, opensLabel, phase, remaining } from "@/lib/dhi/study/hours";
 import type { StudyLine } from "@/lib/dhi/study/schema";
+import { Sheet } from "@/components/dhi/sheet";
+import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
 
 type Self = "live" | "away" | "dnd";
@@ -19,6 +21,7 @@ const TRACKS = [
 ];
 
 export function StudyHourRoom() {
+  const student = useStudent();
   const [now, setNow] = useState(() => Date.now());
   const [inside, setInside] = useState(phase(LIVE) === "live");
   const [self, setSelf] = useState<Self>("live");
@@ -84,7 +87,7 @@ export function StudyHourRoom() {
   function send() {
     const body = text.trim();
     if (!body) return;
-    setLines((ls) => [...ls, { id: `me-${ls.length}`, author: "Suzzy Glass", body, at: clockLabel(), }]);
+    setLines((ls) => [...ls, { id: `me-${ls.length}`, author: student.name, body, at: clockLabel(), }]);
     setText("");
     setSeen((n) => n + 1);
   }
@@ -95,13 +98,13 @@ export function StudyHourRoom() {
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-[#07141c] text-paper">
-      <header className="flex items-center gap-3 px-4 py-3">
+    <div className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-[28px] bg-[#07141c] text-paper lg:min-h-0">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <div className="min-w-0">
           <p className="font-display text-lg leading-tight">{self === "dnd" ? "Alone" : LIVE.title}</p>
           <p className="text-xs text-paper/50">{self === "dnd" ? "No one can see you" : LIVE.subject}</p>
         </div>
-        <span className="ml-auto hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm sm:flex">
+        <span className="ml-auto flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm">
           <Clock className="size-3.5 text-gold" />
           <span className="tabular-nums text-gold">{remaining(LIVE, now)}</span>
         </span>
@@ -134,7 +137,7 @@ export function StudyHourRoom() {
 
       {self === "live" && view === "all" && (
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-          <button type="button" onClick={() => setView("room")} className="mb-3 flex h-9 w-fit items-center gap-2 rounded-full bg-white/10 px-3 text-sm">
+          <button type="button" onClick={() => setView("room")} className="mb-3 flex h-9 w-fit items-center gap-2 rounded-full bg-white/10 px-3 text-sm touch:h-11">
             <ArrowLeft className="size-4" /> Back to you
           </button>
           <div className="grid min-h-0 flex-1 auto-rows-[140px] grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
@@ -146,17 +149,19 @@ export function StudyHourRoom() {
       )}
 
       {self === "live" && view === "room" && (
-        <div className="grid min-h-0 flex-1 gap-3 px-4 pb-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)]">
-          <div className="grid grid-cols-2 grid-rows-3 gap-3">
-            {liveOthers.slice(0, 4).map((s) => (
-              <Face key={s.id} name={s.name} role={s.role} image={s.image} speaking={s.id === speaking} />
-            ))}
-            <button type="button" onClick={() => setView("all")} className="col-span-2 grid place-items-center rounded-3xl bg-white/8 text-sm text-paper/80 ring-1 ring-white/10">
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 px-4 pb-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)]">
+          <div className="order-2 flex min-w-0 flex-col gap-3 lg:order-1 lg:grid lg:grid-cols-2 lg:grid-rows-3">
+            <div data-scroll-x className="flex gap-3 overflow-x-auto lg:contents">
+              {liveOthers.slice(0, 4).map((s) => (
+                <Face key={s.id} name={s.name} role={s.role} image={s.image} speaking={s.id === speaking} className="h-28 w-36 shrink-0 lg:h-auto lg:w-auto" />
+              ))}
+            </div>
+            <button type="button" onClick={() => setView("all")} className="grid h-11 place-items-center rounded-3xl bg-white/8 text-sm text-paper/80 ring-1 ring-white/10 lg:col-span-2 lg:h-auto">
               View all · {liveOthers.length} studying
             </button>
           </div>
 
-          <div className="flex min-h-[280px] flex-col gap-3">
+          <div className="order-1 flex min-h-[280px] min-w-0 flex-col gap-3 lg:order-2">
             <article className="relative min-h-0 flex-1 overflow-hidden rounded-3xl bg-[#102833]">
               {cam && you.image ? (
                 <img src={you.image} alt="" className="absolute inset-0 size-full object-cover object-[center_18%]" />
@@ -175,9 +180,9 @@ export function StudyHourRoom() {
                   <PhoneOff className="size-4" />
                 </button>
               </div>
-              <button type="button" onClick={openChat} className="absolute right-3 top-3 grid size-10 place-items-center rounded-2xl bg-black/40" aria-label="Chat">
-                <MessageCircle className="size-4" />
-                {unread > 0 && <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-[#c45c4a] px-1 text-[10px]">{unread}</span>}
+              <button type="button" onClick={openChat} className="absolute right-3 top-3 grid size-10 place-items-center rounded-2xl bg-black/40 touch:size-11" aria-label="Chat">
+                <MessageCircle className="size-4" aria-hidden />
+                {unread > 0 && <span data-decorative className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-[#c45c4a] px-1 text-[10px]">{unread}</span>}
               </button>
             </article>
             <button type="button" onClick={openChat} className="flex items-center gap-3 rounded-3xl bg-white/8 px-4 py-3 text-left ring-1 ring-white/10">
@@ -188,43 +193,40 @@ export function StudyHourRoom() {
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm">{last?.body}</span>
-                <span className="text-[11px] text-paper/50">{last?.author} · on {LIVE.subject}</span>
+                <span className="text-[11px] text-paper/50 touch:text-xs">{last?.author} · on {LIVE.subject}</span>
               </span>
             </button>
           </div>
         </div>
       )}
 
-      {chat && self === "live" && (
-        <div className="absolute inset-0 z-20 flex justify-end bg-black/40" onClick={() => setChat(false)}>
-          <aside className="flex h-full w-[min(100%,360px)] flex-col bg-[#0b1c26]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3">
-              <p className="text-sm">Subject chat</p>
-              <button type="button" onClick={() => setChat(false)} className="grid size-8 place-items-center rounded-full bg-white/10" aria-label="Close chat">
-                <X className="size-4" />
-              </button>
-            </div>
-            <label className="mx-4 mb-2 flex h-10 items-center gap-2 rounded-full bg-white/10 px-3 text-sm">
-              <Search className="size-3.5 opacity-50" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a line…" className="min-w-0 flex-1 bg-transparent outline-none" />
-            </label>
-            <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4">
-              {lines.filter((l) => l.body.toLowerCase().includes(q.trim().toLowerCase())).map((l) => (
-                <li key={l.id}>
-                  <p className="text-[11px] text-paper/50">{l.author} · {l.at}</p>
-                  <p className="text-sm leading-snug">{l.body}</p>
-                </li>
-              ))}
-            </ul>
-            <form className="flex gap-2 p-3" onSubmit={(e) => { e.preventDefault(); send(); }}>
-              <input value={text} onChange={(e) => setText(e.target.value)} placeholder={`On ${LIVE.subject}…`} className="h-11 min-w-0 flex-1 rounded-full bg-white/10 px-4 text-sm outline-none" />
-              <button type="submit" className="grid size-11 place-items-center rounded-full bg-gold text-gold-ink" aria-label="Send">
-                <Send className="size-4" />
-              </button>
-            </form>
-          </aside>
-        </div>
-      )}
+      <Sheet
+        open={chat && self === "live"}
+        onOpenChange={(open) => !open && setChat(false)}
+        side="right"
+        tone="dark"
+        title="Subject chat"
+        className="sm:w-[min(92vw,360px)]"
+      >
+        <label className="mb-2 flex h-10 items-center gap-2 rounded-full bg-white/10 px-3 text-sm touch:h-11">
+          <Search className="size-3.5 opacity-50" aria-hidden />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a line…" className="min-w-0 flex-1 bg-transparent outline-none" />
+        </label>
+        <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+          {lines.filter((l) => l.body.toLowerCase().includes(q.trim().toLowerCase())).map((l) => (
+            <li key={l.id}>
+              <p className="text-[11px] text-paper/50 touch:text-xs">{l.author} · {l.at}</p>
+              <p className="text-sm leading-snug">{l.body}</p>
+            </li>
+          ))}
+        </ul>
+        <form className="flex gap-2 pt-3" onSubmit={(e) => { e.preventDefault(); send(); }}>
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={`On ${LIVE.subject}…`} className="h-11 min-w-0 flex-1 rounded-full bg-white/10 px-4 text-sm outline-none" />
+          <button type="submit" className="grid size-11 place-items-center rounded-full bg-gold text-gold-ink" aria-label="Send">
+            <Send className="size-4" aria-hidden />
+          </button>
+        </form>
+      </Sheet>
     </div>
   );
 }
@@ -240,7 +242,7 @@ function Alone({
   return (
     <div className="grid min-h-0 flex-1 place-items-center px-6 pb-8">
       <div className="w-full max-w-md text-center">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-gold">Do not disturb</p>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-gold touch:text-xs">Do not disturb</p>
         <p className="font-display mt-2 text-4xl tabular-nums">{m}:{s}</p>
         <p className="mt-1 text-sm text-paper/50">One sitting. Twenty-five minutes.</p>
         <div className="mt-5 flex justify-center gap-2">
@@ -268,9 +270,9 @@ function Alone({
 function StatusSwitch({ value, onChange }: { value: Self; onChange: (v: Self) => void }) {
   const items: Self[] = ["live", "away", "dnd"];
   return (
-    <div className="flex rounded-full bg-white/10 p-1 text-xs">
+    <div className="order-last flex w-full rounded-full bg-white/10 p-1 text-xs sm:order-none sm:w-auto">
       {items.map((item) => (
-        <button key={item} type="button" onClick={() => onChange(item)} className={cn("h-8 rounded-full px-3 uppercase", value === item ? "bg-gold text-gold-ink" : "text-paper/60")}>
+        <button key={item} type="button" onClick={() => onChange(item)} className={cn("h-8 flex-1 rounded-full px-3 uppercase touch:h-11 sm:flex-none", value === item ? "bg-gold text-gold-ink" : "text-paper/60")}>
           {item}
         </button>
       ))}
@@ -278,13 +280,13 @@ function StatusSwitch({ value, onChange }: { value: Self; onChange: (v: Self) =>
   );
 }
 
-function Face({ name, role, image, speaking }: { name: string; role: string; image: string | null; speaking: boolean }) {
+function Face({ name, role, image, speaking, className }: { name: string; role: string; image: string | null; speaking: boolean; className?: string }) {
   return (
-    <article className={cn("relative overflow-hidden rounded-3xl bg-[#102833]", speaking && "ring-2 ring-gold")}>
+    <article className={cn("relative overflow-hidden rounded-3xl bg-[#102833]", speaking && "ring-2 ring-gold", className)}>
       {image ? <img src={image} alt="" className="absolute inset-0 size-full object-cover" /> : <div className="absolute inset-0 grid place-items-center text-lg">{name.slice(0, 1)}</div>}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
         <p className="truncate text-xs font-medium">{name}</p>
-        <p className="text-[10px] text-paper/70">{speaking ? "Speaking" : role}</p>
+        <p className="text-[10px] text-paper/70 touch:text-xs">{speaking ? "Speaking" : role}</p>
       </div>
     </article>
   );
@@ -301,7 +303,7 @@ function Board({
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <article className="rounded-[28px] border border-white/80 bg-[#07141c] p-6 text-paper">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-gold">{livePhase === "live" ? "Open now" : livePhase === "closed" ? "Closed" : "Locked"}</p>
+        <p className="text-[11px] uppercase tracking-[0.14em] text-gold touch:text-xs">{livePhase === "live" ? "Open now" : livePhase === "closed" ? "Closed" : "Locked"}</p>
         <h2 className="font-display mt-2 text-3xl">{LIVE.title}</h2>
         <p className="mt-2 text-sm text-paper/70">{LIVE.teacher} dedicated {LIVE.subject}. Voice and camera. The room drops when the clock ends.</p>
         <p className="mt-4 text-sm tabular-nums text-gold">{livePhase === "live" ? `${remaining(LIVE, now)} left` : "The window has shut."}</p>
@@ -310,7 +312,7 @@ function Board({
         </button>
       </article>
       <article className="rounded-[28px] border border-white/80 bg-white/70 p-6">
-        <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-mute">
+        <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">
           <Lock className="size-3.5" /> {lockedPhase === "locked" ? "Locked" : lockedPhase}
         </p>
         <h2 className="font-display mt-2 text-3xl">{LOCKED.title}</h2>

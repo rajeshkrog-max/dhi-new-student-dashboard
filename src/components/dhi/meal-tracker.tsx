@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Clock, Moon, Plus, Sparkles, Sunrise, Sun, Trash2, UtensilsCrossed, X } from "lucide-react";
+import { Clock, Moon, Plus, Sparkles, Sunrise, Sun, Trash2, UtensilsCrossed } from "lucide-react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis } from "recharts";
 import {
   GOAL,
@@ -26,6 +26,7 @@ import {
   type Slot,
   type Unit,
 } from "@/lib/dhi/meals-demo";
+import { Sheet } from "@/components/dhi/sheet";
 import { cn } from "@/lib/utils";
 
 const SLOT_UI: { id: Slot; label: string; icon: typeof Sun }[] = [
@@ -122,13 +123,18 @@ export function MealTracker() {
                     <Icon className="size-4 text-mute" /> {s.label}
                     <span className="ml-auto text-xs text-mute">{plate.items.length ? (kcal ? `${kcal} kcal` : "DHI pending") : "Empty"}</span>
                     {plate.items.length > 0 && (
-                      <button type="button" className="text-mute" aria-label={`Clear ${s.label}`} onClick={() => setStore(clearSlot(store, s.id))}>
-                        <Trash2 className="size-3.5" />
+                      <button
+                        type="button"
+                        className="text-mute touch:-my-3 touch:-mr-2 touch:grid touch:size-11 touch:place-items-center"
+                        aria-label={`Clear ${s.label}`}
+                        onClick={() => setStore(clearSlot(store, s.id))}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
                       </button>
                     )}
                   </p>
                   {clock && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] text-grove">
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-grove touch:text-xs">
                       <Clock className="size-3" /> sat at {clock}
                     </p>
                   )}
@@ -170,11 +176,11 @@ export function MealTracker() {
             </ResponsiveContainer>
           </div>
           <div className="mt-3 rounded-2xl bg-white/80 p-3">
-            <p className="text-[11px] uppercase tracking-wide text-mute">Usual sitting time this week</p>
+            <p className="text-[11px] uppercase tracking-wide text-mute touch:text-xs">Usual sitting time this week</p>
             <p className="mt-1 text-sm">
               Breakfast {rhythm.breakfast ?? "—"} · Lunch {rhythm.lunch ?? "—"} · Dinner {rhythm.dinner ?? "—"} · Snacks {rhythm.snack ?? "—"}
             </p>
-            <p className="mt-1 text-[11px] text-mute">A rhythm for the house — not a medical reading.</p>
+            <p className="mt-1 text-[11px] text-mute touch:text-xs">A rhythm for the house — not a medical reading.</p>
           </div>
           <ul className="mt-3 grid gap-1 sm:grid-cols-2">
             {top.map((t) => (
@@ -189,12 +195,16 @@ export function MealTracker() {
         <article className="overflow-hidden rounded-[24px] border border-white/80 bg-white/70 backdrop-blur-xl">
           <img src={news.image} alt="" className="h-36 w-full object-cover" />
           <div className="p-4">
-            <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-mute">
+            <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">
               <Sparkles className="size-3" /> DHI kitchen lamp
             </p>
             <h3 className="font-display mt-1 text-xl">{news.title}</h3>
             <p className="mt-2 text-sm text-mute">{news.body}</p>
-            <button type="button" onClick={() => setTip((n) => n + 1)} className="mt-3 text-xs text-grove">
+            <button
+              type="button"
+              onClick={() => setTip((n) => n + 1)}
+              className="tap mt-3 text-xs text-grove touch:-ml-3 touch:inline-flex touch:items-center touch:justify-center touch:px-3"
+            >
               Next lamp
             </button>
           </div>
@@ -271,133 +281,139 @@ function PlateDialog({
   const live = sumItems(known);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-home/35 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-[#f7f1e8] shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <p className="font-display text-2xl">Log a plate</p>
-            <p className="text-xs text-mute">How many. What time. Your own dish if it is not in the house kitchen.</p>
-          </div>
-          <button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-2xl bg-white" aria-label="Close">
-            <X className="size-4" />
+    <Sheet open onOpenChange={(open) => !open && onClose()} side="bottom" title="Log a plate" className="sm:w-[min(92vw,42rem)]">
+      <p className="text-xs text-mute">How many. What time. Your own dish if it is not in the house kitchen.</p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {SLOT_UI.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setSlot(s.id)}
+            className={cn("h-10 rounded-full px-4 text-sm touch:h-11", slot === s.id ? "bg-home text-paper" : "bg-white")}
+          >
+            {s.label}
           </button>
-        </div>
+        ))}
+        <label className="flex h-10 items-center gap-2 rounded-full bg-white px-3 text-xs touch:h-11 sm:ml-auto">
+          <Clock className="size-3.5" aria-hidden />
+          Ate at
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="bg-transparent text-sm outline-none" />
+        </label>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2 px-5">
-          {SLOT_UI.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSlot(s.id)}
-              className={cn("h-10 rounded-full px-4 text-sm", slot === s.id ? "bg-home text-paper" : "bg-white")}
+      <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-3">
+        {KITCHEN.map((k) => {
+          const n = qty[k.id] ?? 0;
+          return (
+            <div
+              key={k.id}
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-2xl border p-3 min-[420px]:block",
+                n ? "border-grove bg-mint/40" : "border-transparent bg-white",
+              )}
             >
-              {s.label}
-            </button>
-          ))}
-          <label className="ml-auto flex h-10 items-center gap-2 rounded-full bg-white px-3 text-xs">
-            <Clock className="size-3.5" />
-            Ate at
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="bg-transparent text-sm outline-none" />
-          </label>
-        </div>
-
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto px-5">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {KITCHEN.map((k) => {
-              const n = qty[k.id] ?? 0;
-              return (
-                <div key={k.id} className={cn("rounded-2xl border p-3", n ? "border-grove bg-mint/40" : "border-transparent bg-white")}>
-                  <p className="text-sm font-medium">{k.name}</p>
-                  <p className="text-[11px] text-mute">
-                    1 {k.unit} · {k.kcal} kcal
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button type="button" className="grid size-8 place-items-center rounded-xl bg-white text-sm" onClick={() => setQty((q) => ({ ...q, [k.id]: Math.max(0, (q[k.id] ?? 0) - 1) }))}>
-                      −
-                    </button>
-                    <span className="min-w-8 text-center text-sm tabular-nums">
-                      {n} {k.unit}
-                    </span>
-                    <button type="button" className="grid size-8 place-items-center rounded-xl bg-white text-sm" onClick={() => setQty((q) => ({ ...q, [k.id]: (q[k.id] ?? 0) + 1 }))}>
-                      +
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-white p-3">
-            <p className="text-xs font-medium">Not in the list? Write the dish (uttapam, aite, home sabzi…)</p>
-            <p className="mt-1 text-[11px] text-mute">Calories wait. DHI searches later and updates the tracker. The name is remembered.</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="Name of the dish"
-                className="h-11 min-w-40 flex-1 rounded-2xl bg-[#f7f1e8] px-3 text-sm outline-none"
-              />
-              <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value as Unit)} className="h-11 rounded-2xl bg-[#f7f1e8] px-3 text-sm">
-                {UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-              <div className="flex h-11 items-center gap-1 rounded-2xl bg-[#f7f1e8] px-2">
-                <button type="button" className="grid size-8 place-items-center" onClick={() => setCustomQty((n) => Math.max(1, n - 1))}>
+              <div>
+                <p className="text-sm font-medium">{k.name}</p>
+                <p className="text-[11px] text-mute touch:text-xs">
+                  1 {k.unit} · {k.kcal} kcal
+                </p>
+              </div>
+              <div className="flex items-center gap-2 min-[420px]:mt-2">
+                <button
+                  type="button"
+                  aria-label={`Less ${k.name}`}
+                  className="grid size-8 place-items-center rounded-xl bg-white text-sm touch:size-11"
+                  onClick={() => setQty((q) => ({ ...q, [k.id]: Math.max(0, (q[k.id] ?? 0) - 1) }))}
+                >
                   −
                 </button>
-                <span className="w-6 text-center text-sm">{customQty}</span>
-                <button type="button" className="grid size-8 place-items-center" onClick={() => setCustomQty((n) => n + 1)}>
+                <span className="min-w-8 text-center text-sm tabular-nums">
+                  {n} {k.unit}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`More ${k.name}`}
+                  className="grid size-8 place-items-center rounded-xl bg-white text-sm touch:size-11"
+                  onClick={() => setQty((q) => ({ ...q, [k.id]: (q[k.id] ?? 0) + 1 }))}
+                >
                   +
                 </button>
               </div>
-              <button
-                type="button"
-                disabled={!customName.trim()}
-                onClick={() => {
-                  setCustoms((c) => [...c, { name: customName.trim(), unit: customUnit, qty: customQty }]);
-                  setCustomName("");
-                  setCustomQty(1);
-                }}
-                className="h-11 rounded-2xl bg-home px-4 text-sm text-paper disabled:opacity-40"
-              >
-                Add dish
-              </button>
             </div>
-            {customs.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs">
-                {customs.map((c, i) => (
-                  <li key={`${c.name}-${i}`} className="flex justify-between">
-                    <span>
-                      {c.qty} {c.unit} {c.name} · DHI will fill kcal
-                    </span>
-                    <button type="button" onClick={() => setCustoms((x) => x.filter((_, j) => j !== i))}>
-                      remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+          );
+        })}
+      </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-home/5 px-5 py-4">
-          <p className="text-xs text-mute">
-            {Math.round(live.kcal)} kcal known · {customs.length} waiting on DHI · {time}
-          </p>
+      <div className="mt-4 rounded-2xl bg-white p-3">
+        <p className="text-xs font-medium">Not in the list? Write the dish (uttapam, aite, home sabzi…)</p>
+        <p className="mt-1 text-[11px] text-mute touch:text-xs">Calories wait. DHI searches later and updates the tracker. The name is remembered.</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <input
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            placeholder="Name of the dish"
+            className="h-11 min-w-40 flex-1 rounded-2xl bg-[#f7f1e8] px-3 text-sm outline-none"
+          />
+          <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value as Unit)} className="h-11 rounded-2xl bg-[#f7f1e8] px-3 text-sm">
+            {UNITS.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+          </select>
+          <div className="flex h-11 items-center gap-1 rounded-2xl bg-[#f7f1e8] px-2">
+            <button type="button" aria-label="Fewer" className="grid size-8 place-items-center touch:size-11" onClick={() => setCustomQty((n) => Math.max(1, n - 1))}>
+              −
+            </button>
+            <span className="w-6 text-center text-sm">{customQty}</span>
+            <button type="button" aria-label="More" className="grid size-8 place-items-center touch:size-11" onClick={() => setCustomQty((n) => n + 1)}>
+              +
+            </button>
+          </div>
           <button
             type="button"
-            disabled={draft.length === 0}
-            onClick={() => onConfirm(slot, draft, time)}
-            className="h-11 rounded-2xl bg-grove px-5 text-sm font-medium text-paper disabled:opacity-40"
+            disabled={!customName.trim()}
+            onClick={() => {
+              setCustoms((c) => [...c, { name: customName.trim(), unit: customUnit, qty: customQty }]);
+              setCustomName("");
+              setCustomQty(1);
+            }}
+            className="h-11 rounded-2xl bg-home px-4 text-sm text-paper disabled:opacity-40"
           >
-            Confirm {SLOT_UI.find((s) => s.id === slot)?.label}
+            Add dish
           </button>
         </div>
+        {customs.length > 0 && (
+          <ul className="mt-2 space-y-1 text-xs">
+            {customs.map((c, i) => (
+              <li key={`${c.name}-${i}`} className="flex items-center justify-between gap-2">
+                <span>
+                  {c.qty} {c.unit} {c.name} · DHI will fill kcal
+                </span>
+                <button type="button" className="tap touch:inline-flex touch:items-center touch:justify-center touch:px-2" onClick={() => setCustoms((x) => x.filter((_, j) => j !== i))}>
+                  remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </div>
+
+      <div className="sticky -bottom-5 -mx-5 -mb-5 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-home/5 bg-home-bg px-5 py-4">
+        <p className="text-xs text-mute">
+          {Math.round(live.kcal)} kcal known · {customs.length} waiting on DHI · {time}
+        </p>
+        <button
+          type="button"
+          disabled={draft.length === 0}
+          onClick={() => onConfirm(slot, draft, time)}
+          className="h-11 rounded-2xl bg-grove px-5 text-sm font-medium text-paper disabled:opacity-40"
+        >
+          Confirm {SLOT_UI.find((s) => s.id === slot)?.label}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 
