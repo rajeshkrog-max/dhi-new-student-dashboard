@@ -145,15 +145,20 @@ function Landing() {
               onChange={(e) => setPassword(e.target.value)}
               className="min-w-0 flex-1 bg-transparent outline-none placeholder:opacity-40"
             />
-            <button type="button" onClick={() => setShowPw((v) => !v)} className="opacity-70" aria-label={showPw ? "Hide password" : "Show password"}>
-              {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="opacity-70 touch:-mr-2 touch:grid touch:size-11 touch:place-items-center"
+              aria-label={showPw ? "Hide password" : "Show password"}
+            >
+              {showPw ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
             </button>
           </Field>
 
           {error ? <p className="mt-3 text-xs text-[#f7c9c0]">{error}</p> : null}
 
           <div className={cn("mt-4 mb-5 flex items-center justify-between text-xs", day ? "text-ink/70" : "text-paper/70")}>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 touch:min-h-11">
               <input type="checkbox" className="accent-gold" defaultChecked />
               Remember me
             </label>
@@ -180,7 +185,7 @@ function Landing() {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="mt-4 block">
-      <span className="mb-2 block text-[10px] tracking-[0.12em] uppercase opacity-60">{label}</span>
+      <span className="mb-2 block text-[10px] tracking-[0.12em] uppercase opacity-60 touch:text-xs">{label}</span>
       <span className="flex h-12 items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3">{children}</span>
     </label>
   );

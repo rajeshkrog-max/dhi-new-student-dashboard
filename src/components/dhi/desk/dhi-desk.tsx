@@ -19,6 +19,9 @@ import {
   type DeskThread,
 } from "@/lib/dhi/desk";
 import { HOME } from "@/lib/dhi/home-demo";
+import { RoomActions } from "@/components/dhi/room-actions";
+import { Sheet } from "@/components/dhi/sheet";
+import { useMediaQuery } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 
 export function DhiDesk() {
@@ -35,6 +38,10 @@ export function DhiDesk() {
   const [think, setThink] = useState("");
   const [pending, setPending] = useState("");
   const [canvasOn, setCanvasOn] = useState(true);
+  // Below 1024 the Sittings list and the drawing are Sheets, opened on purpose, never on entry.
+  const [sittings, setSittings] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const wide = useMediaQuery("(min-width: 1024px)");
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -52,8 +59,10 @@ export function DhiDesk() {
     return n ? store.threads.filter((t) => (t.title + t.preview).toLowerCase().includes(n)) : store.threads;
   }, [store.threads, q]);
 
+  // Scroll the chat box only. scrollIntoView would also scroll the page when it scrolls (below 1024).
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    const box = endRef.current?.closest<HTMLElement>("[data-chat-scroll]");
+    box?.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
   }, [thread?.messages.length, busy, pending]);
 
   async function send(text: string, kind?: DeskKind) {
@@ -78,7 +87,10 @@ export function DhiDesk() {
     setPending("");
     setBusy(false);
     setThink("");
-    if (r.store.threads[0].canvas) setCanvasOn(true);
+    if (r.store.threads[0].canvas) {
+      setCanvasOn(true);
+      setDrawing(true);
+    }
   }
 
   function startNew() {
@@ -86,12 +98,43 @@ export function DhiDesk() {
     setStore(s);
     setTid(s.threads[0].id);
     setCanvasOn(false);
+    setSittings(false);
+  }
+
+  function openThread(t: DeskThread) {
+    setTid(t.id);
+    if (t.canvas) setCanvasOn(true);
+    setSittings(false);
   }
 
   const showCanvas = canvasOn && thread?.canvas;
+  const panel = (inSheet: boolean) => (
+    <SittingsPanel
+      inSheet={inSheet}
+      store={store}
+      left={left}
+      used={used}
+      q={q}
+      onQ={setQ}
+      list={list}
+      activeId={thread?.id}
+      onOpen={openThread}
+      onNew={startNew}
+    />
+  );
 
   return (
-    <div className="grid min-h-0 flex-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1fr)_260px]">
+    <div className="grid h-[calc(100dvh-14rem)] min-h-[32rem] flex-none gap-3 overflow-hidden lg:h-auto lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <RoomActions>
+        <button
+          type="button"
+          onClick={() => setSittings(true)}
+          className="h-11 rounded-full bg-home px-4 text-sm text-paper"
+        >
+          Sittings
+        </button>
+        <span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium tabular-nums">{left} coins</span>
+      </RoomActions>
       <section className={cn("grid min-h-0 flex-1 overflow-hidden rounded-[28px] border border-white/80 bg-white/65 shadow-sm backdrop-blur-xl", showCanvas && "lg:grid-cols-2")}>
         <div className="flex min-h-0 flex-col">
           <DeskChat
@@ -102,6 +145,7 @@ export function DhiDesk() {
             onStarter={(s) => send(s.body, s.kind)}
             onPick={(mid, i, p) => thread && setStore(pickMock(store, thread.id, mid, i, p))}
             onDraft={(mid, d) => thread && setStore(saveDraft(store, thread.id, mid, d))}
+            onOpenDrawing={thread?.canvas ? () => setDrawing(true) : undefined}
             endRef={endRef}
           />
           <Composer
@@ -136,46 +180,93 @@ export function DhiDesk() {
         )}
       </section>
 
-      <aside className="flex min-h-0 flex-col rounded-[28px] border border-white/80 bg-white/70 p-4 backdrop-blur-xl">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-sm font-medium">Sittings</p>
-            <p className="text-[11px] text-mute">coins left</p>
-          </div>
-          <p className="font-display text-3xl leading-none">{left}</p>
-        </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#efeae3]">
-          <div className="h-full rounded-full bg-gradient-to-r from-lilac to-gold" style={{ width: `${Math.max(6, 100 - used)}%` }} />
-        </div>
-        <p className="mt-1.5 text-[11px] text-mute">
-          {store.wallet.spent} spent of {store.wallet.allotment}. Admin sets the bowl.
-        </p>
-        <label className="mt-4 flex h-10 items-center gap-2 rounded-full bg-white px-3 text-sm text-mute">
-          <Search className="size-3.5" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search sittings…" className="min-w-0 flex-1 bg-transparent text-home outline-none" />
-        </label>
-        <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-          {list.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setTid(t.id);
-                  if (t.canvas) setCanvasOn(true);
-                }}
-                className={cn("w-full rounded-2xl px-3 py-2.5 text-left", t.id === thread?.id ? "bg-white shadow-sm" : "hover:bg-white/60")}
-              >
-                <p className="truncate text-sm font-medium">{t.title}</p>
-                <p className="mt-0.5 truncate text-[11px] text-mute">{t.preview}</p>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <button type="button" onClick={startNew} className="mt-3 flex h-11 items-center justify-center gap-2 rounded-full bg-home text-sm text-paper">
-          <Plus className="size-4" /> New sitting
-        </button>
+      <Sheet open={sittings && !wide} onOpenChange={setSittings} side="right" title="Sittings">
+        {panel(true)}
+      </Sheet>
+      <Sheet
+        open={drawing && !wide && Boolean(thread?.canvas)}
+        onOpenChange={setDrawing}
+        side="right"
+        title="Canvas"
+        className="sm:w-full sm:rounded-none"
+      >
+        {thread?.canvas && (
+          <>
+            <img src={thread.canvas.src} alt="" className="max-h-[70dvh] w-full rounded-2xl object-contain" />
+            <p className="pt-4 text-sm text-home/80">{thread.canvas.caption}</p>
+          </>
+        )}
+      </Sheet>
+
+      <aside className="hidden min-h-0 flex-col rounded-[28px] border border-white/80 bg-white/70 p-4 backdrop-blur-xl lg:flex">
+        {panel(false)}
       </aside>
     </div>
+  );
+}
+
+// The wallet, the search and the list of sittings. The side rail shows it from 1024; below that it
+// sits in a Sheet, where the page body scrolls it, so the list does not need its own scroll.
+function SittingsPanel({
+  inSheet,
+  store,
+  left,
+  used,
+  q,
+  onQ,
+  list,
+  activeId,
+  onOpen,
+  onNew,
+}: {
+  inSheet: boolean;
+  store: DeskStore;
+  left: number;
+  used: number;
+  q: string;
+  onQ: (v: string) => void;
+  list: DeskThread[];
+  activeId?: string;
+  onOpen: (t: DeskThread) => void;
+  onNew: () => void;
+}) {
+  return (
+    <>
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-sm font-medium">Sittings</p>
+          <p className="text-[11px] text-mute touch:text-xs">coins left</p>
+        </div>
+        <p className="font-display text-3xl leading-none">{left}</p>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#efeae3]">
+        <div className="h-full rounded-full bg-gradient-to-r from-lilac to-gold" style={{ width: `${Math.max(6, 100 - used)}%` }} />
+      </div>
+      <p className="mt-1.5 text-[11px] text-mute touch:text-xs">
+        {store.wallet.spent} spent of {store.wallet.allotment}. Admin sets the bowl.
+      </p>
+      <label className="mt-4 flex h-10 items-center gap-2 rounded-full bg-white px-3 text-sm text-mute touch:h-11">
+        <Search className="size-3.5" aria-hidden />
+        <input value={q} onChange={(e) => onQ(e.target.value)} placeholder="Search sittings…" className="min-w-0 flex-1 bg-transparent text-home outline-none" />
+      </label>
+      <ul className={cn("mt-3 space-y-2", !inSheet && "min-h-0 flex-1 overflow-y-auto pr-1")}>
+        {list.map((t) => (
+          <li key={t.id}>
+            <button
+              type="button"
+              onClick={() => onOpen(t)}
+              className={cn("w-full rounded-2xl px-3 py-2.5 text-left", t.id === activeId ? "bg-white shadow-sm" : "hover:bg-white/60")}
+            >
+              <p className="truncate text-sm font-medium">{t.title}</p>
+              <p className="mt-0.5 truncate text-[11px] text-mute touch:text-xs">{t.preview}</p>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" onClick={onNew} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-home text-sm text-paper">
+        <Plus className="size-4" aria-hidden /> New sitting
+      </button>
+    </>
   );
 }
 
@@ -187,6 +278,7 @@ function DeskChat({
   onStarter,
   onPick,
   onDraft,
+  onOpenDrawing,
   endRef,
 }: {
   thread?: DeskThread;
@@ -196,12 +288,13 @@ function DeskChat({
   onStarter: (s: (typeof STARTERS)[number]) => void;
   onPick: (mid: string, i: number, p: number) => void;
   onDraft: (mid: string, d: string) => void;
+  onOpenDrawing?: () => void;
   endRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const empty = !thread || (thread.messages.length === 0 && !pending);
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+    <div data-chat-scroll className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
       {empty ? (
         <div className="flex h-full flex-col items-center justify-center text-center">
           <div className="relative mb-4 grid size-16 place-items-center">
@@ -223,10 +316,15 @@ function DeskChat({
         </div>
       ) : (
         <div className="space-y-4">
+          {onOpenDrawing && (
+            <button type="button" onClick={onOpenDrawing} className="tap flex items-center gap-2 rounded-full bg-white px-4 text-sm shadow-sm lg:hidden">
+              <ImageIcon className="size-4" aria-hidden /> Open drawing
+            </button>
+          )}
           {thread?.messages.map((m) => (
             <article key={m.id} className={cn("max-w-[92%] rounded-[22px] px-4 py-3 text-sm", m.role === "student" ? "ml-auto bg-home text-paper" : "bg-white text-home shadow-sm")}>
               {m.role === "dhi" && (
-                <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-mute">
+                <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-mute touch:text-xs">
                   <Sparkles className="size-3" /> DHI
                   {m.cacheHit && <span className="ml-1 rounded-full bg-mint/60 px-1.5 normal-case tracking-normal">saved</span>}
                   {m.coins > 0 && <span className="ml-1 normal-case tracking-normal">· {m.coins} coins</span>}
@@ -249,7 +347,7 @@ function DeskChat({
                               type="button"
                               onClick={() => onPick(m.id, i, j)}
                               className={cn(
-                                "rounded-xl px-3 py-2 text-left text-xs",
+                                "rounded-xl px-3 py-2 text-left text-xs touch:min-h-11",
                                 picked && right && "bg-mint",
                                 picked && !right && "bg-peach/70",
                                 !picked && reveal && right && "bg-mint/50",
@@ -308,7 +406,7 @@ function Composer({
   onAttach: () => void;
 }) {
   return (
-    <div className="border-t border-home/5 p-4">
+    <div data-first-screen className="border-t border-home/5 p-3 sm:p-4">
       <div className="rounded-[24px] bg-white p-3 shadow-sm">
         <textarea
           value={value}
@@ -321,11 +419,11 @@ function Composer({
           }}
           rows={2}
           placeholder="Ask DHI — a picture, a story, a mock, a page…"
-          className="w-full resize-none bg-transparent text-sm outline-none"
+          className="w-full resize-none bg-transparent text-sm outline-none touch:min-h-11"
         />
         <div className="mt-2 flex items-center gap-2">
-          <button type="button" onClick={onAttach} className="rounded-full bg-paper px-3 py-1.5 text-xs">
-            <Paperclip className="mr-1 inline size-3.5" /> Attach
+          <button type="button" onClick={onAttach} className="rounded-full bg-paper px-3 py-1.5 text-xs touch:h-11 touch:px-4">
+            <Paperclip className="mr-1 inline size-3.5" aria-hidden /> Attach
           </button>
           <span className="rounded-full bg-paper px-3 py-1.5 text-xs text-mute">PDF · image</span>
           <span className="ml-auto grid size-8 place-items-center rounded-full text-mute">
@@ -335,7 +433,7 @@ function Composer({
             type="button"
             disabled={busy || !value.trim()}
             onClick={onSend}
-            className="grid size-9 place-items-center rounded-full bg-home text-paper disabled:opacity-40"
+            className="grid size-9 place-items-center rounded-full bg-home text-paper disabled:opacity-40 touch:size-11"
             aria-label="Send"
           >
             <Send className="size-4" />
@@ -348,7 +446,7 @@ function Composer({
 
 function CanvasPane({ src, caption, onClose }: { src: string; caption: string; onClose: () => void }) {
   return (
-    <div className="relative flex min-h-0 flex-col border-t border-home/5 bg-[#f7f3ee] lg:border-l lg:border-t-0">
+    <div className="relative hidden min-h-0 flex-col border-home/5 bg-[#f7f3ee] lg:flex lg:border-l">
       <div className="flex items-center justify-between px-4 py-3">
         <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-mute">
           <ImageIcon className="size-3.5" /> Canvas

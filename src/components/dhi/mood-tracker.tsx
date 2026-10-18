@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { Clock, Heart, Sparkles, X } from "lucide-react";
+import { Clock, Heart, Sparkles } from "lucide-react";
 import {
   COUNSELOR,
   MONTHS,
@@ -19,6 +19,8 @@ import {
   type MoodKey,
   type MoodStore,
 } from "@/lib/dhi/mood-demo";
+import { Sheet } from "@/components/dhi/sheet";
+import { useTouch } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 
 const glass = "rounded-[24px] border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
@@ -34,6 +36,9 @@ export function MoodTracker() {
   const [msg, setMsg] = useState("");
   const [slotId, setSlotId] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [month, setMonth] = useState(() => new Date().getMonth());
+  const touch = useTouch();
+  const board = useRef<HTMLDivElement>(null);
 
   const today = todayKey();
   const slots = useMemo(() => openSlots(), []);
@@ -74,7 +79,7 @@ export function MoodTracker() {
   return (
     <div className="relative flex min-h-0 flex-col gap-4 pb-4">
       <div className="grid items-stretch gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-        <article className={cn(glass, "flex flex-col p-6")}>
+        <article className={cn(glass, "flex flex-col p-4 sm:p-6")}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="font-display text-2xl">Today’s colour</h3>
@@ -90,7 +95,7 @@ export function MoodTracker() {
                   type="button"
                   onClick={() => setMood(m.key)}
                   className={cn(
-                    "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] transition duration-200 hover:-translate-y-1 hover:text-paper hover:shadow-md",
+                    "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:text-paper hover:shadow-md",
                     on ? "border-transparent text-paper shadow-md" : "border-white/80 bg-white text-home",
                   )}
                   style={{ backgroundColor: on ? m.color : undefined }}
@@ -123,7 +128,7 @@ export function MoodTracker() {
           </button>
         </article>
 
-        <article className={cn(glass, "flex flex-col p-6")}>
+        <article className={cn(glass, "flex flex-col p-4 sm:p-6")}>
           <div className="flex items-center justify-between">
             <h3 className="font-display text-2xl">How the mind sat</h3>
             <div className="flex rounded-full bg-white p-1 text-xs">
@@ -132,7 +137,7 @@ export function MoodTracker() {
                   key={s}
                   type="button"
                   onClick={() => setScope(s)}
-                  className={cn("rounded-full px-3 py-1.5 capitalize", scope === s && "bg-home text-paper")}
+                  className={cn("rounded-full px-3 py-1.5 capitalize touch:min-h-11 touch:px-4", scope === s && "bg-home text-paper")}
                 >
                   {s}
                 </button>
@@ -174,7 +179,7 @@ export function MoodTracker() {
         </article>
       </div>
 
-      <article className={cn(glass, "p-6")}>
+      <article className={cn(glass, "p-3 sm:p-6")}>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 className="font-display text-2xl">Year in colour</h3>
@@ -182,16 +187,53 @@ export function MoodTracker() {
           </div>
           <p className="text-xs text-mute">{store.year}</p>
         </div>
-        <MonthBoard year={store.year} month={new Date().getMonth()} days={store.days} today={today} onPick={setPick} />
+        <div ref={board} className="scroll-mt-16">
+          <MonthBoard year={store.year} month={month} days={store.days} today={today} onPick={setPick} />
+        </div>
         <div className="mt-8">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-mute">The year</p>
+          <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">The year</p>
           <div className="space-y-2">
             {MONTHS.map((name, mi) => {
               const dim = daysInMonth(store.year, mi);
               const isNow = mi === new Date().getMonth();
+              const label = (
+                <span className={cn("w-20 shrink-0 text-xs", isNow ? "font-medium text-home" : "text-mute")}>{name}</span>
+              );
+              // On touch the 18 pixel dots are only a picture. The whole row is one 44 pixel button
+              // that opens the month in the calendar above, so every past day stays reachable.
+              if (touch) {
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    aria-pressed={mi === month}
+                    aria-label={`Open ${name}`}
+                    onClick={() => {
+                      setMonth(mi);
+                      board.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className={cn("flex min-h-11 w-full items-center gap-3 rounded-2xl px-2 py-2 text-left", mi === month && "bg-white/80")}
+                  >
+                    {label}
+                    <span aria-hidden className="flex flex-wrap gap-1">
+                      {Array.from({ length: dim }, (_, di) => {
+                        const key = `${store.year}-${String(mi + 1).padStart(2, "0")}-${String(di + 1).padStart(2, "0")}`;
+                        const cell = store.days[key];
+                        return (
+                          <span
+                            key={di}
+                            className="size-[18px] rounded-md"
+                            style={{ backgroundColor: cell ? moodOf(cell.mood).color : "#efeae3" }}
+                          />
+                        );
+                      })}
+                    </span>
+                  </button>
+                );
+              }
               return (
                 <div key={name} className="flex items-center gap-3">
-                  <span className={cn("w-20 shrink-0 text-xs", isNow ? "font-medium text-home" : "text-mute")}>{name}</span>
+                  {label}
                   <div className="flex flex-wrap gap-1">
                     {Array.from({ length: dim }, (_, di) => {
                       const day = di + 1;
@@ -233,9 +275,8 @@ export function MoodTracker() {
       )}
 
       {confirmHelp && !help && !sent && (
-        <Modal onClose={() => setConfirmHelp(false)}>
-          <p className="font-display text-2xl">Sit with a counselor?</p>
-          <p className="mt-2 text-sm text-mute">In-house, human. DHI does not enter the recording. Asha Rao will see your note, not a diagnosis.</p>
+        <Modal title="Sit with a counselor?" onClose={() => setConfirmHelp(false)}>
+          <p className="text-sm text-mute">In-house, human. DHI does not enter the recording. Asha Rao will see your note, not a diagnosis.</p>
           <div className="mt-5 flex gap-2">
             <button type="button" onClick={() => setConfirmHelp(false)} className="h-11 rounded-2xl bg-white px-4 text-sm">
               Not now
@@ -270,9 +311,8 @@ export function MoodTracker() {
       )}
 
       {sent && (
-        <Modal onClose={() => setSent(false)}>
-          <p className="font-display text-2xl">The door is open</p>
-          <p className="mt-2 text-sm text-mute">Your words went to the counselor desk. If you booked a slot, it is held.</p>
+        <Modal title="The door is open" onClose={() => setSent(false)}>
+          <p className="text-sm text-mute">Your words went to the counselor desk. If you booked a slot, it is held.</p>
           <button type="button" onClick={() => setSent(false)} className="mt-5 h-11 rounded-2xl bg-home px-5 text-sm text-paper">
             Stay in the house
           </button>
@@ -306,7 +346,7 @@ function MonthBoard({
       <p className="mb-3 font-display text-lg">
         {MONTHS[month]} {year}
       </p>
-      <div className="grid grid-cols-7 gap-2 text-center text-[11px] text-mute">
+      <div className="grid grid-cols-7 gap-x-0.5 gap-y-1 text-center text-[11px] text-mute touch:text-xs sm:gap-2">
         {names.map((n) => (
           <span key={n}>{n}</span>
         ))}
@@ -320,10 +360,11 @@ function MonthBoard({
             <button
               key={key}
               type="button"
+              data-day-cell
               disabled={future || !cell}
               onClick={() => cell && onPick(key)}
               className={cn(
-                "grid aspect-square place-items-center rounded-2xl text-xs",
+                "grid h-11 place-items-center rounded-2xl text-xs sm:aspect-square sm:h-auto",
                 isToday && "ring-2 ring-gold",
                 !cell && "bg-[#efeae3] text-mute",
                 cell && "text-paper",
@@ -356,42 +397,43 @@ function DaySlide({
 }) {
   const m = moodOf(mood);
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-home/40" onClick={onClose}>
-      <aside className="relative h-full w-full max-w-lg overflow-hidden text-paper shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="absolute inset-0 bg-cover bg-[center_40%]" style={{ backgroundImage: "url(/mood/thought.jpg)" }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1208]/80 via-[#1a1208]/25 to-transparent" />
-        <div className="relative flex h-full flex-col p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="inline-flex flex-col gap-2">
-              <p className="w-fit rounded-full border border-white/35 bg-[#1a1208]/55 px-3 py-1 text-[11px] tracking-[0.14em] text-paper backdrop-blur-md">
-                {prettyDate(date)}
-              </p>
-              <p className="font-display text-4xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">
-                {m.glyph} {m.label}
-              </p>
-            </div>
-            <button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-full border border-white/30 bg-white/15 backdrop-blur-md" aria-label="Close">
-              <X className="size-4" />
-            </button>
-          </div>
-          <div className="mt-auto space-y-3 pb-2">
-            <div className="rounded-[24px] border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70">What you wrote</p>
-              <p className="font-display mt-2 text-2xl leading-snug">{note || "This day was coloured, but no line was left."}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
-              <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-paper/70">
-                <Sparkles className="size-3" /> DHI thought
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-paper/90">{thought}</p>
-            </div>
-            <button type="button" onClick={onHelp} className="lamp-glow flex h-12 w-full items-center justify-center gap-2 rounded-full bg-paper text-sm font-medium text-home">
-              <Heart className="size-4" /> Ask DHI for a sitting
-            </button>
-          </div>
+    <Sheet
+      open
+      onOpenChange={(open) => !open && onClose()}
+      side="right"
+      tone="photo"
+      title={prettyDate(date)}
+      backdrop={
+        <>
+          <div className="pointer-events-none absolute inset-0 bg-cover bg-[center_40%]" style={{ backgroundImage: "url(/mood/thought.jpg)" }} />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1a1208]/80 via-[#1a1208]/25 to-transparent" />
+        </>
+      }
+    >
+      <div className="inline-flex flex-col gap-2">
+        <p className="w-fit rounded-full border border-white/35 bg-[#1a1208]/55 px-3 py-1 text-[11px] tracking-[0.14em] text-paper backdrop-blur-md touch:text-xs">
+          {prettyDate(date)}
+        </p>
+        <p className="font-display text-4xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">
+          {m.glyph} {m.label}
+        </p>
+      </div>
+      <div className="mt-auto space-y-3 pb-2 pt-16">
+        <div className="rounded-[24px] border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">What you wrote</p>
+          <p className="font-display mt-2 text-2xl leading-snug">{note || "This day was coloured, but no line was left."}</p>
         </div>
-      </aside>
-    </div>
+        <div className="rounded-[24px] border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
+          <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">
+            <Sparkles className="size-3" aria-hidden /> DHI thought
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-paper/90">{thought}</p>
+        </div>
+        <button type="button" onClick={onHelp} className="lamp-glow flex h-12 w-full items-center justify-center gap-2 rounded-full bg-paper text-sm font-medium text-home">
+          <Heart className="size-4" aria-hidden /> Ask DHI for a sitting
+        </button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -417,9 +459,8 @@ function HelpDesk({
   const ofDay = slots.filter((s) => s.date === day);
 
   return (
-    <Modal onClose={onClose} wide>
-      <p className="font-display text-2xl">Write to {COUNSELOR}</p>
-      <p className="mt-1 text-xs text-mute">A human sitting. Pick an open hour if you want a time held.</p>
+    <Modal title={`Write to ${COUNSELOR}`} onClose={onClose}>
+      <p className="text-xs text-mute">A human sitting. Pick an open hour if you want a time held.</p>
       <textarea
         value={message}
         onChange={(e) => onMessage(e.target.value)}
@@ -427,10 +468,10 @@ function HelpDesk({
         placeholder="What do you need them to know before the sitting?"
         className="mt-4 w-full resize-none rounded-2xl bg-white p-3 text-sm outline-none"
       />
-      <p className="mt-4 text-[11px] uppercase tracking-wide text-mute">Open hours</p>
+      <p className="mt-4 text-[11px] uppercase tracking-wide text-mute touch:text-xs">Open hours</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {days.map((d) => (
-          <button key={d} type="button" onClick={() => setDay(d)} className={cn("h-9 rounded-full px-3 text-xs", day === d ? "bg-home text-paper" : "bg-white")}>
+          <button key={d} type="button" onClick={() => setDay(d)} className={cn("h-9 rounded-full px-3 text-xs touch:h-11", day === d ? "bg-home text-paper" : "bg-white")}>
             {d.slice(5)}
           </button>
         ))}
@@ -462,12 +503,10 @@ function HelpDesk({
   );
 }
 
-function Modal({ children, onClose, wide }: { children: ReactNode; onClose: () => void; wide?: boolean }) {
+function Modal({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-home/35 p-4" onClick={onClose}>
-      <div className={cn("w-full rounded-[28px] bg-[#f7f1e8] p-6 shadow-2xl", wide ? "max-w-lg" : "max-w-md")} onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
+    <Sheet open onOpenChange={(open) => !open && onClose()} side="bottom" title={title}>
+      {children}
+    </Sheet>
   );
 }

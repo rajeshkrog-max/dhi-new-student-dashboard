@@ -23,6 +23,7 @@
     "test:house": "node --test \"scripts/**/*.test.mjs\" && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/auth/gate-identity.test.ts src/lib/auth/sign-in-gate.test.ts",
     "test": "pnpm test:house && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run test",
     "test:e2e": "pnpm --filter dhirise test:e2e",
+    "responsive:sweep": "node scripts/responsive-sweep.mjs",
     "lint:house": "eslint src scripts server vite.config.ts eslint.config.mjs",
     "lint": "pnpm lint:house && node scripts/check-catalog.mjs && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run lint",
     "format": "prettier --write src scripts server vite.config.ts eslint.config.mjs",

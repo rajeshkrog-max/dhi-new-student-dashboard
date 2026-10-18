@@ -32,6 +32,7 @@ import {
   type HabitPlan,
   type HabitStore,
 } from "@/lib/dhi/habits";
+import { useMediaQuery } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 import { HabitCompose } from "./habit-compose";
 import { HabitSlide } from "./habit-slide";
@@ -44,6 +45,7 @@ export function HabitTracker() {
   const [pick, setPick] = useState<string | null>(null);
   const [scope, setScope] = useState<"week" | "month">("week");
   const [tip, setTip] = useState(0);
+  const narrow = useMediaQuery("(max-width: 639.98px)");
   const today = todayKey();
 
   useEffect(() => {
@@ -108,7 +110,7 @@ export function HabitTracker() {
         />
       </div>
 
-      <article className={cn(glass, "p-6")}>
+      <article className={cn(glass, "p-4 sm:p-6")}>
         <h3 className="font-display text-2xl">Today’s habits</h3>
         <p className="text-sm text-mute">Tap the circle. Open the card for the streak.</p>
         {open.length === 0 ? (
@@ -130,16 +132,19 @@ export function HabitTracker() {
         )}
       </article>
 
-      <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr]">
-        <article className={cn(glass, "p-6")}>
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <article className={cn(glass, "p-4 sm:p-6")}>
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display text-2xl">{scope === "week" ? "Week wheel" : "Month bars"}</h3>
-              <p className="text-xs text-mute">Hover a slice or bar — name, days kept, percent.</p>
+              <p className="text-xs text-mute">
+                <span className="touch:hidden">Hover</span>
+                <span className="hidden touch:inline">Tap</span> a slice or bar — name, days kept, percent.
+              </p>
             </div>
             <div className="flex rounded-full bg-white p-1 text-xs">
               {(["week", "month"] as const).map((s) => (
-                <button key={s} type="button" onClick={() => setScope(s)} className={cn("rounded-full px-3 py-1.5 capitalize", scope === s && "bg-home text-paper")}>
+                <button key={s} type="button" onClick={() => setScope(s)} className={cn("rounded-full px-3 py-1.5 capitalize touch:min-h-11 touch:px-4", scope === s && "bg-home text-paper")}>
                   {s}
                 </button>
               ))}
@@ -169,7 +174,7 @@ export function HabitTracker() {
                 <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
                   <div>
                     <p className="font-display text-3xl leading-none">{rating.toFixed(1)}</p>
-                    <p className="text-[11px] text-mute">/ 5 DHI</p>
+                    <p className="text-[11px] text-mute touch:text-xs">/ 5 DHI</p>
                   </div>
                 </div>
               </div>
@@ -187,9 +192,16 @@ export function HabitTracker() {
           ) : (
             <div className="mt-4 h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthScores} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <BarChart data={monthScores} layout="vertical" margin={narrow ? { left: 0, right: 8 } : { left: 8, right: 16 }}>
                   <XAxis type="number" domain={[0, 100]} hide />
-                  <YAxis type="category" dataKey="name" width={118} tick={{ fontSize: 11, fill: "#2a2438" }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={narrow ? 84 : 118}
+                    tick={narrow ? <ClippedTick /> : { fontSize: 11, fill: "#2a2438" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <Tooltip content={<ScoreTip />} />
                   <Bar dataKey="pct" radius={[0, 8, 8, 0]} barSize={16}>
                     {monthScores.map((s) => (
@@ -202,10 +214,10 @@ export function HabitTracker() {
           )}
         </article>
 
-        <article className={cn(glass, "p-6")}>
+        <article className={cn(glass, "p-4 sm:p-6")}>
           {leader ? (
             <>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-mute">Live streak</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">Live streak</p>
               <p className="font-display mt-1 text-2xl">{leader.title}</p>
               <div className="mt-4 flex items-end gap-3">
                 <span className="streak-fire text-4xl">🔥</span>
@@ -248,13 +260,17 @@ export function HabitTracker() {
 
       <article className={cn(glass, "overflow-hidden lg:grid lg:grid-cols-[1.1fr_1fr]")}>
         <img src={news.image} alt="" className="h-44 w-full object-cover lg:h-full" />
-        <div className="p-6">
-          <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-mute">
+        <div className="p-4 sm:p-6">
+          <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">
             <Sparkles className="size-3" /> DHI habit lamp
           </p>
           <h3 className="font-display mt-2 text-2xl">{news.title}</h3>
           <p className="mt-2 text-sm text-mute">{news.body}</p>
-          <button type="button" onClick={() => setTip((n) => n + 1)} className="mt-4 text-xs text-grove">
+          <button
+            type="button"
+            onClick={() => setTip((n) => n + 1)}
+            className="tap mt-4 text-xs text-grove touch:-ml-3 touch:inline-flex touch:items-center touch:justify-center touch:px-3"
+          >
             Next insight
           </button>
         </div>
@@ -310,15 +326,20 @@ function HabitCard({
           >
             {glyphOf(plan)}
           </button>
-          <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+          <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left touch:min-h-11">
             <p className="font-medium">{plan.title}</p>
             <p className="text-xs text-mute">
               {t.streak > 0 && <span className="streak-fire mr-1 text-sm">🔥</span>}
               {t.streak} day streak · best {t.best}
             </p>
           </button>
-          <button type="button" onClick={onRemove} className="text-mute" aria-label={`Remove ${plan.title}`}>
-            <Trash2 className="size-4" />
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-mute touch:-mr-2 touch:grid touch:size-11 touch:place-items-center"
+            aria-label={`Remove ${plan.title}`}
+          >
+            <Trash2 className="size-4" aria-hidden />
           </button>
         </div>
         <div className="mt-3 flex gap-1">
@@ -331,6 +352,16 @@ function HabitCard({
         </p>
       </div>
     </li>
+  );
+}
+
+// The phone axis has 84 pixels for a name, so long names are cut short rather than overlap the bars.
+function ClippedTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
+  const name = payload?.value ?? "";
+  return (
+    <text x={x} y={y} dy={4} textAnchor="end" fontSize={12} fill="#2a2438">
+      {name.length > 12 ? `${name.slice(0, 11)}…` : name}
+    </text>
   );
 }
 
