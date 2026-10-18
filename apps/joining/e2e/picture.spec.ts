@@ -2,7 +2,7 @@
 // test sign in. A fake account has no Google photo, so the real flow always shows the initial; that is the fallback these tests check
 // first. For the picture itself the browser is given a path through the one seam the pages read (`DhiSession.picture()` and
 // `DhiSession.onPicture()`), and `/api/avatar/*` is answered by the test, so no picture code is changed and Google is never asked.
-// The server half (fetch, store, key, Remove, Restore, block) is in convex/avatars.test.ts.
+// The server half (fetch, store, key, Remove, Restore, block) is in packages/backend/convex/avatars.test.ts.
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import { PATH, finishedCheck, newContext, newStudent, newTag } from "./helpers";
 

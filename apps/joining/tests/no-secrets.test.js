@@ -24,8 +24,8 @@ describe("nothing secret reaches the browser", () => {
   });
 
   test("covers spec 0004 AC-13: only the Convex code reads the Sheet settings, and only through env", () => {
-    const users = walk("convex").filter((f) => !f.includes("_generated") && /SHEET_ID|GOOGLE_SERVICE_ACCOUNT_KEY/.test(read(f)));
-    const allowed = ["convex/convex.config.ts", "convex/sheetFlush.ts", "convex/sheetSync.ts"];
+    const users = walk("../../packages/backend/convex").filter((f) => !f.includes("_generated") && /SHEET_ID|GOOGLE_SERVICE_ACCOUNT_KEY/.test(read(f)));
+    const allowed = ["convex.config.ts", "sheetFlush.ts", "sheetSync.ts"].map((f) => `../../packages/backend/convex/${f}`);
     for (const f of users.map((u) => u.replace(/\\/g, "/"))) expect(allowed, f).toContain(f);
     for (const f of users) expect(read(f), f).not.toMatch(/process\.env\.(SHEET_ID|GOOGLE_SERVICE_ACCOUNT_KEY)/);
   });

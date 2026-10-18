@@ -1,6 +1,6 @@
 // The privacy page (spec 0007): it opens for anyone, reads well on a phone, and the landing consent sheet links to it.
 import { expect, test } from "@playwright/test";
-import { CONSENT_LINES } from "../convex/consentText";
+import { CONSENT_LINES } from "@dhi/backend/consentText";
 import { PATH } from "./helpers";
 
 test("covers AC-1, AC-2, AC-3: the page opens without signing in, names the services, and fits a phone", async ({ page }) => {

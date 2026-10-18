@@ -16,7 +16,7 @@ import { FRESH_ROUND_AFTER_MS, LEASE_MS, UNATTACHED_FILE_MS, afterCountedFailure
 import { REPORT_VERSION } from "./reportVersion";
 import { NO_FLAGS, findResult } from "./resultsCore";
 import { enqueueSheet } from "./sheetSync";
-import { flatten } from "../src/lib/result";
+import { flatten } from "@dhi/engine/result";
 
 const stateValidator = v.union(v.literal("queued"), v.literal("making"), v.literal("ready"), v.literal("failed"));
 

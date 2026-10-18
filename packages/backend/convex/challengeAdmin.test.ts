@@ -464,9 +464,9 @@ describe("who can run these commands (0015 AC-1; 0019 AC-2, AC-5)", () => {
     expect(source.replace(/\/\/.*$/gm, "")).not.toMatch(/console\./);
   });
 
-  test("covers 0015 AC-1: no page, no forwarder and no HTTP route mentions the review commands", () => {
+  // The page bridge half of this check (src/lib/session.ts) lives in the funnel's tests/winner-review.test.js: a package must not read an app.
+  test("covers 0015 AC-1: no HTTP route mentions the review commands", () => {
     for (const f of ["http.ts", "referralHttp.ts"]) expect(readFileSync(new URL(`./${f}`, import.meta.url), "utf8")).not.toMatch(/challengeAdmin/);
-    expect(readFileSync(new URL("../src/lib/session.ts", import.meta.url), "utf8")).not.toMatch(/challengeAdmin/);
   });
 
   test("covers AC-1: running the commands writes nothing to the log", async () => {

@@ -92,3 +92,10 @@ describe("tools/WINNER-REVIEW.md (AC-6)", () => {
     expect(doc).toContain('\\"');
   });
 });
+
+// Moved here from the backend's challengeAdmin.test.ts: the backend package must not read an app file, but an app may check itself.
+describe("the review commands stay out of the page bridge (spec 0015 AC-1)", () => {
+  test("covers 0015 AC-1: the page bridge never mentions the review commands", () => {
+    expect(read("src/lib/session.ts")).not.toMatch(/challengeAdmin/);
+  });
+});

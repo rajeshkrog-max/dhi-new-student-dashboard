@@ -8,7 +8,7 @@ import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { pictureFor } from "./avatarState";
 import { NO_FLAGS, findResult } from "./resultsCore";
-import { flatten } from "../src/lib/result";
+import { flatten } from "@dhi/engine/result";
 
 // What the saved detail gives away even with the flags set to false (review 2026-10-11, blocker): the mood split carries the exact rule of
 // the low mood flag (`low` at 35 or more), and the "said" answer of a top or bottom area is the student's own option, which for the feelings

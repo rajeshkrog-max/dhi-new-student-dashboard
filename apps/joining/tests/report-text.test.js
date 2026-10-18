@@ -1,5 +1,6 @@
 // The report words file (spec 0005, AC-12 and AC-3): the report version and the band word live here, not in score.js.
 import { beforeAll, describe, expect, test } from "vitest";
+import { REPORT_VERSION } from "@dhi/backend/reportVersion";
 
 let T, Score;
 beforeAll(async () => {
@@ -15,6 +16,11 @@ describe("report text", () => {
   test("covers AC-12: REPORT_VERSION exists as DhiReportText.VERSION, a whole number starting at 1", () => {
     expect(Number.isInteger(T.VERSION)).toBe(true);
     expect(T.VERSION).toBeGreaterThanOrEqual(1);
+  });
+
+  // Moved here from the backend's reportCore.test.ts: the backend package must not read an app file, but an app may import the backend.
+  test("covers spec 0006 AC-13: the server's REPORT_VERSION equals the VERSION the page carries in reportText.js", () => {
+    expect(T.VERSION).toBe(REPORT_VERSION);
   });
 
   test("covers AC-3: band moved out of DhiScore into reportText.js and uses the same cut points as the scoring", () => {

@@ -2,6 +2,8 @@
 
 Every lead and every feedback note is saved in Convex first. A few seconds later the app copies each one to your team's Google Sheet, one row each. Convex stays the source of truth, so a Sheet problem never loses a lead. The old Apps Script receiver is gone: this is the only way data reaches the Sheet.
 
+Run every `npx convex …` command on this page in a terminal in the `packages/backend` folder: the Convex backend lives there, and only that folder knows the Convex project.
+
 You do this once for each place the app runs. Development and production each get their own Sheet and their own settings, so a development copy can never write to the production Sheet.
 
 ## Set it up

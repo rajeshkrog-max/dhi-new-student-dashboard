@@ -1,4 +1,4 @@
-# Cloudflare Pages settings (direct upload, see "deploy:pages" in package.json).
+# Cloudflare Pages settings (direct upload, see "deploy:pages" in package.json). The backend deploys separately from packages/backend (deploy:convex).
 # Public values only. Secrets are never put here (spec 0001, configuration and secrets).
 name = "dhirise"
 pages_build_output_dir = "./dist"

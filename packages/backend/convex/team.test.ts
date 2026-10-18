@@ -569,15 +569,4 @@ describe("the picture in the list (spec 0011, AC-4, AC-13)", () => {
     expect(Object.keys(JSON.parse(text).rows[0]).sort()).toEqual(["avatar", "class", "madeAt", "name", "studentId"]);
     expect(text).not.toMatch(/googleusercontent|private-address|private-etag|storageId|sourceUrl|sha256|@|phone|score/i);
   });
-
-  test("covers AC-13: the picture needs no change to the team pages' policy: it is a same origin path, and img-src 'self' is already there", async () => {
-    const { readFileSync } = await import("node:fs");
-    const headers = readFileSync(new URL("../public/_headers", import.meta.url), "utf8");
-    const policies = [...headers.matchAll(/Content-Security-Policy: (.+)/g)].map((m) => m[1]).filter((p) => p.includes("frame-src blob:"));
-    expect(policies).toHaveLength(4);
-    for (const p of policies) {
-      expect(p).toContain("img-src 'self' data:");
-      expect(p).not.toMatch(/googleusercontent|https:/);
-    }
-  });
 });

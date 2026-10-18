@@ -181,8 +181,8 @@ describe("the team pages and their script (AC-10)", () => {
 });
 
 describe("the team functions on the server (AC-4, AC-9)", () => {
-  const team = read("convex/team.ts");
-  const http = read("convex/teamHttp.ts");
+  const team = read("../../packages/backend/convex/team.ts");
+  const http = read("../../packages/backend/convex/teamHttp.ts");
 
   test("covers AC-4: every function in team.ts is internal and runs the team check before anything else", () => {
     const exported = [...team.matchAll(/export const (\w+) = (\w+)\(/g)];
@@ -200,7 +200,7 @@ describe("the team functions on the server (AC-4, AC-9)", () => {
   test("covers AC-4: the team check reads the setting on every call and never caches it", () => {
     expect(team).toMatch(/mayEnterTeam\(user, env\.TEAM_EMAILS, env\.TEST_SIGNIN_ENABLED\)/);
     expect(team).not.toMatch(/^(let|var)\s/m);
-    expect(read("convex/teamCore.ts")).not.toMatch(/^(let|var)\s/m);
+    expect(read("../../packages/backend/convex/teamCore.ts")).not.toMatch(/^(let|var)\s/m);
   });
 
   test("covers AC-9: both routes answer through one json helper that sets private, no-store", () => {
@@ -218,5 +218,18 @@ describe("the team functions on the server (AC-4, AC-9)", () => {
 
   test("covers AC-3: the dev server forwards /api/team to Convex like the production forwarder", () => {
     expect(read("astro.config.mjs")).toMatch(/'\/api\/team': \{ target: convexSite/);
+  });
+});
+
+// Moved here from the backend's team.test.ts: the backend package must not read an app file, but an app may check itself.
+describe("the team pages' policy needs no change for the picture (spec 0011, AC-13)", () => {
+  test("covers AC-13: the picture is a same origin path, and img-src 'self' is already there", () => {
+    const headers = read("public/_headers");
+    const policies = [...headers.matchAll(/Content-Security-Policy: (.+)/g)].map((m) => m[1]).filter((p) => p.includes("frame-src blob:"));
+    expect(policies).toHaveLength(4);
+    for (const p of policies) {
+      expect(p).toContain("img-src 'self' data:");
+      expect(p).not.toMatch(/googleusercontent|https:/);
+    }
   });
 });

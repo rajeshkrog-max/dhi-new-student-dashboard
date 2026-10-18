@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
-const dir = join(process.cwd(), "convex");
+const dir = join(process.cwd(), "../../packages/backend/convex"); // the backend package (spec 0001, child 0002)
 const files = readdirSync(dir).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts") && f !== "testUtils.ts");
 const src = Object.fromEntries(files.map((f) => [f, readFileSync(join(dir, f), "utf8")]));
 

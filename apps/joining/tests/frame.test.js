@@ -112,7 +112,7 @@ describe("the frame and its pages (AC-4, AC-5, AC-8, AC-10, AC-11)", () => {
   });
 
   test("covers AC-5: the privacy contact is read from the consent text, in one place only", () => {
-    expect(read("src/lib/frame.ts")).toContain("convex/consentText");
+    expect(read("src/lib/frame.ts")).toContain("@dhi/backend/consentText");
     expect(read("src/pages/dhiinterviews/privacy.astro")).not.toMatch(/CONSENT_LINES/);
   });
 

@@ -1,10 +1,10 @@
 # DhiRise student funnel
 
-A mobile first self check for students (Class 8 to college, India) and the marketing funnel for the upcoming Dhi app. A student signs in, answers 18 questions, gets a teaser, a "Who you are" story, a full report with a Founding Card, then can join the Founding Circle Challenge (referrals and leaderboard). Backend developers: start with `BACKEND.md`.
+A mobile first self check for students (Class 8 to college, India) and the marketing funnel for the upcoming Dhi app. A student signs in, answers 18 questions, gets a teaser, a "Who you are" story, a full report with a Founding Card, then can join the Founding Circle Challenge (referrals and leaderboard). Backend developers: start with `BACKEND.md`. The Convex backend and the shared engine code live in `packages/backend` and `packages/engine` (spec 0001, child 0002); this app imports them as `@dhi/backend/<export>` and `@dhi/engine/<export>`.
 
 ## Stack
 
-- **Language / Runtime**: TypeScript (strict) for the backend and the browser bridge, Node 22. Page scripts stay plain JavaScript (ES5 style, runs in the browser).
+- **Language / Runtime**: TypeScript (strict) for the backend and the browser bridge, Node `>=22.19.0` (its `undici` needs it). Page scripts stay plain JavaScript (ES5 style, runs in the browser).
 - **Framework**: Astro 7 (static output, no server adapter). Backend: Convex. Sign in: Better Auth (Google only). Hosting: Cloudflare Pages. Source of truth: spec `docs/specs/0001-adopt-astro-convex-cloudflare-stack/`.
 - **Key dependencies**: Cloudflare Browser Run (draws the saved report PDF on the server, spec 0006), `js/vendor/html2pdf.bundle.min.js` (legacy report only), Google Apps Script receiver in `tools/lead-sheet.gs`, Python with Pillow for image prep scripts in `tools/`
 - **Package manager**: pnpm
@@ -17,21 +17,24 @@ Tracer Bullet (vertical slices, each built end to end through every layer, worki
 ## Commands
 
 ```bash
-# Install
+# Install (run it at the repo root: one pnpm workspace and one lockfile for the house, this app and the packages, spec 0006)
 pnpm install
 
-# Dev server (Astro, port 4321) and the Convex dev deployment (writes .env.local)
+# Dev server (Astro, port 4321). It first copies the shared engine scripts from packages/engine into public/ (pnpm sync:engine)
 pnpm dev                       # then open http://localhost:4321/dhiinterviews/landing.html
-pnpm exec convex dev           # or `convex dev --once` to push once and typecheck
+# The Convex dev deployment: only the backend package runs the Convex CLI (it writes packages/backend/.env.local)
+pnpm --filter @dhi/backend dev          # convex dev; use `dev:once` to push once and typecheck
 
 # Build
 pnpm build                     # static site into dist/
 
 # Test
-pnpm test                      # vitest: convex suites (convex/*.test.ts) and the browser scripts (tests/)
+pnpm test                      # vitest: the browser scripts (tests/). The Convex suites run in packages/backend (`pnpm --filter @dhi/backend test`)
 pnpm test:e2e                  # Playwright, against the local site and the Convex DEV deployment
-pnpm exec tsc --noEmit         # typecheck
+pnpm exec tsc --noEmit         # typecheck (`pnpm typecheck` runs the same, and the root `pnpm typecheck` calls it)
 ```
+
+Version rules for shared libraries come from the root `pnpm-workspace.yaml` (`catalog:`). Do not pin `better-auth` or `vite` here directly. This app has no `lint` or `format` script, so the root `pnpm lint` and `pnpm format` skip it.
 
 ## Specs
 
@@ -39,6 +42,7 @@ Stored in `docs/specs/`. Format: `docs/specs/NNNN-title.md`. Handover docs live 
 
 ## Rules
 
+- `js/engine/questions.js` and `js/engine/score.js` are generated copies of `packages/engine/questions.js` and `score.js` (git ignored, written by `scripts/sync-engine.mjs` before `dev`, `build` and `test`). Edit the package files, never the copies. The backend runs the same two files.
 - Each script is an IIFE that hangs one global on `window` (`DhiScore`, `DhiQuestions`, `DHI_FUNNEL`, `DHI_CHALLENGE`). Pages load them as `<script type="text/dhi-deferred">` tags (started in order by the page guard in `src/lib/session.ts`), so the order matters: config, then `js/api.js`, then `js/engine/*`, then the page script.
 - Start each file with a header comment that says what it owns and what it needs loaded first.
 - Challenge data is read and written only through `js/api.js` (a localStorage mock today). Keep its `// BACKEND:` notes accurate when you change it.
@@ -55,7 +59,7 @@ Stored in `docs/specs/`. Format: `docs/specs/NNNN-title.md`. Handover docs live 
 
 Installed in `.claude/skills/` (mirrored in `.agents/skills/`), pinned in `skills-lock.json`. Load only the one a task needs.
 
-- [convex and 32 more `convex-*`](.claude/skills/convex/): `get-convex/agent-skills`, backend work under `convex/` (start with `convex`, `convex-expert`, `convex-reviewer`, `convex-test`)
+- [convex and 32 more `convex-*`](.claude/skills/convex/): `get-convex/agent-skills`, backend work under `packages/backend/convex/` (start with `convex`, `convex-expert`, `convex-reviewer`, `convex-test`)
 - [astro](.claude/skills/astro/): `astrolicious/agent-skills`, pages and build
 - [better-auth-best-practices](.claude/skills/better-auth-best-practices/), [better-auth-security-best-practices](.claude/skills/better-auth-security-best-practices/): `better-auth/skills`, sign in
 - [workers-best-practices](.claude/skills/workers-best-practices/), [wrangler](.claude/skills/wrangler/): `cloudflare/skills`, Pages Functions and deploys
@@ -67,21 +71,7 @@ Installed in `.claude/skills/` (mirrored in `.agents/skills/`), pinned in `skill
 
 - [public/dhiinterviews/js/engine/AGENTS.md](public/dhiinterviews/js/engine/AGENTS.md) (questions, scoring, answer store, report and story text)
 - [tools/AGENTS.md](tools/AGENTS.md) (Google Sheet lead receiver and image prep scripts)
-- [convex/AGENTS.md](convex/AGENTS.md) (the Convex backend: tables, sign in, checks, results, leads, Sheet copy)
+- [packages/backend/convex/AGENTS.md](../../packages/backend/convex/AGENTS.md) (the Convex backend, now a shared package: tables, sign in, checks, results, leads, Sheet copy)
 - [src/AGENTS.md](src/AGENTS.md) (Astro pages, the page guard and the browser bridge `DhiSession`)
 
 _Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._
-
-<!-- convex-ai-start -->
-
-This project uses [Convex](https://convex.dev) as its backend.
-
-When working on Convex code, **always read
-`convex/_generated/ai/guidelines.md` first** for important guidelines on
-how to correctly use Convex APIs and patterns. The file contains rules that
-override what you may have learned about Convex from training data.
-
-Convex agent skills for common tasks can be installed by running
-`npx convex ai-files install`.
-
-<!-- convex-ai-end -->

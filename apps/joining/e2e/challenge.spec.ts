@@ -9,7 +9,7 @@ const NOTE = "The study blueprint really fits how I revise before exams.";
 
 // The 5 minute job, run now by hand on the dev deployment (a cron would do the same within 5 minutes).
 function runSettleJob() {
-  const r = spawnSync("pnpm", ["exec", "convex", "run", "challengeBoard:run", "{}"], { shell: true, encoding: "utf8" });
+  const r = spawnSync("pnpm", ["--filter", "@dhi/backend", "exec", "convex", "run", "challengeBoard:run", "{}"], { shell: true, encoding: "utf8" });
   expect(r.status, r.stderr).toBe(0);
 }
 const mine = (page: Page) => page.evaluate(() => (window as any).DhiApi.getMyReferral());

@@ -2,7 +2,7 @@
 // convex/challengeRules.ts and again in challenge-config.js; the code pattern is written there and again in js/api.js. This fails if they differ.
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { CODE_RE, ENDS_AT_ISO } from "../convex/challengeRules";
+import { CODE_RE, ENDS_AT_ISO } from "@dhi/backend/challengeRules";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 

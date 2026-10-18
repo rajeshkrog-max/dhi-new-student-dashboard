@@ -1,7 +1,7 @@
 // The privacy page (spec 0007): what can be checked from the source without a browser. The real page is in e2e/privacy.spec.ts.
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { CONSENT_LINES } from "../convex/consentText";
+import { CONSENT_LINES } from "@dhi/backend/consentText";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const page = read("src/pages/dhiinterviews/privacy.astro");
@@ -19,14 +19,14 @@ describe("privacy page", () => {
   test("covers AC-3: the contact address comes from the consent text, so the two cannot differ", () => {
     expect(page).toContain("PRIVACY_CONTACT");
     expect(page).toMatch(/from "\.\.\/\.\.\/lib\/frame"/); // the page takes the address from the frame's constants...
-    expect(read("src/lib/frame.ts")).toContain("convex/consentText"); // ...which read it from the consent text (spec 0009)
+    expect(read("src/lib/frame.ts")).toContain("@dhi/backend/consentText"); // ...which read it from the consent text (spec 0009)
     const fromConsent = /([a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,})/i.exec(CONSENT_LINES.join(" "))?.[1];
     expect(fromConsent).toBe("privacy@dhirise.com");
     expect(words).not.toMatch(/[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}/i); // no address typed into the words; it is filled in from the consent text
   });
 
   test("covers AC-4: it never names a flag, and promises no retention period or storage region", () => {
-    const block = /NO_FLAGS[^{]*\{([^}]*)\}/.exec(read("convex/resultsCore.ts"));
+    const block = /NO_FLAGS[^{]*\{([^}]*)\}/.exec(read("../../packages/backend/convex/resultsCore.ts"));
     expect(block, "NO_FLAGS not found").not.toBeNull();
     const flagNames = [...block[1].matchAll(/(\w+):\s*false/g)].map((m) => m[1]);
     expect(flagNames.length).toBeGreaterThanOrEqual(7);

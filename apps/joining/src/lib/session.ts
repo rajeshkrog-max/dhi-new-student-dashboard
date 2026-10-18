@@ -19,8 +19,9 @@
 // Page scripts are written as <script type="text/dhi-deferred" src="...">; this file starts them, in order,
 // once the guard has let the page through. Sign in itself goes through the site's own /api/auth/* address.
 import { ConvexClient } from "convex/browser";
+import type { FunctionReturnType } from "convex/server";
 import { ConvexError } from "convex/values";
-import { api } from "../../convex/_generated/api";
+import { api } from "@dhi/backend/api";
 import {
   CHALLENGE_CONSENT_LINES,
   CHALLENGE_CONSENT_VERSION,
@@ -35,10 +36,10 @@ import {
   SHARE_CONSENT_VERSION,
   SHARE_GUARDIAN_TICK,
   consentHash,
-} from "../../convex/consentText";
-import { MIN_NOTE_CHARS, isGenuine } from "../../convex/feedbackRules";
+} from "@dhi/backend/consentText";
+import { MIN_NOTE_CHARS, isGenuine } from "@dhi/backend/feedbackRules";
 import { authClient, createConvexClient } from "./auth-client";
-import { flatten, isFlat, startResult, type FlatResult, type ResultView } from "./result";
+import { flatten, isFlat, startResult, type FlatResult, type ResultView } from "@dhi/engine/result";
 import {
   OLD_CHECK_KEY,
   OWNER_KEY,
@@ -97,8 +98,11 @@ type QueueEntry = { optionId: string; answeredAt: number; synced: boolean };
 type Queue = Record<string, QueueEntry>;
 export type SyncStatus = "saving" | "saved" | "offline" | "signin" | "dropped";
 
-// The saved result's types and its pure helpers live in ./result.ts (unit tested without a page).
-export type { FlatResult } from "./result";
+// The saved result's types and its pure helpers live in packages/engine/result.ts (unit tested without a page).
+export type { FlatResult } from "@dhi/engine/result";
+// @dhi/engine cannot import the backend's API, so it writes `ResultView` out itself. This line stops compiling if `results.ensure` no longer fits it.
+const resultViewFits: FunctionReturnType<typeof api.results.ensure> extends ResultView ? true : never = true;
+void resultViewFits;
 type ResultCopy = { v: 1; owner: string; result: FlatResult };
 
 const LANDING = "landing.html";
@@ -1101,7 +1105,7 @@ export type ChallengeMe = {
   rank: number | null;
   toNext: number | null;
   nextRank: number | null;
-  endsAt: number; // ms since 1970, the deadline from convex/challengeRules.ts
+  endsAt: number; // ms since 1970, the deadline from packages/backend/convex/challengeRules.ts
   frozen: boolean;
 };
 
@@ -1211,7 +1215,7 @@ export const DhiSession = {
   markReportSeen,
   submitLead,
   submitFeedback,
-  /** The same note rule the server uses (convex/feedbackRules.ts), so the page and the server cannot disagree. */
+  /** The same note rule the server uses (packages/backend/convex/feedbackRules.ts), so the page and the server cannot disagree. */
   isGenuine,
   minNoteChars: MIN_NOTE_CHARS,
   pendingCount,

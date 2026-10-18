@@ -7,7 +7,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
-import { CONSENT_TEXTS, SHARE_CONSENT_VERSION, consentHash } from "../convex/consentText";
+import { CONSENT_TEXTS, SHARE_CONSENT_VERSION, consentHash } from "@dhi/backend/consentText";
 import { finishedCheck, newContext, newTag } from "./helpers";
 
 const ENGINE = resolve("public/dhiinterviews/js/engine");

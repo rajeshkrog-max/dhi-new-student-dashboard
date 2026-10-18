@@ -1,0 +1,43 @@
+{
+  "name": "@dhi/backend",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "description": "The Convex backend shared by the funnel and the house (spec 0001, child 0002). Only this package runs the Convex CLI.",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    "./api": {
+      "types": "./convex/_generated/api.d.ts",
+      "default": "./convex/_generated/api.js"
+    },
+    "./consentText": "./convex/consentText.ts",
+    "./feedbackRules": "./convex/feedbackRules.ts",
+    "./challengeRules": "./convex/challengeRules.ts",
+    "./reportVersion": "./convex/reportVersion.ts"
+  },
+  "scripts": {
+    "dev": "convex dev",
+    "dev:once": "convex dev --once",
+    "deploy:convex": "convex deploy --cmd-url-env-var-name PUBLIC_CONVEX_URL --cmd \"pnpm --filter dhirise build\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@convex-dev/better-auth": "^0.12.5",
+    "@convex-dev/rate-limiter": "^0.4.1",
+    "@dhi/engine": "workspace:*",
+    "better-auth": "catalog:",
+    "convex": "^1.46.0",
+    "google-auth-library": "^11.1.0"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "@types/node": "^26.6.4",
+    "convex-test": "^0.0.60",
+    "typescript": "^7.0.2",
+    "vite": "catalog:",
+    "vitest": "^5.0.3"
+  }
+}

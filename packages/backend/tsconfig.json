@@ -1,0 +1,20 @@
+{
+  /* Typechecks the Convex functions and their test helpers. convex/tsconfig.json is the config Convex itself reads and
+   * covers only the functions; this one also covers tests/ (which uses import.meta) and the vitest config. */
+  "compilerOptions": {
+    "allowJs": true,
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "types": ["node"],
+    "allowSyntheticDefaultImports": true,
+    "target": "ESNext",
+    "lib": ["ES2023", "dom"],
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": ["convex", "tests", "vitest.config.ts"],
+  "exclude": ["convex/_generated/ai"]
+}

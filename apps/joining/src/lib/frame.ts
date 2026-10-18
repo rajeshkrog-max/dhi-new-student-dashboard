@@ -5,7 +5,7 @@
 //    when the root address is handed to another product.
 //  - FOOTER_LINKS: the footer's links, absolute addresses (a 404 can be served at any depth). Row 21 adds About here.
 //  - PRIVACY_CONTACT: read from the consent text, so the footer, the privacy page and the notice a student agrees to cannot differ.
-import { CONSENT_LINES } from "../../convex/consentText";
+import { CONSENT_LINES } from "@dhi/backend/consentText";
 
 export const HOME_PATH = "/dhiinterviews/landing.html";
 

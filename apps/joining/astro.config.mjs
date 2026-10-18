@@ -8,7 +8,7 @@ import { defineConfig } from 'astro/config';
 import { existsSync, readFileSync } from 'node:fs';
 
 // Local development only: send /api/auth/* (and /api/files, /api/render, /api/team, /api/avatar, /api/shared, /api/referral) to the Convex dev deployment, like functions/api does in
-// production. The address comes from .env.local, which `convex dev` writes (git ignored).
+// production. The address comes from .env.local, which holds CONVEX_SITE_URL for this app (git ignored; `convex dev` in packages/backend writes the same address into its own .env.local).
 const convexSite =
   process.env.CONVEX_SITE_URL ??
   (existsSync('.env.local')

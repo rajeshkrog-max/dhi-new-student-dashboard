@@ -1,7 +1,6 @@
 // The pure rules of the saved report copy (spec 0006): the signed render token, the retry schedule, the PDF check and the
 // download name. Each test names the criterion it covers.
 import { describe, expect, test } from "vitest";
-import reportText from "../public/dhiinterviews/js/engine/reportText.js?raw";
 import {
   DEFAULT_WAIT_MS,
   MAX_PDF_BYTES,
@@ -18,7 +17,6 @@ import {
   verifyRenderToken,
   waitFromRetryAfter,
 } from "./reportCore";
-import { REPORT_VERSION } from "./reportVersion";
 
 const SECRET = "a-long-random-test-secret";
 const NOW = 1_700_000_000_000;
@@ -122,13 +120,5 @@ describe("Browser Run free plan pacing", () => {
     expect(msUntilNextUtcDay(noon)).toBe(12 * 3600_000 + 60_000);
     const justBefore = Date.UTC(2026, 11, 31, 23, 59, 59);
     expect(msUntilNextUtcDay(justBefore)).toBe(1000 + 60_000); // across the new year
-  });
-});
-
-describe("report version", () => {
-  test("covers AC-13: the server's REPORT_VERSION equals the VERSION the page carries in reportText.js", () => {
-    const m = /^\s*VERSION:\s*(\d+)\s*,/m.exec(reportText);
-    expect(m, "no `VERSION: <number>,` line in reportText.js").not.toBeNull();
-    expect(Number(m?.[1])).toBe(REPORT_VERSION);
   });
 });

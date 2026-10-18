@@ -1,13 +1,16 @@
-// Writes the winner review CSV (spec 0019, AC-2) to a file. Run from the project root, never in an AI session:
+/// Writes the winner review CSV (spec 0019, AC-2) to a file. Run from apps/joining, never in an AI session:
 //   node tools/winner-csv.mjs review.csv           (the dev deployment)
 //   node tools/winner-csv.mjs review.csv --prod    (production: only with the owner's yes)
-// `npx convex run challengeAdmin:exportCsv` prints the CSV text as a JSON string, so a plain redirect would give a file full of \r\n marks. This
+// `convex run challengeAdmin:exportCsv` (run in packages/backend, the only home of the Convex CLI) prints the CSV text as a JSON string, so a plain redirect would give a file full of \r\n marks. This
 // runs that command itself, reads its output as UTF-8 (a shell pipe can mangle Hindi letters), and writes the real CSV with a byte order mark so
 // Excel opens it correctly. It never overwrites a file, and it prints only the name of the file and the number of rows: no email, name or note.
 import { spawnSync } from "node:child_process";
 import { existsSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// The Convex CLI runs only in the backend package (spec 0001, child 0002), so the command is started there.
+const BACKEND_DIR = fileURLToPath(new URL("../../../packages/backend/", import.meta.url));
 
 // The CLI prints the returned string as JSON, possibly after log lines. The last line that parses as a JSON string is the CSV.
 export function csvFromRunOutput(stdout) {
@@ -36,9 +39,9 @@ function main(argv) {
     return 2;
   }
   const args = ["node_modules/convex/bin/main.js", "run", "challengeAdmin:exportCsv", "{}", ...(prod ? ["--prod"] : [])];
-  const r = spawnSync(process.execPath, args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync(process.execPath, args, { cwd: BACKEND_DIR, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (r.status !== 0) {
-    console.error("The command failed. Run it by hand to see why: npx convex run challengeAdmin:exportCsv" + (prod ? " --prod" : ""));
+    console.error("The command failed. Run it by hand to see why: in packages/backend, npx convex run challengeAdmin:exportCsv" + (prod ? " --prod" : ""));
     return 1;
   }
   const csv = csvFromRunOutput(r.stdout);

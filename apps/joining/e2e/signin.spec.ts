@@ -1,7 +1,7 @@
 // Sign in, the guard, the form, resume on a second device, the offline queue and the sign in problem screens
 // (spec 0002, AC-1 to AC-5, AC-12, AC-15, AC-16). Runs on the dev deployment with the fake test sign in.
 import { expect, test } from "@playwright/test";
-import { CONSENT_LINES, CONSENT_VERSION } from "../convex/consentText";
+import { CONSENT_LINES, CONSENT_VERSION } from "@dhi/backend/consentText";
 import { PATH, answersOnDevice, newContext, newStudent, newTag, openQuestion, signIn, waitSaved } from "./helpers";
 
 const PROTECTED = ["questions.html?q=5", "question.html", "question2.html", "meet.html", "done.html", "who.html", "report-student.html", "challenge.html", "leaderboard.html"];

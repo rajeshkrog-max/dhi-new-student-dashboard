@@ -1,8 +1,8 @@
 // The browser side of the saved result (spec 0005): the adapter, the shape check for a device copy, and the wait, box and
-// retry controller. These are the pure parts of src/lib/result.ts, so no Convex client and no page is needed. Fake timers
+// retry controller. These are the pure parts of packages/engine/result.ts, so no Convex client and no page is needed. Fake timers
 // stand in for the clock; the box is a recorder that knows whether it is showing.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { flatten, isFlat, startResult } from "../src/lib/result.ts";
+import { flatten, isFlat, startResult } from "@dhi/engine/result";
 
 const detail = (over = {}) => ({
   style: { v: 10, p: 80, k: 10 },

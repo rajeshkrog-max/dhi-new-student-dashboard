@@ -5,7 +5,7 @@ For the Founding Circle Challenge (spec 0015, child 0019). The challenge ends at
 ## Who runs it, and where
 
 - The owner, or one team member the owner names. Nobody else.
-- On your own computer, in a terminal in the project folder, signed in to Convex (`npx convex login`).
+- On your own computer, signed in to Convex (`npx convex login`). Run every `npx convex …` command below in a terminal in the `packages/backend` folder (the Convex backend moved there from `apps/joining/convex`; only that folder knows the Convex project). The CSV step (`node tools/winner-csv.mjs`) runs in `apps/joining`; it calls Convex in `packages/backend` for you.
 - **Never in an AI session** (Claude Code, a chat assistant, anything that reads your screen). The output holds students' email addresses and what they wrote.
 - Production needs `--prod` on every command and the owner's yes. Without `--prod` a command runs on the dev deployment, which holds test students only.
 - Quoting: in Git Bash or a Mac terminal put the JSON in single quotes, as below. In Windows PowerShell put it in single quotes **and write each inner double quote as `\"`**, for example `'{\"friendEmail\":\"a@b.com\",\"reason\":\"x\",\"note\":\"y\"}'`.

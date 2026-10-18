@@ -1,6 +1,6 @@
 // The profile picture in the places other than the student's own screens (spec 0011, M3: AC-4, AC-5, AC-13, AC-17): the saved PDF copy
 // and its render page, the team list and viewer, and the leaderboard rows. What can be checked from the source and the mock api without a
-// browser; the real pages are looked at in M5. The server side of each place is in convex/avatars.test.ts, reportCopy.test.ts and team.test.ts.
+// browser; the real pages are looked at in M5. The server side of each place is in packages/backend/convex/avatars.test.ts, reportCopy.test.ts and team.test.ts.
 import { readFileSync } from "node:fs";
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -36,8 +36,8 @@ describe("the saved PDF copy (AC-4, AC-17)", () => {
   });
 
   test("covers AC-4: REPORT_VERSION is not bumped for a picture (it is not report content)", () => {
-    expect(read("convex/reportVersion.ts")).toContain("REPORT_VERSION");
-    expect(code(read("convex/reportCopy.ts"))).not.toMatch(/avatar[^\n]*REPORT_VERSION|REPORT_VERSION[^\n]*avatar/i);
+    expect(read("../../packages/backend/convex/reportVersion.ts")).toContain("REPORT_VERSION");
+    expect(code(read("../../packages/backend/convex/reportCopy.ts"))).not.toMatch(/avatar[^\n]*REPORT_VERSION|REPORT_VERSION[^\n]*avatar/i);
   });
 });
 
@@ -136,7 +136,7 @@ describe("the other places stay clear of the pages that must not carry a picture
   });
 
   test("covers AC-5: the Sheet copy and the Founding Card image code never mention the picture", () => {
-    for (const f of ["convex/sheetRows.ts", "convex/sheetRowsCore.ts", "convex/sheetFlush.ts", "convex/sheetSync.ts", "public/dhiinterviews/js/card-export.js", "public/dhiinterviews/js/card.js"]) {
+    for (const f of ["../../packages/backend/convex/sheetRows.ts", "../../packages/backend/convex/sheetRowsCore.ts", "../../packages/backend/convex/sheetFlush.ts", "../../packages/backend/convex/sheetSync.ts", "public/dhiinterviews/js/card-export.js", "public/dhiinterviews/js/card.js"]) {
       expect(code(read(f)), f).not.toMatch(/avatar|picture/i);
     }
   });

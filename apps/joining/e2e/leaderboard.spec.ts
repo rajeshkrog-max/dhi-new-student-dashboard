@@ -2,9 +2,10 @@
 // against the Convex DEV deployment: two referrers with friends who finish, the 5 minute job run by hand, the board and the "you" card on
 // leaderboard.html, what a stranger can read, then the top 10, the CSV, and a reject followed by a restore. Needs CHALLENGE_LIVE=true and
 // TEST_SIGNIN_ENABLED=true on dev. The frozen state needs a moved clock, which a deployed server cannot have, so it is proved in
-// convex/challengeBoard.test.ts.
+// packages/backend/convex/challengeBoard.test.ts.
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { PATH, finishedCheck, newContext, newTag, openQuestion, waitSaved } from "./helpers";
 
 // Genuine notes, made different on every run: older dev students already hold the plain sentences, and the review marks a note shared with another referral.
@@ -16,8 +17,10 @@ const NOTES = [
 ];
 
 // A convex function run from the terminal, the way the team runs it. The CLI is started directly (no shell), so a JSON argument needs no quoting.
+// It runs in the backend package, the only home of the Convex CLI (spec 0001, child 0002).
+const BACKEND_DIR = fileURLToPath(new URL("../../../packages/backend/", import.meta.url));
 function convex(fn: string, args: object = {}): string {
-  const r = spawnSync(process.execPath, ["node_modules/convex/bin/main.js", "run", fn, JSON.stringify(args)], { encoding: "utf8" });
+  const r = spawnSync(process.execPath, ["node_modules/convex/bin/main.js", "run", fn, JSON.stringify(args)], { cwd: BACKEND_DIR, encoding: "utf8" });
   expect(r.status, r.stderr).toBe(0);
   return r.stdout;
 }

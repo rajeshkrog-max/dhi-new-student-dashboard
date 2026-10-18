@@ -34,3 +34,7 @@ playwright-report/
 
 # local Cloudflare Pages dev cache (wrangler pages dev)
 .wrangler/
+
+# generated copies of the shared engine scripts (scripts/sync-engine.mjs copies them from packages/engine)
+public/dhiinterviews/js/engine/questions.js
+public/dhiinterviews/js/engine/score.js

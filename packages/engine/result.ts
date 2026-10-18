@@ -3,14 +3,22 @@
 //  - `flatten`: the one adapter from what `results.ensure` returns back to the old flat object the pages were written for
 //  - `isFlat`: the shape check for a copy read from the device, so a damaged copy is dropped instead of blanking a page
 //  - `startResult`: the wait, the "could not load" box and the retry button, with exactly one live timer
-import type { FunctionReturnType } from "convex/server";
-import type { api } from "../../convex/_generated/api";
+// This file sits in @dhi/engine, which the backend imports, so it cannot import the backend's generated API for the type.
+// `ResultView` is written out here instead, and the funnel's session.ts checks at compile time that `results.ensure` still fits it.
 
 const TOTAL = 18;
 
 // What `results.ensure` returns, and the old flat object (score.js `score()`) rebuilt from it. `answered` and `complete`
 // are not stored: a result exists only for a finished check with all 18 answers.
-export type ResultView = FunctionReturnType<typeof api.results.ensure>;
+export type ResultView = {
+  engineVersion: number;
+  scoredAt: number;
+  dhiStart: number;
+  styleKey: "v" | "p" | "k";
+  confidence: "clear" | "leaning" | "blended";
+  detail: unknown;
+  flags: Record<string, boolean>;
+};
 export type ResultDetail = {
   style: Record<string, number>;
   styleGap: number;

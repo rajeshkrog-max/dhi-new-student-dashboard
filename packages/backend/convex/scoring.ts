@@ -1,9 +1,9 @@
-// Scoring on the server (spec 0005). It runs the SAME two files the browser loads (js/engine/questions.js and
-// score.js), never a copy, so the server and the browser cannot drift. Both files hang their object on the global
+// Scoring on the server (spec 0005). It runs the SAME two files the browser loads (packages/engine/questions.js and
+// score.js, which the funnel build copies to js/engine/), never a second version, so the server and the browser cannot drift. Both files hang their object on the global
 // (`window` in a page, `globalThis` here), so importing them for their side effect is enough.
 // Used only by `makeResult` (resultsCore.ts). Nothing here reads or writes the database.
-import "../public/dhiinterviews/js/engine/questions.js";
-import "../public/dhiinterviews/js/engine/score.js";
+import "@dhi/engine/questions";
+import "@dhi/engine/score";
 
 export type StyleKey = "v" | "p" | "k";
 export type Confidence = "clear" | "leaning" | "blended";
