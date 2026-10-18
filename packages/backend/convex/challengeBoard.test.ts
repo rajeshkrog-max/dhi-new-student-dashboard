@@ -9,8 +9,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { boardName, compareEntries, rankEntries, recount } from "./challengeCore";
-import { ENDS_AT_MS, LEADERBOARD_SIZE } from "./challengeRules";
-import { makeBackend, opt, profileInput, signInAs, type Backend } from "../tests/convexTestUtils";
+import { LEADERBOARD_SIZE } from "./challengeRules";
+import { TEST_ENDS_AT_ISO, TEST_ENDS_AT_MS as ENDS_AT_MS, makeBackend, opt, profileInput, signInAs, type Backend } from "../tests/convexTestUtils";
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -20,11 +20,13 @@ beforeEach(() => {
   vi.setSystemTime(Date.parse("2026-10-20T10:00:00+05:30"));
   Object.assign(process.env, AUTH_ENV);
   process.env.CHALLENGE_LIVE = "true";
+  process.env.CHALLENGE_ENDS_AT = TEST_ENDS_AT_ISO;
 });
 afterEach(() => {
   vi.useRealTimers();
   for (const k of Object.keys(AUTH_ENV)) delete process.env[k];
   delete process.env.CHALLENGE_LIVE;
+  delete process.env.CHALLENGE_ENDS_AT;
   delete process.env.LEADERBOARD_PICTURES_ENABLED;
 });
 

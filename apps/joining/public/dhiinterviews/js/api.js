@@ -154,7 +154,7 @@
       });
     },
 
-    /* about the board last read by getLeaderboard → { computedAt (ms or null), frozen, endsAt (ms) }, or null before the first read or when it failed */
+    /* about the board last read by getLeaderboard → { computedAt (ms or null), frozen, endsAt (ms, or null when the challenge has no end date) }, or null before the first read or when it failed */
     boardInfo: function () { return lastBoard; },
 
     /* where I stand → { rank, valid, pending, toNext, nextRank } (rank, toNext and nextRank are null until I have a valid referral or have joined) */
@@ -170,8 +170,11 @@
     /* the feedback rule, for live hints on the page (no data access; the server re-checks) */
     isGenuine: function (text) { return genuine(text); },
 
-    /* has the challenge ended? (local clock; the server decides for real) */
-    isOver: function () { return Date.now() > Date.parse(CFG.endsAt || "2026-10-30T23:59:00+05:30"); }
+    /* the end date in milliseconds, or null when the challenge has no end date (the usual case, spec 0008) */
+    endsAtMs: function () { var ms = Date.parse(CFG.endsAt || ""); return isNaN(ms) ? null : ms; },
+
+    /* has the challenge ended? (local clock; the server decides for real; never with no end date) */
+    isOver: function () { var ms = api.endsAtMs(); return ms !== null && Date.now() > ms; }
   };
 
   root.DhiApi = api;

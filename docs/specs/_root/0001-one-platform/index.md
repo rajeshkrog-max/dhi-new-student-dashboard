@@ -1,7 +1,7 @@
 # 0001. One platform for the funnel and the house: database, sign in, host and dependencies
 
 **Date**: 2026-10-17
-**Status**: Proposed
+**Status**: Accepted
 
 ## Summary
 
@@ -15,6 +15,7 @@ This is an umbrella. The cross part rules sit here, and each part of the decisio
 - [0003 Shared sign in](0003-shared-sign-in.md): one Better Auth instance inside Convex, Google only, on one origin, and the house's Postgres and Grok broker pieces removed.
 - [0004 Shared host and routing](0004-shared-host-and-routing.md): Cloudflare Workers for both parts, the funnel moves off Pages, and one domain split by path.
 - [0005 Shared dependencies](0005-shared-dependencies.md): one pinned version list for the libraries both parts use, and what the house drops.
+- [0007 The thin thread](0007-thin-thread.md): the build spec for phase 3 and scope row 6, the house `/thread` page that signs in, saves question 1 and reads it back on the shared platform.
 
 The package manager, install and build commands, lint and format, and CI are not decided here. They belong to scope row 3 (shared workspace and tooling), and the build below assumes that row provides a workspace.
 
@@ -122,4 +123,4 @@ Reasoning and options: see [rationale.md](rationale.md).
 - [ ] Add the house's localhost redirect address and the staging address to the Google OAuth client, and to the trusted origins list.
 - [ ] The installed Convex, Better Auth and Cloudflare skills sit under `apps/joining/.claude/skills/`, so they do not reach house work at the repo root. Put them where both parts see them, and add an `## Agent skills` section to root `AGENTS.md`.
 - [ ] Revisit the Convex plan (Pro for scheduled backups) before the first institute's real data arrives.
-- [ ] Decide the TypeScript version once the first thin thread proves the house's lint and type check on it (see 0005).
+- [x] Decide the TypeScript version once the first thin thread proves the house's lint and type check on it (see 0005). Settled 2026-10-18: 6.0.3 for the house and shared packages, and the funnel moves in scope row 17.

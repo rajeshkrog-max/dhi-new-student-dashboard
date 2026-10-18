@@ -402,5 +402,7 @@ window.DhiReportText = {
   downloadOffline: "We could not reach DhiRise. Please check your connection and try again.",
   downloadSignin: "Please sign in again to download your PDF.",
 
+  /* the button to the DHI house, shown only when funnel-config.js sets dashboardUrl (spec 0008); never in the saved copy */
+  dashboardButton: "Go to your dashboard",
   footer: "A study and wellbeing screening based on your answers. Not a medical or psychological diagnosis."
 };

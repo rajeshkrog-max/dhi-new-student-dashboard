@@ -18,7 +18,7 @@ import {
   type DeskStore,
   type DeskThread,
 } from "@/lib/dhi/desk";
-import { HOME } from "@/lib/dhi/home-demo";
+import { useStudent } from "@/lib/dhi/student";
 import { RoomActions } from "@/components/dhi/room-actions";
 import { Sheet } from "@/components/dhi/sheet";
 import { useMediaQuery } from "@/lib/use-touch";
@@ -291,6 +291,7 @@ function DeskChat({
   onOpenDrawing?: () => void;
   endRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const student = useStudent();
   const empty = !thread || (thread.messages.length === 0 && !pending);
 
   return (
@@ -303,7 +304,7 @@ function DeskChat({
               <Sparkles className="size-6" />
             </span>
           </div>
-          <h2 className="font-display text-4xl">Welcome, {HOME.student.name.split(" ")[0]}</h2>
+          <h2 className="font-display text-4xl">Welcome, {student.name.split(" ")[0]}</h2>
           <p className="mt-2 text-sm text-mute">How shall we sit today?</p>
           <div className="mt-8 grid w-full max-w-xl gap-3 sm:grid-cols-2">
             {STARTERS.map((s) => (

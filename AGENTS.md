@@ -8,55 +8,73 @@ DHI is one product with two parts in this repo. Each part has its own stack, com
 
 | Part | Folder | Package manager | What it is |
 |---|---|---|---|
-| Student house | repo root (`src/`, `scripts/`, `migrations/`) | npm | The dashboard UI and demo data below. Everything under `## Stack`, `## Commands` and `## Rules` is about this part |
+| Student house | repo root (`src/`, `scripts/`) | pnpm | The front door (`/enter`), the dashboard and the demo rooms below. Everything under `## Stack`, `## Commands` and `## Rules` is about this part |
 | DhiRise student funnel | `apps/joining/` | pnpm | The live self check, report and Founding Circle Challenge (Astro, Convex, Cloudflare Pages). Own specs and scope in `apps/joining/docs/`. See [apps/joining/AGENTS.md](apps/joining/AGENTS.md) |
 
-The root rules (`@/` alias, Prettier, `npm run dev`, TanStack Router) do not apply inside `apps/joining/`, and its page scripts and Convex rules do not apply to the house. Neither part imports the other, and the root `tsconfig.json` covers only `src` and `server`. Careful: root `npm run lint` and `npm run format` are not scoped away from `apps/joining/` (no ignore entry), so `format` would rewrite funnel files with the house's Prettier settings. Run them on named paths, or add an ignore first.
+The root rules (`@/` alias, Prettier, `pnpm dev`, TanStack Router) do not apply inside `apps/joining/`, and its page scripts and Convex rules do not apply to the house. Neither part imports the other, and the root `tsconfig.json` covers only `src`. The repo is one pnpm workspace with one lockfile at the root (spec 0006). Root `pnpm lint` and `pnpm format` cover the house only, by explicit path lists plus ignores for `apps/` and `packages/`, so they cannot rewrite the funnel. The funnel has no lint or format until it opts in with its own script and config.
 
 ## Stack
 
-- **Language / Runtime**: TypeScript (strict), Node, ESM
-- **Framework**: TanStack Start (React 19) with TanStack Router file routes, built by Vite 8, deployed through Nitro (`vercel` preset)
-- **Key dependencies**: Tailwind CSS 4, Better Auth, Postgres (Neon via `pg`, or embedded PGLite when `DATABASE_URL` is unset), TanStack Query, Recharts, Radix UI, lucide-react, zod
-- **Package manager**: npm
+- **Language / Runtime**: TypeScript (strict), Node `>=22.19.0` (`.node-version` is 24), ESM
+- **Framework**: TanStack Start (React 19) with TanStack Router file routes, built by Vite 8 as a Cloudflare Worker (the Cloudflare Vite plugin and `wrangler.jsonc`; no deploy step yet, spec 0007)
+- **Key dependencies**: Tailwind CSS 4, the shared Convex backend and Better Auth sign in (`@dhi/backend`, `src/lib/auth/client.ts`, no database of its own), TanStack Query, Recharts, Radix UI, lucide-react, zod
+- **Package manager**: pnpm, exact version pinned in `package.json` `packageManager`. Release age rule, build script approvals and the shared `catalog:` version list live in `pnpm-workspace.yaml`
 
 ## Build approach
 
-<TBD, set by /scope>
+Tracer Bullet (vertical slices, each built end to end through every layer, working). (from the scope headers, `docs/scope/_root/scope.md` and `docs/scope/house/index.md`)
 
 ## Commands
 
 ```bash
-npm install
-npm run dev          # Vite on 0.0.0.0:8080 (strict port), wrapped by scripts/with-app-env.mjs
-npm run build        # vite build, then db:migrate
-npm run typecheck    # tsc --noEmit
-npm run lint         # eslint .
-npm run format       # prettier --write .
-npm test             # node:test for scripts/, plus a few src/lib tests
-npm run check:auth   # compare dev vs build VITE_AUTH_ENABLED (needs a running dev server)
+pnpm install --frozen-lockfile   # one install at the root for the house, the funnel and any package
+pnpm dev             # Vite on 0.0.0.0:8080 (strict port), wrapped by scripts/with-app-env.mjs; also serves the funnel's built interview at /dhiinterviews (run `pnpm --filter dhirise build` first)
+pnpm dev:joining     # the funnel (Astro) on port 4321
+pnpm build           # house only: vite build, a Cloudflare Worker in dist/
+pnpm build:all       # the house, then every app and package
+pnpm typecheck       # every part: house tsc --noEmit, then each part's own typecheck
+pnpm lint            # house ESLint on named paths, the catalog check, then each part's own lint
+pnpm format          # prettier --write on the house's named paths only
+pnpm test            # house node:test (scripts/ and a few src/lib tests), then each part's tests
+pnpm enter:check     # real browser proof of the front door, dev server on 8080 and the funnel built (development backend only)
 ```
+
+The `:house` variants (`typecheck:house`, `lint:house`, `test:house`) run the house alone. `test:e2e` and `enter:check` are not in CI. CI (`.github/workflows/ci.yml`) runs a frozen install, `typecheck`, `lint`, `test` and `build:all` on Node 22.19.0 and 24. `deploy:*` has no root alias: run `pnpm --filter dhirise deploy:pages` by name.
 
 ## Specs
 
-Stored in `docs/specs/`. Format: `docs/specs/NNNN-title.md`. `docs/` also holds three PDFs: the Master Spec (metrics, storage, insights, build roadmap), the Growth Report and the Desk Design.
+Stored in `docs/specs/<part>/`: `_root` for repo wide decisions (the platform move, the workspace) and `house` for the student house. Format: `docs/specs/<part>/NNNN-title.md`, or a folder with `index.md` for an umbrella. The funnel keeps its own in `apps/joining/docs/specs/`. Scope files follow the same split under `docs/scope/`. `docs/` also holds three PDFs: the Master Spec (metrics, storage, insights, build roadmap), the Growth Report and the Desk Design.
 
 ## Rules
 
-- Always start the app with `npm run dev`, never `vite` directly. The wrapper merges `.grok/app-env.json` so dev, build and preview agree.
+- Always start the app with `pnpm dev`, never `vite` directly. The wrapper merges `.grok/app-env.json` so dev, build and preview agree.
 - Import with the `@/` alias (maps to `src/`). Prettier: double quotes, semicolons, trailing commas, 100 columns.
 - `src/routeTree.gen.ts` is generated by the router plugin. Do not edit it by hand.
-- Database code (`@/lib/db`, `@/lib/auth/server`) is server only. Call it from server functions or server routes, never from client code.
-- Schema lives only in `migrations/*.sql`. Add new ordered files (`0002_*.sql`), never edit an applied one. Subfolders (like `migrations/auth/`) are not applied automatically.
+- The house has no database. Data and sign in live in the shared Convex backend (`packages/backend`), imported as `@dhi/backend/api`. Routes that read the signed in student render in the browser only (`ssr: false`) and sit inside `ConvexSession` (`src/components/dhi/convex-session.tsx`).
+- A new account goes through the front door `/enter`: a finished interview goes to `/dashboard`, anything else to the funnel's interview at `/dhiinterviews/landing.html` (spec 0008, `src/lib/entry.ts`). The interview stays the funnel's; do not rebuild it in the house.
 - Rows owned by a person carry `student_id` and `institute_id`. Never return another institute's rows.
 - Do not label a student weak, average or bright. Scores are growth marks, not ranks.
 - The room rules in `BACKEND.md` ("Rooms in this repo" and "Do not") are product rules. Keep them when changing a room.
 
+## Agent skills
+
+Installed under `apps/joining/.claude/skills/` for now (spec 0001 and house spec 0002 ask to move them where both parts see them). Open the one a task needs before shared backend or sign in work. The funnel's own list is in `apps/joining/AGENTS.md`.
+
+- [convex](apps/joining/.claude/skills/convex/): `get-convex/agent-skills`, the backend, and the router to the other `convex-*` skills
+- [convex-auth](apps/joining/.claude/skills/convex-auth/): `get-convex/agent-skills`, wiring sign in into Convex
+- [convex-authz](apps/joining/.claude/skills/convex-authz/): `get-convex/agent-skills`, ownership and tenant checks (`student_id`, `institute_id`)
+- [convex-env](apps/joining/.claude/skills/convex-env/): `get-convex/agent-skills`, deployment variables and secrets
+- [better-auth-best-practices](apps/joining/.claude/skills/better-auth-best-practices/): `better-auth/skills`, the one shared sign in
+- [better-auth-security-best-practices](apps/joining/.claude/skills/better-auth-security-best-practices/): `better-auth/skills`, trusted origins, rate limits, sessions
+- [workers-best-practices](apps/joining/.claude/skills/workers-best-practices/): `cloudflare/skills`, both Workers
+- [wrangler](apps/joining/.claude/skills/wrangler/): `cloudflare/skills`, deploys and environments
+
 ## Context files
 
 - [src/lib/dhi/AGENTS.md](src/lib/dhi/AGENTS.md): demo stores and schema comments that define the backend contract
-- [src/lib/auth/AGENTS.md](src/lib/auth/AGENTS.md): Better Auth wiring, the demo gate, and the auth on/off modes
-- [scripts/AGENTS.md](scripts/AGENTS.md): env wrapper, migrations, preview tooling and their tests
+- [src/lib/auth/AGENTS.md](src/lib/auth/AGENTS.md): the browser sign in client (Better Auth through the shared backend) and the preview and dev proxies for `/api/auth`
+- [src/components/dhi/AGENTS.md](src/components/dhi/AGENTS.md): the room screens, the shared menu and Sheet, and the responsive rules
+- [scripts/AGENTS.md](scripts/AGENTS.md): env wrapper, the `/api/auth` proxies, the local funnel serving, preview tooling and their tests
 - [src/lib/app-data/AGENTS.md](src/lib/app-data/AGENTS.md): server only connector client (Drive, Calendar and others) and its readiness probe
 - [apps/joining/AGENTS.md](apps/joining/AGENTS.md): the DhiRise student funnel part (Astro, Convex, Cloudflare); it has its own nested docs for `convex/`, `src/`, `tools/` and the scoring engine
 

@@ -21,7 +21,7 @@ This file plans the repo wide work. The funnel's own detailed scope stays at `ap
 | 3 | Shared workspace and tooling | Foundation | in-progress |
 | 4 | One account across both parts | Foundation | planned |
 | 5 | Environments, secrets and alerts on the shared platform | Foundation | planned |
-| 6 | Sign in, save an answer, read it back, on the shared platform | Slice 1 | planned |
+| 6 | Sign in, save an answer, read it back, on the shared platform | Slice 1 | done |
 | 7 | The full check and its saved result | Slice 2 | planned |
 | 8 | Leads, feedback, consents and the Sheet copy | Slice 3 | planned |
 | 9 | Reports, files, share links, team view and pictures | Slice 4 | planned |
@@ -97,11 +97,19 @@ Spec [0001](../../specs/_root/0001-one-platform/index.md) (phase 2) and its chil
 
 ## Slice 1: the thin thread (the walking skeleton)
 
-### 6. Sign in, save an answer, read it back, on the shared platform
+### 6. Sign in, save an answer, read it back, on the shared platform · done
 The thinnest real path: a test student signs in, answers one question, and reads it back, from the shared database, on a private preview address. Real sign in, real database, real page. No live student is touched. This is also where the house moves onto the shared platform (spec 0001 phase 3): it drops Postgres, PGLite and the Grok sign in broker, reads the shared session, and builds for Workers on the development deployment only. The same pass adds the trusted origins list to the sign in, adds the house's localhost and staging addresses to the Google client, and settles the TypeScript version.
 **Done when:** on a private address a test student can sign in, save an answer and see it after a reload, from the shared database, the house signs in through the same session as the funnel with its own database and broker code gone, and the live site is unchanged.
-- [ ] Build it: `/develop sign in, save an answer, read it back`
-Spec [0001](../../specs/_root/0001-one-platform/index.md) (phase 3) with children [0003](../../specs/_root/0001-one-platform/0003-shared-sign-in.md) and [0005](../../specs/_root/0001-one-platform/0005-shared-dependencies.md). Needs row 16. The house's first build (house row 2) waits for this row.
+- [x] Build it: `/develop sign in, save an answer, read it back`
+  - [x] Shared sign in accepts the house origin: trusted origins list, Google redirect address (AC-2, AC-6, AC-10)
+  - [x] A signed in student reaches their saved data on the dev server: the owner saw a real Google sign in work on 2026-10-18; the `/thread` proof page was then replaced by the interview first entry (spec 0008): `/enter` sends a finished account to `/dashboard` with its own name and class, and a new account to the interview (AC-1 to AC-9 were proven on `/thread` before it went)
+  - [x] Old house database and sign in code out, Worker build in, TypeScript settled (AC-11, AC-12, AC-13)
+  - [x] Proof and live guard: repeatable browser script, secrets check, funnel suite (AC-14, AC-15, AC-16)
+- [x] Verify it: `/check verify sign in, save an answer, read it back` (2026-10-18, PASS against spec 0008 and the surviving 0007 criteria; 0007 AC-1 to AC-9 and AC-16 superseded with the `/thread` page; one open item, the Google loop through `/enter`)
+- [x] Test it: `/test sign in, save an answer, read it back` (2026-10-18: `pnpm enter:check` 14 of 14 in a real browser for an adult and an under 18 student; new unit tests for the entry rule, the initials, the funnel's end date and the funnel's local serving; all suites green)
+- [x] Review it (fresh model): `/check review sign in, save an answer, read it back` (2026-10-18, opus: Changes requested, 2 major and 5 minor; all fixed except two accepted trade offs written into spec 0008: the page copy of the end date, and pending referrals that never expire; findings in `docs/reviews/2026-10-18-import-funnel-history.md`)
+- [x] Document it: `/document sign in, save an answer, read it back` (2026-10-18: PR description written in the session, chat only; no PR opened)
+Spec [0007](../../specs/_root/0001-one-platform/0007-thin-thread.md) (the build spec, 16 acceptance criteria) under spec [0001](../../specs/_root/0001-one-platform/index.md) (phase 3), with children [0003](../../specs/_root/0001-one-platform/0003-shared-sign-in.md) and [0005](../../specs/_root/0001-one-platform/0005-shared-dependencies.md). Needs row 16. The house's first build (house row 2) waits for this row. Build started 2026-10-18 · code in `src/routes/{enter,dashboard,index}.tsx`, `src/components/dhi/{enter-screen,convex-session}.tsx`, `src/lib/{entry.ts,auth/client.ts}`, `scripts/auth-proxy.mjs`, `scripts/auth-proxy-preview.mjs`, `scripts/funnel-local.mjs`, `wrangler.jsonc`, `packages/backend/convex/trustedOrigins.ts` (branch `import/funnel-history`, uncommitted) · all 14 build plan steps were done on 2026-10-18, and the owner saw a real Google sign in work. Later the same day the owner asked for the `/thread` page to be replaced by the DhiRise interview (decisions in spec [0008](../../specs/_root/0001-one-platform/0008-interview-first-entry.md), `Assumed`, owing `/architect` ratification): `/thread`, `src/components/thread/`, `src/lib/thread/` and `scripts/thread-check.mjs` are gone, so `/check verify` for this row reads the 0007 acceptance criteria against `/enter`, `/dashboard` and the interview, and the 0007 browser proof script no longer exists. The challenge deadline became an optional setting (`CHALLENGE_ENDS_AT`, unset means no end). TypeScript: house and shared packages on 6.0.3, the funnel moves in row 17 (spec 0005)
 
 ### 4. One account across both parts
 Spec 0003 and the house spec 0002 already settle the account: one sign in user per person, and the house's member record is keyed to that user. Nothing is left to decide here, and the consent and erasure side moved to house row 4. This row proves the result.

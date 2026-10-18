@@ -579,6 +579,15 @@
   /* ---------- 11c. the picture row (spec 0011): Remove my picture / Use my Google picture; not in the saved copy ---------- */
   if (!HIDE && window.DhiPictureControl) DhiPictureControl.mount(root, profile);
 
+  /* ---------- 11d. the way on to the dashboard (spec 0008): only when the deploy sets dashboardUrl, never in the saved copy or the public page ---------- */
+  var dash = window.DHI_FUNNEL && window.DHI_FUNNEL.dashboardUrl;
+  if (!HIDE && dash) {
+    var go = el("a", "btn-gold span2", T.dashboardButton);
+    go.href = dash;
+    go.id = "goDashboard";
+    add(root, go);
+  }
+
   /* ---------- 12. footer ---------- */
   add(root, el("footer", "foot span2", T.footer));
 

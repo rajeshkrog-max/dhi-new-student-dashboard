@@ -2,8 +2,8 @@
 // `genuine` itself (convex/feedbackRules.ts). Nothing here takes a student id, and the note is never returned.
 // Expected refusals come back as { ok: false, code } so a refused attempt still uses up a rate limit token.
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
-import { hasEnded } from "./challengeRules";
+import { env, mutation } from "./_generated/server";
+import { endsAtOf, hasEnded } from "./challengeRules";
 import { MAX_NOTE_CHARS, MIN_NOTE_CHARS, isGenuine, trimNote, validRating } from "./feedbackRules";
 import { requireStudent } from "./helpers";
 import { rateLimiter } from "./limits";
@@ -31,7 +31,7 @@ export const submit = mutation({
     if (existing) {
       const now = Date.now();
       const later = trimNote(args.text);
-      const better = !existing.genuine && !hasEnded(now) && validRating(args.rating) && later.length >= MIN_NOTE_CHARS && later.length <= MAX_NOTE_CHARS && isGenuine(later);
+      const better = !existing.genuine && !hasEnded(now, endsAtOf(env)) && validRating(args.rating) && later.length >= MIN_NOTE_CHARS && later.length <= MAX_NOTE_CHARS && isGenuine(later);
       if (!better) return { ok: true as const, alreadySaved: true, genuine: existing.genuine };
       await ctx.db.patch("feedback", existing._id, { rating: args.rating, text: later, chars: later.length, genuine: true, genuineAt: now, canShare: args.canShare });
       await enqueueSheet(ctx, "feedback", existing._id, student._id, "upsert"); // the Sheet row is sent again with the new note

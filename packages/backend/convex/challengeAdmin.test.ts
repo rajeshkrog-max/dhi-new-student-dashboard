@@ -6,8 +6,7 @@ import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { BURST_WINDOW_MS, CSV_COLUMNS, burstIds, csvCell, normalizeNote, sameTextIds, toCsv } from "./challengeAdminCore";
 import { recount } from "./challengeCore";
-import { ENDS_AT_MS } from "./challengeRules";
-import { makeBackend, opt, profileInput, signInAs, type Backend } from "../tests/convexTestUtils";
+import { TEST_ENDS_AT_ISO, TEST_ENDS_AT_MS as ENDS_AT_MS, makeBackend, opt, profileInput, signInAs, type Backend } from "../tests/convexTestUtils";
 
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -22,12 +21,14 @@ beforeEach(() => {
   vi.setSystemTime(Date.parse("2026-10-20T10:00:00+05:30"));
   Object.assign(process.env, AUTH_ENV);
   process.env.CHALLENGE_LIVE = "true";
+  process.env.CHALLENGE_ENDS_AT = TEST_ENDS_AT_ISO;
 });
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   for (const k of Object.keys(AUTH_ENV)) delete process.env[k];
   delete process.env.CHALLENGE_LIVE;
+  delete process.env.CHALLENGE_ENDS_AT;
 });
 
 // A signed in student with a profile and a finished check. `gapMs` is the time between the first answer and finishing; `code` is the referral

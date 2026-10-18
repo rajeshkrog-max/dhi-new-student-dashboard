@@ -8,7 +8,7 @@ import { v } from "convex/values";
 import { env, mutation, query } from "./_generated/server";
 import { rowFor } from "./challengeBoard";
 import { dropEntry, makeUniqueCode, recount } from "./challengeCore";
-import { ENDS_AT_MS, hasEnded, isLive } from "./challengeRules";
+import { endsAtOf, hasEnded, isLive } from "./challengeRules";
 import { CHALLENGE_CONSENT_VERSION, CONSENT_KINDS, CONSENT_TEXTS, consentHash } from "./consentText";
 import { ADULT_AGE, requireStudent } from "./helpers";
 import { rateLimiter } from "./limits";
@@ -35,7 +35,7 @@ export const join = mutation({
     const { student, check } = await requireStudent(ctx);
     if (!isLive(env)) return refuse("not_open");
     const now = Date.now();
-    if (hasEnded(now)) return refuse("ended");
+    if (hasEnded(now, endsAtOf(env))) return refuse("ended");
     const allowed = await rateLimiter.limit(ctx, "challengeJoin", { key: student._id });
     if (!allowed.ok) return refuse("rate_limited");
 
@@ -81,7 +81,7 @@ export const setHideName = mutation({
   returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), code: v.union(v.literal("not_joined"), v.literal("ended")) })),
   handler: async (ctx, args) => {
     const { student } = await requireStudent(ctx);
-    if (hasEnded(Date.now())) return refuse("ended");
+    if (hasEnded(Date.now(), endsAtOf(env))) return refuse("ended");
     const entry = await ctx.db.query("challengeEntries").withIndex("by_studentId", (q) => q.eq("studentId", student._id)).first();
     if (!entry) return refuse("not_joined");
     if (entry.hideName !== args.hideName) {
@@ -132,13 +132,13 @@ export const me = query({
     rank: v.union(v.number(), v.null()),
     toNext: v.union(v.number(), v.null()),
     nextRank: v.union(v.number(), v.null()),
-    endsAt: v.number(),
+    endsAt: v.union(v.number(), v.null()), // null: no end date is set, the challenge runs on
     frozen: v.boolean(),
   }),
   handler: async (ctx) => {
     const { student } = await requireStudent(ctx);
     const snapshot = await ctx.db.query("leaderboardSnapshots").first();
-    const base = { open: isLive(env), endsAt: ENDS_AT_MS, frozen: snapshot?.frozen ?? false };
+    const base = { open: isLive(env), endsAt: endsAtOf(env), frozen: snapshot?.frozen ?? false };
     const entry = await ctx.db.query("challengeEntries").withIndex("by_studentId", (q) => q.eq("studentId", student._id)).first();
     if (!entry) return { ...base, joined: false, code: null, hideName: false, valid: 0, pending: 0, rank: null, toNext: null, nextRank: null };
     const pending = await ctx.db
@@ -169,7 +169,7 @@ export const leaderboard = query({
     rows: v.array(boardRowValidator),
     computedAt: v.union(v.number(), v.null()),
     frozen: v.boolean(),
-    endsAt: v.number(),
+    endsAt: v.union(v.number(), v.null()),
     myRank: v.union(v.number(), v.null()),
   }),
   handler: async (ctx) => {
@@ -178,6 +178,6 @@ export const leaderboard = query({
     const rows = snapshot?.rows ?? [];
     const entry = await ctx.db.query("challengeEntries").withIndex("by_studentId", (q) => q.eq("studentId", student._id)).first();
     const myRank = entry?.rank !== undefined && rows.some((r) => r.rank === entry.rank) ? entry.rank : null;
-    return { rows, computedAt: snapshot?.computedAt ?? null, frozen: snapshot?.frozen ?? false, endsAt: ENDS_AT_MS, myRank };
+    return { rows, computedAt: snapshot?.computedAt ?? null, frozen: snapshot?.frozen ?? false, endsAt: endsAtOf(env), myRank };
   },
 });

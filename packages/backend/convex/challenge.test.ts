@@ -2,9 +2,9 @@
 // 5 minute job that settles a referral and recounts. Each test names the criterion it covers.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
-import { CODE_RE, ENDS_AT_MS } from "./challengeRules";
+import { CODE_RE } from "./challengeRules";
 import { CHALLENGE_CONSENT_VERSION, CHALLENGE_CONSENT_LINES, CONSENT_TEXTS, consentHash } from "./consentText";
-import { makeBackend, opt, profileInput, signInAs, type Backend } from "../tests/convexTestUtils";
+import { TEST_ENDS_AT_ISO, TEST_ENDS_AT_MS as ENDS_AT_MS, makeBackend, opt, profileInput, signInAs, type Backend } from "../tests/convexTestUtils";
 
 // The first test loads the scoring engine, which can take longer than the 5 second default on a cold start.
 vi.setConfig({ testTimeout: 30_000 });
@@ -19,11 +19,13 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "Date"] });
   Object.assign(process.env, AUTH_ENV);
   process.env.CHALLENGE_LIVE = "true";
+  process.env.CHALLENGE_ENDS_AT = TEST_ENDS_AT_ISO;
 });
 afterEach(() => {
   vi.useRealTimers();
   for (const k of Object.keys(AUTH_ENV)) delete process.env[k];
   delete process.env.CHALLENGE_LIVE;
+  delete process.env.CHALLENGE_ENDS_AT;
 });
 
 // A signed in student with a profile and (unless `finish` is false) a finished check. `code` is the referral code sent with the form.
@@ -141,6 +143,18 @@ describe("challenge.join", () => {
     vi.setSystemTime(ENDS_AT_MS + 1000);
     expect(await join(s)).toEqual({ ok: false, code: "ended" });
     expect((await tables(t)).entries).toHaveLength(0);
+  });
+
+  test("spec 0008: with no end date the challenge never ends: join and hide name still work after the old date, and `me` says endsAt null", async () => {
+    delete process.env.CHALLENGE_ENDS_AT;
+    const t = makeBackend();
+    const s = await student(t);
+    vi.setSystemTime(ENDS_AT_MS + 3 * DAY); // well past the old date
+    expect(await join(s)).toMatchObject({ ok: true });
+    expect(await s.as.mutation(api.challenge.setHideName, { hideName: true })).toEqual({ ok: true });
+    expect(await s.as.query(api.challenge.me, {})).toMatchObject({ joined: true, endsAt: null, frozen: false });
+    await runJob(t);
+    expect(await s.as.query(api.challenge.leaderboard, {})).toMatchObject({ endsAt: null, frozen: false });
   });
 
   test("covers 0017 AC-4: 23:59:00 exactly still joins; the switch is read on every call, so turning it on later opens joining", async () => {

@@ -9,6 +9,8 @@ import rateLimiter from "@convex-dev/rate-limiter/convex.config";
 const app = defineApp({
   env: {
     BETTER_AUTH_URL: v.optional(v.string()),
+    // The origins that may sign in, comma separated (spec 0007). Unset or empty means only BETTER_AUTH_URL, as before.
+    BETTER_AUTH_TRUSTED_ORIGINS: v.optional(v.string()),
     GOOGLE_CLIENT_ID: v.optional(v.string()),
     GOOGLE_CLIENT_SECRET: v.optional(v.string()),
     TEST_SIGNIN_ENABLED: v.optional(v.string()),
@@ -42,6 +44,8 @@ const app = defineApp({
     // The live Founding Circle Challenge (spec 0015). `true` (also `1`, `yes`, `on`) lets students join and records referrals. Unset means off:
     // nobody can join, no referral is made and the job does nothing. Leave it unset on production until the words and the lawyer check are in.
     CHALLENGE_LIVE: v.optional(v.string()),
+    // When the challenge ends, as an ISO date with an offset (`2026-10-30T23:59:00+05:30`). Unset or empty means it never ends (spec 0008).
+    CHALLENGE_ENDS_AT: v.optional(v.string()),
   },
 });
 app.use(betterAuth);

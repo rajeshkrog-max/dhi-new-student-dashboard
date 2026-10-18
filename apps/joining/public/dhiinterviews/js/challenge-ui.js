@@ -12,7 +12,7 @@
   if (!C || !api || !root || !window.DhiStore || !DhiStore.get().completedAt) return;
 
   var SHOWS_KEY = "dhirise.challenge.invite.v1";
-  var END = Date.parse(C.endsAt);
+  var END = api.endsAtMs();                              /* null: the challenge has no end date, so no countdown anywhere */
   var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var over = api.isOver();
 
@@ -52,7 +52,7 @@
 
   /* ---------- the sticky bar ---------- */
   var barEl = null;
-  function joinBar() { bar("Founding Circle Challenge · " + endsIn(), "challenge.html", "Join"); }
+  function joinBar() { bar("Founding Circle Challenge" + (END === null ? "" : " · " + endsIn()), "challenge.html", "Join"); }
   function bar(text, href, action) {
     if (barEl) barEl.remove();
     barEl = el("div", "ch-bar");
@@ -90,24 +90,28 @@
     var line = el("p", "ch-line", "You're one of the first. Help us find students who feel the same way."); line.id = "chLine";
     var prize = el("p", "ch-prize-line", "Top referrer wins a " + C.prize.title.charAt(0).toLowerCase() + C.prize.title.slice(1));
 
-    var clock = el("div", "ch-clock");
-    clock.setAttribute("role", "timer");
-    clock.setAttribute("aria-live", "off");
-    var parts = ["days", "hrs", "min"].map(function (u) {
-      var n = el("b", null, "0"), box = add(el("span", "ch-unit"), n, el("small", null, u));
-      add(clock, box);
-      return n;
-    });
-    function paint() {
-      var ms = Math.max(0, END - Date.now());
-      parts[0].textContent = Math.floor(ms / 86400000);
-      parts[1].textContent = String(Math.floor(ms / 3600000) % 24).padStart(2, "0");
-      parts[2].textContent = String(Math.floor(ms / 60000) % 60).padStart(2, "0");
-      clock.setAttribute("aria-label", "Ends in " + parts[0].textContent + " days, " + parts[1].textContent + " hours, " + parts[2].textContent + " minutes");
-      if (!ms) close();
+    /* the countdown exists only when an end date is set */
+    var clock = null;
+    if (END !== null) {
+      clock = el("div", "ch-clock");
+      clock.setAttribute("role", "timer");
+      clock.setAttribute("aria-live", "off");
+      var parts = ["days", "hrs", "min"].map(function (u) {
+        var n = el("b", null, "0"), box = add(el("span", "ch-unit"), n, el("small", null, u));
+        add(clock, box);
+        return n;
+      });
+      var paint = function () {
+        var ms = Math.max(0, END - Date.now());
+        parts[0].textContent = Math.floor(ms / 86400000);
+        parts[1].textContent = String(Math.floor(ms / 3600000) % 24).padStart(2, "0");
+        parts[2].textContent = String(Math.floor(ms / 60000) % 60).padStart(2, "0");
+        clock.setAttribute("aria-label", "Ends in " + parts[0].textContent + " days, " + parts[1].textContent + " hours, " + parts[2].textContent + " minutes");
+        if (!ms) close();
+      };
+      paint();
+      tick = setInterval(paint, 30000);
     }
-    paint();
-    tick = setInterval(paint, 30000);
 
     var join = el("a", "ch-join", "Join the challenge"); join.href = "challenge.html";
     var later = el("button", "ch-later", "Maybe later"); later.type = "button";

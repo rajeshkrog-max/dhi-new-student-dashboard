@@ -9,7 +9,7 @@
   var C = window.DHI_CHALLENGE, api = window.DhiApi;
   if (!C || !api) return;
   var $ = function (id) { return document.getElementById(id); };
-  var END = Date.parse(C.endsAt);
+  var END = api.endsAtMs();                              /* null: the challenge has no end date, so no time left chip */
   var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   var OWL = { Builder: "builder", Achiever: "achiever", Explorer: "explorer" };
 
@@ -29,6 +29,7 @@
 
   /* ---------- top bar chip + prize ---------- */
   function paintChip() {
+    if (END === null) { $("lbChip").hidden = true; return; }
     var ms = END - Date.now();
     if (ms <= 0) { $("lbChip").textContent = "Ended"; return; }
     var d = Math.floor(ms / 86400000), h = Math.floor(ms / 3600000) % 24, m = Math.floor(ms / 60000) % 60;

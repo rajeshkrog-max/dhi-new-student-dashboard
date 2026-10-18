@@ -9,6 +9,7 @@ import { ArrowLeft, Clock, Lock, MessageCircle, Mic, MicOff, Pause, PhoneOff, Pl
 import { LIVE, LOCKED, opensLabel, phase, remaining } from "@/lib/dhi/study/hours";
 import type { StudyLine } from "@/lib/dhi/study/schema";
 import { Sheet } from "@/components/dhi/sheet";
+import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
 
 type Self = "live" | "away" | "dnd";
@@ -20,6 +21,7 @@ const TRACKS = [
 ];
 
 export function StudyHourRoom() {
+  const student = useStudent();
   const [now, setNow] = useState(() => Date.now());
   const [inside, setInside] = useState(phase(LIVE) === "live");
   const [self, setSelf] = useState<Self>("live");
@@ -85,7 +87,7 @@ export function StudyHourRoom() {
   function send() {
     const body = text.trim();
     if (!body) return;
-    setLines((ls) => [...ls, { id: `me-${ls.length}`, author: "Suzzy Glass", body, at: clockLabel(), }]);
+    setLines((ls) => [...ls, { id: `me-${ls.length}`, author: student.name, body, at: clockLabel(), }]);
     setText("");
     setSeen((n) => n + 1);
   }

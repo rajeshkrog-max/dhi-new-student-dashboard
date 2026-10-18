@@ -54,3 +54,7 @@ Both parts run on Cloudflare Workers under one dhirise.com address. The funnel m
 ## Short rationale
 
 Both parts are already on Cloudflare, and Browser Run is there, so one host means one account and one place for routing. Cloudflare says to start new projects on Workers, and the house's framework officially targets Workers, so the house cannot sit on Pages at all. Moving the funnel too is your explicit choice. It is riskier than leaving it on Pages until after the challenge, and the staged order and the untouched Pages fallback are what contain that risk. (basis: strangler pattern, new beside old, old kept until proven)
+
+## Follow-up
+
+- [ ] The funnel's TypeScript version moves to the shared one in this row's build, in the same change that edits `apps/joining/package.json` for the Worker build (spec 0005, "TypeScript, one version again"). Not inside the cutover freeze window. If `typescript-eslint` supports TypeScript 7 by then, the shared version becomes 7 and `typescript` joins the `catalog:` list instead.

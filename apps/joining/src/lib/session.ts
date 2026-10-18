@@ -1105,7 +1105,7 @@ export type ChallengeMe = {
   rank: number | null;
   toNext: number | null;
   nextRank: number | null;
-  endsAt: number; // ms since 1970, the deadline from packages/backend/convex/challengeRules.ts
+  endsAt: number | null; // ms since 1970, the deadline (CHALLENGE_ENDS_AT); null when the challenge has no end date (spec 0008)
   frozen: boolean;
 };
 
@@ -1126,7 +1126,7 @@ export type ChallengeBoard = {
   rows: ChallengeBoardRow[];
   computedAt: number | null; // when the 5 minute job last wrote the board
   frozen: boolean; // the board is final
-  endsAt: number;
+  endsAt: number | null; // null: no end date is set
   myRank: number | null; // the signed in student's place when they are on the board, so the page can mark their row
 };
 

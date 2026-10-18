@@ -30,7 +30,9 @@ import type { DataModel } from "./dataModel.js";
 type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
+  readonly BETTER_AUTH_TRUSTED_ORIGINS: string | undefined;
   readonly BETTER_AUTH_URL: string | undefined;
+  readonly CHALLENGE_ENDS_AT: string | undefined;
   readonly CHALLENGE_LIVE: string | undefined;
   readonly CLOUDFLARE_ACCOUNT_ID: string | undefined;
   readonly CLOUDFLARE_API_TOKEN: string | undefined;

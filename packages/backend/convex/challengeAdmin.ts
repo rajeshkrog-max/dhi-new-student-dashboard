@@ -11,8 +11,9 @@
 // email, name or text.
 import { v, type Infer } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
+import { env, internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
 import { RANK_CAP, boardName, decideReferral, rankEntries, recount, stepTimesOf } from "./challengeCore";
+import { endsAtOf } from "./challengeRules";
 import { CSV_COLUMNS, burstIds, isFastFinish, sameTextIds, toCsv, type Warning } from "./challengeAdminCore";
 import type { Reader } from "./helpers";
 
@@ -241,7 +242,7 @@ export const restore = internalMutation({
     const now = Date.now();
     const note = `${ref.reviewNote ?? ""} | restored: ${noteOf(args.reason, args.note)}`.replace(/^ \| /, "").slice(0, MAX_NOTE * 2);
     const friend = await ctx.db.get("students", ref.friendId);
-    const decision = friend ? decideReferral(await stepTimesOf(ctx, ref.friendId), now) : ({ kind: "pending" } as const);
+    const decision = friend ? decideReferral(await stepTimesOf(ctx, ref.friendId), now, endsAtOf(env)) : ({ kind: "pending" } as const);
     if (decision.kind === "valid") {
       await ctx.db.patch("referrals", ref._id, { status: "valid", validAt: decision.validAt, rejectReason: undefined, reviewNote: note, reviewedAt: now });
     } else if (decision.kind === "rejected") {

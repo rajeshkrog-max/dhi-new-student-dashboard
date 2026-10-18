@@ -1,7 +1,7 @@
 /**
  * Dev/preview (Vite) half of the platform PWA chrome: serves the ?install=1
  * tutorial and the per-app manifest, and injects missing PWA head tags into
- * app documents. The deployed-app half lives in server/middleware/grok-pwa.ts;
+ * app documents. The deployed-app half (server/middleware/grok-pwa.ts) left with Nitro, spec 0007;
  * both share scripts/grok-pwa-shared.mjs.
  */
 import { readFileSync } from "node:fs";

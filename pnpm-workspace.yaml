@@ -23,9 +23,4 @@ allowBuilds:
   esbuild: true # Vite and Astro build tool, downloads its native binary
   workerd: true # Cloudflare Workers runtime used by Wrangler
 
-# The house pinned nf3 while Nitro stays (spec 0005 removes Nitro). Moved here from package.json,
-# because pnpm reads overrides from this file.
-overrides:
-  nf3: 0.3.17
-
 engineStrict: true

@@ -56,6 +56,7 @@ import type * as students from "../students.js";
 import type * as team from "../team.js";
 import type * as teamCore from "../teamCore.js";
 import type * as teamHttp from "../teamHttp.js";
+import type * as trustedOrigins from "../trustedOrigins.js";
 
 import type {
   ApiFromModules,
@@ -112,6 +113,7 @@ declare const fullApi: ApiFromModules<{
   team: typeof team;
   teamCore: typeof teamCore;
   teamHttp: typeof teamHttp;
+  trustedOrigins: typeof trustedOrigins;
 }>;
 
 /**

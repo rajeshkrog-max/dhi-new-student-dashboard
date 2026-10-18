@@ -22,7 +22,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
  * library joins the catalog (spec 0005's first thin thread settles both of these).
  */
 export const EXCEPTIONS = new Map([
-  ["typescript", "house on 5, funnel on 7: settled in spec 0005's first thin thread"],
+  ["typescript", "house and shared packages on 6.0.3 (typescript-eslint stops below 6.1), funnel still on 7: spec 0007, AC-13"],
   ["@types/node", "house on 22, funnel on 26: settled in spec 0005's first thin thread"],
 ]);
 

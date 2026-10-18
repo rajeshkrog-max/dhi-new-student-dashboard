@@ -10,6 +10,7 @@ Each student room has a store or catalog here, plus a header comment that names 
 |---|---|
 | `gate.tsx` | Demo "in the house" state (`enter` / `leave`); wraps the app in `__root.tsx` |
 | `home-demo.ts` | Home greeting, DHI score and quick tiles |
+| `student.ts`, `initials.ts` | Who "you" are on the house screens: a context that is the demo student unless the dashboard route wraps the rooms in the real one (name, initials, class, and a real sign out), and the badge initials rule (spec 0008) |
 | `papers-demo.ts` | Exam papers; attempts are stored from `components/dhi/papers-desk.tsx` |
 | `meals-demo.ts` | Meal plates (key `dhi-meals-v3`) |
 | `mood-demo.ts` | Mood days (key `dhi-mood-v1`) |

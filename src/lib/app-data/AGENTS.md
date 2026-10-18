@@ -21,7 +21,7 @@ A client for the platform connectors (Google Drive, Google Calendar, Gmail, Outl
 
 - Call connector tools only from a `createServerFn` handler, with a dynamic `import("@/lib/app-data/client.server")`. Components import from `@/lib/app-data`, never from `client.server`.
 - Check results with `isLoginRequired` and `isConnectorPending` before reading data, and show `classifyCallToolError` messages instead of raw errors.
-- Tests sit beside the module (`app-data.test.ts`, `readiness-schedule.test.ts`) and run in `npm test`. Keep new pure logic in a small module so it can be tested the same way.
+- Tests sit beside the module (`app-data.test.ts`, `readiness-schedule.test.ts`) and run in `pnpm test`. Keep new pure logic in a small module so it can be tested the same way.
 
 ## Gotchas
 

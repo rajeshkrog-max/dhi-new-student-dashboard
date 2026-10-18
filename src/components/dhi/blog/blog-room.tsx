@@ -5,11 +5,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Bold, ImagePlus, Italic, ListOrdered } from "lucide-react";
 import { loadPosts, saveMine, type BlogPost } from "@/lib/dhi/blog/posts";
 import { Sheet } from "@/components/dhi/sheet";
+import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
 
 const TAGS = ["Academic", "Self help", "Mental health", "House"];
 
 export function BlogRoom() {
+  const student = useStudent();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [open, setOpen] = useState<BlogPost | null>(null);
   const [writing, setWriting] = useState(false);
@@ -24,7 +26,7 @@ export function BlogRoom() {
 
   if (open && !writing) {
     return <Reader post={open} onBack={() => setOpen(null)} onComment={(body) => {
-      const next = posts.map((p) => p.id === open.id ? { ...p, comments: [...p.comments, { id: `c-${Date.now()}`, author: "Suzzy Glass", body, at: "Just now" }] } : p);
+      const next = posts.map((p) => p.id === open.id ? { ...p, comments: [...p.comments, { id: `c-${Date.now()}`, author: student.name, body, at: "Just now" }] } : p);
       commit(next);
     }} />;
   }
@@ -111,6 +113,7 @@ function Reader({ post, onBack, onComment }: { post: BlogPost; onBack: () => voi
 }
 
 function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (post: BlogPost) => void }) {
+  const student = useStudent();
   const body = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState("");
   const [tag, setTag] = useState(TAGS[0]);
@@ -135,7 +138,7 @@ function Composer({ onClose, onPublish }: { onClose: () => void; onPublish: (pos
       tag,
       html,
       photo,
-      author: "Suzzy Glass",
+      author: student.name,
       at: "Just now",
       comments: [],
     });

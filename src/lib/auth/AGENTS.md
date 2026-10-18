@@ -2,37 +2,32 @@
 
 ## Overview
 
-Self hosted Better Auth at same origin `/api/auth/*`, federated to the Grok auth broker, with sessions kept in the same Postgres (or PGLite) as app data. The files were pre wired by the app template. This is separate from the demo "house" gate (`src/lib/dhi/gate.tsx`, `src/lib/session.ts`), which is a placeholder and not the real auth design. Real DHI entry is invite only (see `BACKEND.md`).
+The house signs in through the one shared Better Auth account system that lives in the shared Convex deployment (`packages/backend`, spec 0003 and 0007). The house has no auth server, no database and no broker of its own. The browser talks only to its own address, `/api/auth/*`, which the dev server and the preview forward to the Convex site address (`scripts/auth-proxy.mjs`, `scripts/auth-proxy-preview.mjs`), so the session cookie stays on one address. This is separate from the demo gate (`src/lib/dhi/gate.tsx`, `src/lib/session.ts`), which only drives the demo rooms.
 
 ## Key files
 
 | File | Owns |
 |---|---|
-| `server.ts` | Better Auth instance (server only, do not import from client code). Header comment explains the three modes |
-| `client.ts` | Browser auth client, `authEnabled` flag, `signIn` / `signOut`, preview bearer token |
-| `verify.server.ts` | `requireUserId` style session check from request cookies; `DEV_USER_ID = "dev-user"` |
-| `middleware.ts` | `authMiddleware` for server functions; supplies a verified user id |
-| `use-current-user.ts` | `useCurrentUser` / `useCurrentUserState`; returns `DEV_USER` when auth is off |
-| `gates.tsx` | `SignedIn`, `SignedOut`, `RedirectToSignIn`; `SIGN_IN_PATH` is `/login` (that route does not exist yet) |
-| `email-password.ts` | The single flag that enables local email and password |
-| `pglite-dialect.ts` | Kysely dialect so Better Auth uses the shared PGLite instance in preview |
-| `popup.server.ts` | OAuth popup handler, mounted by the Vite plugin in `vite.config.ts` (not a React route) |
-| `gate-*.server.ts` | Verifies the platform identity header (`x-grok-identity`) with `jose` |
-| `providers.ts`, `preview.ts` | Sign in providers and the shared preview client |
+| `client.ts` | The browser auth client (`authClient`, with the Convex plugin), `signInWithGoogle`, `testSignIn` (dev only email and password), `signOutNow` and `refreshSession`. `testSignInOffered` is true only when `VITE_TEST_SIGNIN` is `"true"` |
+
+The pages that use it are the front door `src/routes/enter.tsx`, the dashboard `src/routes/dashboard.tsx` and the Enter screen `src/components/dhi/enter-screen.tsx`. `ConvexSession` (`src/components/dhi/convex-session.tsx`) is the one place the Convex client and the sign in provider are joined.
 
 ## Conventions
 
-- Components read the user through `@/lib/auth/use-current-user`. Server functions get the user id through `@/lib/auth/middleware`. Never trust a client supplied user id.
-- Sign out with `signOut()` from `client.ts`, not `authClient.signOut()`. The raw call leaves the preview bearer token in place and the visitor stays signed in.
-- Per user tables use `user_id TEXT NOT NULL` (text, not uuid, because the dev user id is the string `dev-user`) and every query is scoped to the verified user on the server.
-- The auth schema is `migrations/auth/0001_auth.sql`. It is generated, do not edit it, and it is not applied automatically. Put app tables in new files directly under `migrations/`.
+- Signed in state is read in the browser only. A route that needs the student sets `ssr: false`, sits inside `ConvexSession`, and asks `students.me` only once `useConvexAuth` says the page is signed in. Never fetch anything about a student while signed out or loading.
+- Sign out with `signOutNow()`, and act only when it answers true. It must never claim a sign out while the cookie is alive.
+- No function takes a student id from the browser. The backend finds the student from the session.
+- `VITE_TEST_SIGNIN` defaults to off. The real gate is `TEST_SIGNIN_ENABLED` on the Convex deployment (development only, never production).
 
 ## Gotchas
 
-- Sign in is on unless `VITE_AUTH_ENABLED` is exactly `"false"`. The flag comes from `.grok/app-env.json` through `scripts/with-app-env.mjs`, and that file is gitignored and absent in a fresh checkout.
-- With auth off, `requireUserId` returns the dev user, but once `DATABASE_URL` is set it fails closed and rejects every request.
-- In the live preview the app sits in an iframe with partitioned cookies, so auth uses a bearer token in `sessionStorage`. Deployed builds use cookies.
-- PGLite is in memory. A dev server restart wipes sessions and data.
-- Do not rewrite `server.ts`; the header says it is pre wired for preview and deploy.
+- The Convex integration's `AuthClient` type wrongly narrows `useSession().data` to `never` for a client built with only the Convex plugin. The one cast lives in `convex-session.tsx`.
+- `authClient` takes `window.location.origin` as its base address, so on the server (where the module is only imported) it is undefined.
+- The Cloudflare preview ignores Vite's `preview.proxy`, which is why `/api/auth` has its own preview plugin.
+- Google sign in needs the house address on the Google redirect list (`http://localhost:8080/api/auth/callback/google`) and `BETTER_AUTH_TRUSTED_ORIGINS` on the Convex deployment.
 
-_Drafted by /audit from the repo, worth a quick human pass. Edit freely: once a line stops matching this draft, later runs treat it as curated and will flag rather than overwrite it._
+## Related specs
+
+[0003 shared sign in](../../../docs/specs/_root/0001-one-platform/0003-shared-sign-in.md) · [0007 thin thread](../../../docs/specs/_root/0001-one-platform/0007-thin-thread.md) · [0008 interview first entry](../../../docs/specs/_root/0001-one-platform/0008-interview-first-entry.md)
+
+_Drafted by /sync from the introducing change, worth a quick human pass._

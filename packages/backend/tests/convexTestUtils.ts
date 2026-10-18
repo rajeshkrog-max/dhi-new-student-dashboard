@@ -12,6 +12,11 @@ import { CONSENT_TEXTS, CONSENT_VERSION, LEAD_CONSENT_VERSION, consentHash } fro
 
 const modules = import.meta.glob("../convex/**/*.ts");
 
+// The challenge's original end, 23:59 India time on 30 October 2026. Production runs with no end date (spec 0008), so the suites that test
+// the deadline rules set `CHALLENGE_ENDS_AT` to this value; a test with the setting unset shows the never ending behavior.
+export const TEST_ENDS_AT_ISO = "2026-10-30T23:59:00+05:30";
+export const TEST_ENDS_AT_MS = Date.parse(TEST_ENDS_AT_ISO);
+
 export function makeBackend() {
   const t = convexTest(schema, modules);
   betterAuthTest.register(t, "betterAuth");

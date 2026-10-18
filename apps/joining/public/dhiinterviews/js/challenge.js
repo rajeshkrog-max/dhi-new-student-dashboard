@@ -9,7 +9,7 @@
   if (!C || !api) return;
   var $ = function (id) { return document.getElementById(id); };
   var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var END = Date.parse(C.endsAt);
+  var END = api.endsAtMs();                              /* null: the challenge has no end date, so no countdown */
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function add(p) { for (var i = 1; i < arguments.length; i++) if (arguments[i]) p.appendChild(arguments[i]); return p; }
@@ -24,16 +24,25 @@
   prize.src = C.prize.image;
   $("cpPrizeLine").textContent = "Top referrer wins a " + C.prize.title.charAt(0).toLowerCase() + C.prize.title.slice(1);
   var clock = $("cpClock");
-  var units = ["days", "hrs", "min"].map(function (u) { var b = el("b", null, "0"); add(clock, add(el("span", "ch-unit"), b, el("small", null, u))); return b; });
-  function paintClock() {
-    var ms = Math.max(0, END - Date.now());
-    units[0].textContent = Math.floor(ms / 86400000);
-    units[1].textContent = String(Math.floor(ms / 3600000) % 24).padStart(2, "0");
-    units[2].textContent = String(Math.floor(ms / 60000) % 60).padStart(2, "0");
-    clock.setAttribute("aria-label", "Ends in " + units[0].textContent + " days, " + units[1].textContent + " hours, " + units[2].textContent + " minutes");
+  var rulesEnd = $("cpRuleEnd");
+  if (END === null) {
+    clock.hidden = true;                                 /* no end date: no countdown and no "Ends" rule */
+  } else {
+    if (rulesEnd) {
+      rulesEnd.textContent = "Ends " + new Date(END).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" }).replace(/ (am|pm)/i, " $1") + " IST.";
+      rulesEnd.hidden = false;
+    }
+    var units = ["days", "hrs", "min"].map(function (u) { var b = el("b", null, "0"); add(clock, add(el("span", "ch-unit"), b, el("small", null, u))); return b; });
+    var paintClock = function () {
+      var ms = Math.max(0, END - Date.now());
+      units[0].textContent = Math.floor(ms / 86400000);
+      units[1].textContent = String(Math.floor(ms / 3600000) % 24).padStart(2, "0");
+      units[2].textContent = String(Math.floor(ms / 60000) % 60).padStart(2, "0");
+      clock.setAttribute("aria-label", "Ends in " + units[0].textContent + " days, " + units[1].textContent + " hours, " + units[2].textContent + " minutes");
+    };
+    paintClock();
+    setInterval(paintClock, 30000);
   }
-  paintClock();
-  setInterval(paintClock, 30000);
 
   /* ---------- 5. join ---------- */
   var body = $("cpJoinBody");

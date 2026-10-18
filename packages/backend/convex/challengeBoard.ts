@@ -3,7 +3,7 @@
 //  (2) recount `validCount` and `lastValidAt` for every referrer whose referrals changed,
 //  (3) rank every entry with a valid referral and write `rank`, `toNext` and `nextRank` where they changed, and
 //  (4) write the top 50 into the one `leaderboardSnapshots` row, with `computedAt`.
-// The first run after the deadline settles everything as of `ENDS_AT_MS` (it compares the stored step times with the deadline, so the moment it
+// The first run after the deadline (when `CHALLENGE_ENDS_AT` is set; with none the board never freezes) settles everything as of that date (it compares the stored step times with the deadline, so the moment it
 // actually runs does not matter), writes the final snapshot with `frozen: true`, and every later run changes nothing. The public row is built
 // in one place, `rowFor`, the way sharePayload.ts builds the public report; a test scans its keys.
 // It reads time from the rows, not from counters, so running it twice in a row, or two runs overlapping, gives the same result. It works in
@@ -16,7 +16,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { env, internalMutation, type MutationCtx } from "./_generated/server";
 import { leaderboardPictureFor } from "./avatarState";
 import { RANK_CAP, STYLE_LABEL, boardName, decideReferral, rankEntries, recount, stepTimesOf } from "./challengeCore";
-import { LEADERBOARD_SIZE, hasEnded, isLive } from "./challengeRules";
+import { LEADERBOARD_SIZE, endsAtOf, hasEnded, isLive } from "./challengeRules";
 import type { Reader } from "./helpers";
 
 const PAGE = 100;
@@ -113,7 +113,7 @@ export const run = internalMutation({
         touched.add(row.referrerId);
         continue;
       }
-      const decision = decideReferral(await stepTimesOf(ctx, row.friendId), now);
+      const decision = decideReferral(await stepTimesOf(ctx, row.friendId), now, endsAtOf(env));
       if (decision.kind === "valid") {
         await ctx.db.patch("referrals", row._id, { status: "valid", validAt: decision.validAt });
         touched.add(row.referrerId);
@@ -130,7 +130,7 @@ export const run = internalMutation({
       return null;
     }
     // The last page: rank and write the board. After the deadline this is the final run, so it freezes.
-    const frozen = hasEnded(startedAt);
+    const frozen = hasEnded(startedAt, endsAtOf(env));
     const ranked = await rankAndWrite(ctx, frozen, now);
     if (valid > 0 || rejected > 0 || frozen) {
       console.log(`challengeBoard.run: ${valid} referral(s) became valid, ${rejected} rejected, ${ranked ?? "no"} ranked${frozen ? ", board frozen" : ""}`);

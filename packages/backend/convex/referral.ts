@@ -5,7 +5,7 @@
 // Nothing is logged: no code, no name, no visitor key.
 import { v } from "convex/values";
 import { env, internalMutation } from "./_generated/server";
-import { CODE_RE, hasEnded, isLive } from "./challengeRules";
+import { CODE_RE, endsAtOf, hasEnded, isLive } from "./challengeRules";
 import { rateLimiter } from "./limits";
 
 export const HIDDEN_OWNER_NAME = "a friend";
@@ -27,7 +27,7 @@ export const check = internalMutation({
   handler: async (ctx, args) => {
     const code = args.code.trim().toUpperCase();
     if (!CODE_RE.test(code)) return { ok: false as const, reason: "format" as const };
-    if (hasEnded(Date.now())) return { ok: false as const, reason: "ended" as const };
+    if (hasEnded(Date.now(), endsAtOf(env))) return { ok: false as const, reason: "ended" as const };
     const allowed = await rateLimiter.limit(ctx, "referralCheck", { key: args.visitor });
     if (!allowed.ok) return { ok: false as const, reason: "slow" as const };
     // With the switch off no referral would be recorded, so no hint is given.

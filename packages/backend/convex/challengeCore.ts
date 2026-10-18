@@ -4,7 +4,7 @@
 // Nothing here logs: callers log counts only, never a name, an email or a code.
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { CODE_CHARS, CODE_RE, ENDS_AT_MS, hasEnded } from "./challengeRules";
+import { CODE_CHARS, CODE_RE, hasEnded } from "./challengeRules";
 import { fail } from "./helpers";
 
 // ---------- codes (spec 0016, AC-1) ----------
@@ -57,8 +57,8 @@ export async function makeUniqueCode(ctx: MutationCtx, name: string): Promise<st
 // Called once, by `students.createProfile`, right after the new student row is made. A code that is the wrong shape, has no owner, belongs to
 // the friend themselves, or arrives while the challenge is off or over leaves no referral and never raises an error: sign in is never harmed
 // by a code. The friend can have only one referral, so a second call changes nothing.
-export async function recordPendingReferral(ctx: MutationCtx, friendId: Id<"students">, rawCode: string | undefined, live: boolean, now: number): Promise<void> {
-  if (!live || hasEnded(now) || !rawCode) return;
+export async function recordPendingReferral(ctx: MutationCtx, friendId: Id<"students">, rawCode: string | undefined, live: boolean, now: number, endsAt: number | null): Promise<void> {
+  if (!live || hasEnded(now, endsAt) || !rawCode) return;
   const code = rawCode.trim().toUpperCase();
   if (!CODE_RE.test(code)) return;
   const entry = await ctx.db.query("challengeEntries").withIndex("by_code", (q) => q.eq("code", code)).first();
@@ -81,15 +81,16 @@ export type Decision = { kind: "valid"; validAt: number } | { kind: "rejected"; 
 
 // The one place that says whether a referral counts. All three steps must be there, on a check made here (an imported check never counts),
 // and the latest of the three times (`validAt`) must be at or before the deadline. A step that came after the deadline, or one still missing
-// once the deadline has passed, rejects the referral. Otherwise it waits. `now` is passed in so a test can pick any moment.
-export function decideReferral(steps: StepTimes, now: number): Decision {
+// once the deadline has passed, rejects the referral. Otherwise it waits. With no deadline (`endsAt` null) nothing is late: a complete referral
+// is valid and an incomplete one waits for ever. `now` is passed in so a test can pick any moment.
+export function decideReferral(steps: StepTimes, now: number, endsAt: number | null): Decision {
   const { completedAt, reportSeenAt, genuineAt } = steps;
   const all = steps.source === "fresh" && completedAt !== null && reportSeenAt !== null && genuineAt !== null;
   if (all) {
     const validAt = Math.max(completedAt, reportSeenAt, genuineAt);
-    return validAt <= ENDS_AT_MS ? { kind: "valid", validAt } : { kind: "rejected", reason: "deadline" };
+    return endsAt === null || validAt <= endsAt ? { kind: "valid", validAt } : { kind: "rejected", reason: "deadline" };
   }
-  return hasEnded(now) ? { kind: "rejected", reason: "deadline" } : { kind: "pending" };
+  return hasEnded(now, endsAt) ? { kind: "rejected", reason: "deadline" } : { kind: "pending" };
 }
 
 // The three times for one friend, read from the rows the other functions already keep.

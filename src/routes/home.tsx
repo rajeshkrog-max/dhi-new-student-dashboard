@@ -33,6 +33,7 @@ import { ModulesRoom } from "@/components/dhi/modules/modules-room";
 import { BlogRoom } from "@/components/dhi/blog/blog-room";
 import { useGate } from "@/lib/dhi/gate";
 import { HOME } from "@/lib/dhi/home-demo";
+import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/home")({ component: StudentHome });
@@ -52,6 +53,7 @@ const NAV = [
 ];
 
 export function StudentHome() {
+  const student = useStudent();
   const { leave } = useGate();
   const [tab, setTab] = useState("home");
   const [locked, setLocked] = useState(false);
@@ -77,7 +79,9 @@ export function StudentHome() {
   };
   const exit = () => {
     setMenuOpen(false);
-    leave();
+    // A real student's Leave ends their session (spec 0008); the demo's only closes the demo gate.
+    if (student.signOut) student.signOut();
+    else leave();
   };
 
   return (
@@ -213,10 +217,10 @@ export function StudentHome() {
               <NotificationBell className="hidden lg:grid" />
               <div className="hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/70 px-2 py-1.5 backdrop-blur-md sm:flex">
                 <div data-decorative className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-peach to-lilac text-[11px] font-semibold text-white">
-                  {HOME.student.initials}
+                  {student.initials}
                 </div>
                 <div className="pr-2">
-                  <p className="text-xs font-medium leading-tight">{HOME.student.name}</p>
+                  <p className="text-xs font-medium leading-tight">{student.name}</p>
                   <p className="text-[10px] text-mute touch:text-xs">Student</p>
                 </div>
               </div>
@@ -253,12 +257,13 @@ export function StudentHome() {
 }
 
 function HomeBody({ onOpen }: { onOpen: (id: string) => void }) {
+  const student = useStudent();
   return (
     <>
       <article className="flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-[24px] border border-white/80 bg-gradient-to-r from-white/80 via-lilac/20 to-peach/30 px-6 py-4 backdrop-blur-xl">
         <div>
           <p className="text-sm text-mute">Good morning</p>
-          <h2 className="font-display mt-1 text-3xl font-medium">{HOME.student.name}</h2>
+          <h2 className="font-display mt-1 text-3xl font-medium">{student.name}</h2>
           <p className="mt-2 max-w-md text-sm text-home/70">{HOME.greeting.sub}</p>
         </div>
         <LampStack />
@@ -511,14 +516,15 @@ const LINK_BUTTON =
   "tap text-xs text-grove touch:-mr-2 touch:inline-flex touch:items-center touch:justify-center touch:px-2";
 
 function ProfileCard({ className }: { className?: string }) {
+  const student = useStudent();
   return (
     <div className={cn("flex items-center gap-3 rounded-2xl bg-white/55 p-3", className)}>
       <div data-decorative className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-peach to-lilac text-sm font-semibold text-white">
-        {HOME.student.initials}
+        {student.initials}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{HOME.student.name}</p>
-        <p className="text-xs text-mute">{HOME.student.house}</p>
+        <p className="truncate text-sm font-medium">{student.name}</p>
+        <p className="text-xs text-mute">{student.house}</p>
       </div>
     </div>
   );
