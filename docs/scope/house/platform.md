@@ -20,10 +20,21 @@ Real accounts for the house: institutes, the five roles (student, teacher, insti
 - [ ] Document it: `/document people, roles, invites and institutes`
 Spec [0002](../../specs/house/0002-people-roles-invites-institutes/index.md) · code in `packages/backend/convex/{members,invites,classes,institutes,bootstrap,demo,houseAuth,houseCore,inviteCore}.ts`, `src/routes/{join,staff,dashboard}.tsx`, `src/components/dhi/{join-page,house-screens,house-session,staff/}`, `src/lib/dhi/{house-words,class-list}.ts`, `scripts/{test-student,enter-check,responsive-sweep}.mjs`. Runs on the development deployment with synthetic people only until row 4. Cannot start until the repo wide rows 16 (the shared backend package) and 6 (the house on the shared sign in) are built, because the house tables land in that package and the join page reads the shared session.
 
-### 3. Room event log and day rules · needs a decision
+### 3. Room event log and day rules · in-progress
 The one contract every room writes through: each finished action becomes an event with who did it, when it happened, which day it counts for and what it says. It fixes the day boundary (04:00 to 04:00 India time), how a day with no log is kept (not logged, never zero), how late entries are marked, and that a rerun never counts twice. Every number the Brain shows is rebuilt from these events. (basis: the Master Spec storage rules; an event log means a changed formula never loses data)
 **Done when:** a room can add an event and read it back by student and day, a meal at 01:00 counts for the day before, an unlogged day reads as not logged, and the same event sent twice is stored once.
-- [ ] Design it (spec): `/architect room event log and day rules`
+- [x] Design it (spec): `/architect room event log and day rules`
+- [ ] Build it: `/develop room event log and day rules`
+   - [ ] The day rule as one pure shared file (AC-2, AC-3, AC-13)
+   - [ ] The events table, the static registry, record and read helpers, and the test room (AC-1, AC-3, AC-9, AC-10, AC-16)
+   - [ ] Retries, the 500 a day cap and the live concurrency check (AC-4, AC-11)
+   - [ ] Time limits, not logged, corrections and undo (AC-5, AC-6, AC-7)
+   - [ ] The payload and key rules, the source scans and the proof (AC-8, AC-12, AC-14, AC-15)
+- [ ] Verify it: `/check verify room event log and day rules`
+- [ ] Test it: `/test room event log and day rules`
+- [ ] Review it (fresh model): `/check review room event log and day rules`
+- [ ] Document it: `/document room event log and day rules`
+Spec [0004](../../specs/house/0004-room-event-log-and-day-rules/index.md) · code (filled by /develop). Builds on row 2 (members and `joinedAt`). Runs on the development deployment with synthetic people only until row 4. Every room row after this one calls it.
 
 ### 4. Consent, privacy and access record for minors' house data · needs a decision
 Before any real student logs a mood or a meal: recorded parent consent for students under 18, what each person may see (student, parent, teacher, institute), the parent sharing switch (the Master Spec recommends off until the student turns it on), a record of who looked at a student's personal data, export and erasure of house data, and the privacy notice saying where the data is stored. It reuses the funnel's consent rules rather than inventing new ones.
