@@ -12,7 +12,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 
 | Epic | File | Rows | Rollup |
 |---|---|---|---|
-| Platform and safety | [platform.md](platform.md) | 2 to 4 | 0 of 3 done, 2 in progress (rows 2 and 3, designed), 1 planned |
+| Platform and safety | [platform.md](platform.md) | 2 to 4 | 0 of 3 done, 3 in progress (rows 2, 3 and 4, designed) |
 | The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23, 25 | 1 of 15 done (row 1), 1 in progress (row 25, designed), 13 planned, plus 1 existing for context |
 | The Brain | [brain.md](brain.md) | 17 to 22, 24 | 0 of 7 done, 7 planned |
 
@@ -26,7 +26,7 @@ Row numbers run across all three files, so a row keeps one number wherever it li
 | 1 | Make the app responsive | Slice 1 | done |
 | 2 | People, roles, invites and institutes | Foundation | in-progress |
 | 3 | Room event log and day rules | Foundation | in-progress |
-| 4 | Consent, privacy and access record for minors' house data | Foundation | planned |
+| 4 | Consent, privacy and access record for minors' house data | Foundation | in-progress |
 | 25 | One professional look for every page, the menu and loading screens | Look and feel | in-progress |
 | 5 | Mood room, real, with the Vedic lens | Slice 2 | planned |
 | 6 | Habits room, real | Slice 3 | planned |

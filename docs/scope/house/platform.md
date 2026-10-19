@@ -36,7 +36,18 @@ The one contract every room writes through: each finished action becomes an even
 - [ ] Document it: `/document room event log and day rules`
 Spec [0004](../../specs/house/0004-room-event-log-and-day-rules/index.md) · code (filled by /develop). Builds on row 2 (members and `joinedAt`). Runs on the development deployment with synthetic people only until row 4. Every room row after this one calls it.
 
-### 4. Consent, privacy and access record for minors' house data · needs a decision
+### 4. Consent, privacy and access record for minors' house data · in-progress
 Before any real student logs a mood or a meal: recorded parent consent for students under 18, what each person may see (student, parent, teacher, institute), the parent sharing switch (the Master Spec recommends off until the student turns it on), a record of who looked at a student's personal data, export and erasure of house data, and the privacy notice saying where the data is stored. It reuses the funnel's consent rules rather than inventing new ones.
 **Done when:** a student under 18 cannot enter without recorded parent consent, mood notes and meal logs are never shown to staff or parents beyond what the student shares, every staff read of personal data leaves a record with no personal data inside the record itself, and export and erasure work for house data.
-- [ ] Design it (spec): `/architect consent, privacy and access record for minors' house data`
+- [x] Design it (spec): `/architect consent, privacy and access record for minors' house data`
+- [ ] Build it: `/develop consent, privacy and access record for minors' house data`
+   - [ ] The consent gate: notice, the student agrees, the check in the entry function, the consent screen (AC-1, AC-2, AC-18, AC-20)
+   - [ ] The school records a parent's consent, age rules, withdrawal and the Your data shell (AC-3, AC-4, AC-5, AC-6, AC-17)
+   - [ ] Who sees what: the access rule, the logged staff read, class totals and the access record (AC-7 to AC-11, AC-16, AC-23, AC-24)
+   - [ ] Export, erase in pages, the data map and the 30 day block (AC-12, AC-13, AC-14, AC-19)
+   - [ ] Retention, demo consent, limits and the proof (AC-15, AC-21, AC-22)
+- [ ] Verify it: `/check verify consent, privacy and access record for minors' house data`
+- [ ] Test it: `/test consent, privacy and access record for minors' house data`
+- [ ] Review it (fresh model): `/check review consent, privacy and access record for minors' house data`
+- [ ] Document it: `/document consent, privacy and access record for minors' house data`
+Spec [0005](../../specs/house/0005-consent-privacy-and-access-record/index.md) · code (filled by /develop). Builds on rows 2 and 3. Two things must happen before any real student enters: the owner approves the exact words, and a legal check on the school recording a parent's consent. Until then only made up people are loaded.
