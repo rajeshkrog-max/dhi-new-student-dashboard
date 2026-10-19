@@ -38,6 +38,7 @@ pnpm format          # prettier --write on the house's named paths only
 pnpm test            # house node:test (scripts/ and a few src/lib tests), then each part's tests
 pnpm deploy:house     # builds with the production backend address and deploys the house Worker `dhirise-house` (routes in wrangler.jsonc); asks Cloudflare, so log wrangler in to the account that owns dhirise first
 pnpm enter:check     # real browser proof of the front door, dev server on 8080 and the funnel built (development backend only)
+pnpm consent:check   # real browser proof of the consent flow, Your data and erase (dev server on 8080, development backend only)
 ```
 
 The `:house` variants (`typecheck:house`, `lint:house`, `test:house`) run the house alone. `test:e2e` and `enter:check` are not in CI. CI (`.github/workflows/ci.yml`) runs a frozen install, `typecheck`, `lint`, `test` and `build:all` on Node 22.19.0 and 24. `deploy:*` has no root alias: run `pnpm --filter dhirise deploy:pages` by name.
@@ -56,6 +57,7 @@ Stored in `docs/specs/<part>/`: `_root` for repo wide decisions (the platform mo
 - A new account goes through the front door `/` (also `/enter`): a finished interview goes to `/dashboard`, anything else to the funnel's interview at `/dhiinterviews/landing.html` (spec 0008, `src/lib/entry.ts`). The interview stays the funnel's; do not rebuild it in the house.
 - Rows owned by a person carry `student_id` and `institute_id`. Never return another institute's rows.
 - Do not label a student weak, average or bright. Scores are growth marks, not ranks.
+- A student reaches no room until they agree to the house notice and, if under 18 (or the flag is missing), the school has recorded a parent's consent (house spec 0005). Staff see named student data only through `staffRead`, and a DHI admin or counselor never sees room content. The consent words are drafts until the owner approves them: use only made up people.
 - The room rules in `BACKEND.md` ("Rooms in this repo" and "Do not") are product rules. Keep them when changing a room.
 
 ## Agent skills
