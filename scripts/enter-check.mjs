@@ -7,36 +7,13 @@
 // "Go to your dashboard" button leads there; Leave ends the session. It signs in with the test form (needs VITE_TEST_SIGNIN=true in
 // .env.local and TEST_SIGNIN_ENABLED on the development deployment) and exits with an error if any step fails.
 // It refuses to run against production or against any address that is not this machine.
-import { existsSync, readFileSync } from "node:fs";
 import { chromium } from "playwright";
+import { assertLocalDevelopment } from "./local-dev-guard.mjs";
 
 const argUrl = process.argv.includes("--url") ? process.argv[process.argv.indexOf("--url") + 1] : "http://localhost:8080";
-const PRODUCTION_DEPLOYMENT = "abundant-caiman-975";
 
-const base = new URL(argUrl);
-if (!["localhost", "127.0.0.1"].includes(base.hostname)) {
-  console.error(`enter-check: refusing ${base.origin}. It only runs against this machine.`);
-  process.exit(2);
-}
-const envFile = existsSync(".env.local") ? readFileSync(".env.local", "utf8") : "";
-if (envFile.includes(PRODUCTION_DEPLOYMENT) || process.env.PUBLIC_CONVEX_URL?.includes(PRODUCTION_DEPLOYMENT)) {
-  console.error("enter-check: .env.local points at the production deployment. It only runs against development.");
-  process.exit(2);
-}
-
-// The funnel's built files are served from apps/joining/dist. A production deploy leaves a build there that points at the production backend,
-// and this script must never run against that.
-const distAstro = "apps/joining/dist/_astro";
-if (existsSync(distAstro)) {
-  const { readdirSync } = await import("node:fs");
-  const builtForProduction = readdirSync(distAstro)
-    .filter((f) => f.endsWith(".js"))
-    .some((f) => readFileSync(`${distAstro}/${f}`, "utf8").includes(PRODUCTION_DEPLOYMENT));
-  if (builtForProduction) {
-    console.error("enter-check: apps/joining/dist was built for production. Run `pnpm --filter dhirise build` (it uses the development backend) and try again.");
-    process.exit(2);
-  }
-}
+// Refuses production, any address that is not this machine, and a funnel build made for production (scripts/local-dev-guard.mjs).
+const base = assertLocalDevelopment("enter-check", argUrl);
 
 const failures = [];
 let steps = 0;

@@ -1,0 +1,35 @@
+{
+  "src/components/dhi/blog/blog-room.tsx": {
+    "hex": 3
+  },
+  "src/components/dhi/desk/dhi-desk.tsx": {
+    "hex": 1
+  },
+  "src/components/dhi/habits/habit-slide.tsx": {
+    "inline-style": 1
+  },
+  "src/components/dhi/mood-tracker.tsx": {
+    "inline-style": 1
+  },
+  "src/components/dhi/papers-desk.tsx": {
+    "svg-paint": 1
+  },
+  "src/components/dhi/study/study-hour.tsx": {
+    "hex": 2
+  },
+  "src/lib/dhi/habits/catalog.ts": {
+    "hex": 6
+  },
+  "src/lib/dhi/habits/schema.ts": {
+    "hex": 8
+  },
+  "src/lib/dhi/habits/store.ts": {
+    "hex": 4
+  },
+  "src/lib/dhi/home-demo.ts": {
+    "hex": 4
+  },
+  "src/lib/dhi/mood-demo.ts": {
+    "hex": 10
+  }
+}

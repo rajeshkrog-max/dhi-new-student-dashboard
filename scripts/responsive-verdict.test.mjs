@@ -4,7 +4,9 @@ import {
   WIDTHS,
   exitCodeFor,
   findOffScreen,
+  findLayoutShift,
   findOverflow,
+  findScreenProblems,
   findSmallTargets,
   findSmallText,
   formatTable,
@@ -119,4 +121,33 @@ test("the table has a line per room and a column per width", () => {
   const table = formatTable(rows);
   assert.match(table, /home\s+ok\s+ov1/);
   assert.match(table, /mood\s+ERR/);
+});
+
+const screenFacts = (page, cls) => ({ ...base, page: { loading: false, slowLine: false, tryAgain: false, brandBar: true, h1: "", buttons: [], backHref: null, leaked: [], ...page }, cls });
+
+test("a loading screen must announce Loading, and only show the slow line after 8 seconds", () => {
+  assert.deepEqual(findScreenProblems(screenFacts({ loading: true }), { loading: true, notSlow: true }), []);
+  assert.equal(findScreenProblems(screenFacts({ loading: false }), { loading: true }).length, 1);
+  assert.equal(findScreenProblems(screenFacts({ loading: true, slowLine: true, tryAgain: true }), { notSlow: true }).length, 1);
+  assert.deepEqual(findScreenProblems(screenFacts({ loading: true, slowLine: true, tryAgain: true }), { loading: true, slow: true }), []);
+  assert.equal(findScreenProblems(screenFacts({ loading: true, slowLine: true }), { slow: true }).length, 1);
+});
+
+test("an error screen has its title, exactly its buttons, the brand bar, and leaks nothing", () => {
+  const expect = { h1: "Something went wrong", buttons: ["Try again", "Back to the house"], brandBar: true, backHref: "/dashboard" };
+  const good = screenFacts({ h1: "Something went wrong", buttons: ["Try again", "Back to the house"], backHref: "/dashboard" });
+  assert.deepEqual(findScreenProblems(good, expect), []);
+  assert.equal(findScreenProblems(screenFacts({ ...good.page, buttons: ["Try again"] }), expect).length > 0, true);
+  assert.equal(findScreenProblems(screenFacts({ ...good.page, brandBar: false }), expect).length, 1);
+  assert.equal(findScreenProblems(screenFacts({ brandBar: true }), { brandBar: false }).length, 1);
+  assert.deepEqual(findScreenProblems(screenFacts({ brandBar: false }), { brandBar: false }), []);
+  assert.equal(findScreenProblems(screenFacts({ ...good.page, backHref: "/" }), expect).length, 1);
+  assert.equal(findScreenProblems(screenFacts({ ...good.page, leaked: ["Sweep Student"] }), expect).length, 1);
+});
+
+test("layout shift over 0.05 fails", () => {
+  assert.deepEqual(findLayoutShift({ ...base, cls: 0.05 }), []);
+  assert.deepEqual(findLayoutShift({ ...base }), []);
+  assert.equal(findLayoutShift({ ...base, cls: 0.2 }).length, 1);
+  assert.equal(judge("settle", 360, { ...base, cls: 0.2 }).ok, false);
 });

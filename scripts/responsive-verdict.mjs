@@ -5,6 +5,8 @@
 export const WIDTHS = [360, 768, 1024, 1280];
 export const MIN_TARGET = 44;
 export const MIN_TEXT = 12;
+// The most layout shift a screen may show from navigation until it settles (spec house/0003, AC-5).
+export const MAX_LAYOUT_SHIFT = 0.05;
 // The seven column mood calendar may be 42 wide and 44 tall (named exception, AC-7).
 export const DAY_CELL_MIN_WIDTH = 42;
 
@@ -41,7 +43,20 @@ export function isTouchWidth(width) {
  *   targets: Target[],
  *   texts: TextItem[],
  *   firstScreen?: FirstScreenItem[],
+ *   cls?: number,
+ *   page?: { loading: boolean, slowLine: boolean, tryAgain: boolean, brandBar: boolean, h1: string, buttons: string[], backHref: string | null, leaked: string[] },
  * }} Facts
+ * What a screen is expected to show, for the loading, error and not found screens (spec house/0003, AC-4 to AC-7).
+ * @typedef {{
+ *   loading?: boolean,
+ *   slow?: boolean,
+ *   notSlow?: boolean,
+ *   h1?: string,
+ *   buttons?: string[],
+ *   backHref?: string,
+ *   brandBar?: boolean,
+ *   settles?: boolean,
+ * }} Expect
  */
 
 /**
@@ -106,12 +121,45 @@ export function findOffScreen(/** @type {Facts} */ facts) {
   return problems;
 }
 
-/** One verdict row for a room at a width. */
-export function judge(room, width, /** @type {Facts} */ facts) {
+/**
+ * AC-4 to AC-7: a loading, error or not found screen shows what it should, and nothing it should not. `leaked` holds any student name, class
+ * or raw error text the runner found on the page.
+ */
+export function findScreenProblems(/** @type {Facts} */ facts, /** @type {Expect} */ expect = {}) {
+  const problems = [];
+  const page = facts.page;
+  if (!page) return expect && Object.keys(expect).length ? ["no page facts were collected"] : [];
+  if (expect.loading !== undefined && page.loading !== expect.loading) {
+    problems.push(expect.loading ? 'no "Loading" status for a screen reader' : 'a "Loading" status is still showing');
+  }
+  if (expect.slow === true && !(page.slowLine && page.tryAgain)) problems.push("the slow line and Try again are missing after 8 seconds");
+  if (expect.notSlow === true && (page.slowLine || page.tryAgain)) problems.push("the slow line shows before 8 seconds");
+  if (expect.h1 !== undefined && page.h1 !== expect.h1) problems.push(`title is "${page.h1}", expected "${expect.h1}"`);
+  if (expect.buttons) {
+    for (const label of expect.buttons) if (!page.buttons.includes(label)) problems.push(`no "${label}" button`);
+    if (page.buttons.length !== expect.buttons.length) problems.push(`buttons are ${JSON.stringify(page.buttons)}, expected ${JSON.stringify(expect.buttons)}`);
+  }
+  if (expect.backHref !== undefined && page.backHref !== expect.backHref) problems.push(`Back to the house goes to ${page.backHref}, expected ${expect.backHref}`);
+  if (expect.brandBar !== undefined && page.brandBar !== expect.brandBar) {
+    problems.push(expect.brandBar ? "the brand top bar is missing" : "a brand top bar shows where there should be none");
+  }
+  for (const leak of page.leaked) problems.push(`shows "${leak}"`);
+  return problems;
+}
+
+/** AC-5: the screen that replaces a skeleton does not move the frame. */
+export function findLayoutShift(/** @type {Facts} */ facts) {
+  if (facts.cls === undefined || facts.cls <= MAX_LAYOUT_SHIFT) return [];
+  return [`layout shift ${facts.cls.toFixed(3)} is over ${MAX_LAYOUT_SHIFT}`];
+}
+
+/** One verdict row for a room, or a screen, at a width. */
+export function judge(room, width, /** @type {Facts} */ facts, /** @type {Expect | undefined} */ expect = undefined) {
   const overflow = findOverflow(facts);
   const targets = findSmallTargets(facts);
   const text = findSmallText(facts);
   const screen = findOffScreen(facts);
+  const shown = [...findScreenProblems(facts, expect), ...findLayoutShift(facts)];
   return {
     room,
     width,
@@ -119,7 +167,8 @@ export function judge(room, width, /** @type {Facts} */ facts) {
     targets,
     text,
     screen,
-    ok: !overflow.length && !targets.length && !text.length && !screen.length,
+    shown,
+    ok: !overflow.length && !targets.length && !text.length && !screen.length && !shown.length,
   };
 }
 
@@ -136,6 +185,7 @@ function cell(row) {
   if (row.targets.length) parts.push(`t${row.targets.length}`);
   if (row.text.length) parts.push(`x${row.text.length}`);
   if (row.screen?.length) parts.push(`s${row.screen.length}`);
+  if (row.shown?.length) parts.push(`p${row.shown.length}`);
   return parts.join(" ");
 }
 
@@ -152,7 +202,7 @@ export function formatTable(rows, widths = WIDTHS) {
   }
   lines.push(
     "",
-    "ov = sideways overflow, t = small target, x = small text, s = off the first screen",
+    "ov = sideways overflow, t = small target, x = small text, s = off the first screen, p = wrong or shifting screen",
   );
   return lines.join("\n");
 }
@@ -170,6 +220,7 @@ export function formatFailures(rows, perKind = 6) {
       ["target", r.targets],
       ["text", r.text],
       ["first screen", r.screen ?? []],
+      ["screen", r.shown ?? []],
     ]) {
       if (!list.length) continue;
       out.push(`${r.room} @ ${r.width} ${kind} (${list.length})`);
