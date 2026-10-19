@@ -207,9 +207,15 @@ async function runHouse(browser) {
     expect(words.includes("Demo Institute") && words.includes("Student"), "the institute and the role are not shown");
   });
 
-  await step("pressing Join lands them in their class under their own name, with the student rooms", async () => {
+  await step("pressing Join lands them at the consent gate, and agreeing opens their class under their own name, with the student rooms", async () => {
     await guestPage.getByTestId("join").click();
     await waitForPath(guestPage, "/dashboard");
+    // Spec house/0005: a student who has joined sees only the consent steps until they agree (the full flow is pnpm consent:check).
+    await guestPage.getByRole("heading", { name: "Before you enter" }).waitFor({ timeout: 20_000 });
+    await guestPage.waitForFunction(() => (document.querySelector('[data-testid="notice-box"]')?.textContent ?? "").includes("privacy@"), null, { timeout: 20_000 });
+    await guestPage.getByTestId("notice-box").evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    await guestPage.waitForFunction(() => !document.querySelector('[data-testid="agree"]')?.hasAttribute("disabled"), null, { timeout: 5_000 });
+    await guestPage.getByTestId("agree").click();
     await guestPage.getByText(guest.name).first().waitFor({ timeout: 20_000 });
     await guestPage.getByText("Class 10 A").first().waitFor({ timeout: 10_000 });
     expect(await guestPage.getByTestId("sample-note").isVisible(), "the sample data note is missing on the dashboard");

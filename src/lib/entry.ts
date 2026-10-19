@@ -57,7 +57,10 @@ export type HouseMe =
   | { state: "invitePending"; role: HouseRole; instituteName: string | null }
   | { state: "active"; role: HouseRole }
   | { state: "removed" }
-  | { state: "suspended"; role: HouseRole };
+  | { state: "suspended"; role: HouseRole }
+  // A student who has not yet agreed (or whose school has not recorded a parent's consent), and one who withdrew (spec house/0005).
+  | { state: "consentNeeded"; missing: ("self" | "parent")[] }
+  | { state: "withdrawn"; by: ("self" | "school")[] };
 
 export const JOIN_PATH = "/join";
 export const STAFF_PATH = "/staff";
@@ -76,6 +79,8 @@ export function houseTarget(me: HouseMe | undefined): HouseTarget {
       return "join";
     case "removed":
     case "suspended":
+    case "consentNeeded":
+    case "withdrawn":
       return "dashboard";
     case "active":
       return me.role === "student" ? "dashboard" : "staff";

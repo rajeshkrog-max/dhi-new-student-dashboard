@@ -46,6 +46,10 @@ const app = defineApp({
     CHALLENGE_LIVE: v.optional(v.string()),
     // When the challenge ends, as an ISO date with an offset (`2026-10-30T23:59:00+05:30`). Unset or empty means it never ends (spec 0008).
     CHALLENGE_ENDS_AT: v.optional(v.string()),
+    // Keys the hash of an erased student's email for the 30 day block (house spec 0005, AC-13): HMAC SHA 256 of the trimmed lowercase address. The
+    // same name the funnel's erase spec uses, so one secret can serve both. A different value on development and production. Unset means the
+    // house erase refuses with `erase_not_configured`.
+    ERASURE_HASH_SECRET: v.optional(v.string()),
   },
 });
 app.use(betterAuth);

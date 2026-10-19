@@ -36,6 +36,8 @@ function Staff() {
     if (me?.state === "signedOut") window.location.replace(ENTER_PATH);
     if (me?.state === "invitePending") void navigate({ to: JOIN_PATH, replace: true });
     if (me?.state === "active" && me.role === "student") void navigate({ to: DASHBOARD_PATH, replace: true });
+    // Only a student is ever at the consent gate.
+    if (me?.state === "consentNeeded" || me?.state === "withdrawn") void navigate({ to: DASHBOARD_PATH, replace: true });
   }, [auth.isLoading, auth.isAuthenticated, me, navigate]);
 
   if (!auth.isAuthenticated || me === undefined) return <DashboardSkeleton />;

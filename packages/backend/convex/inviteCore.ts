@@ -2,6 +2,7 @@
 // (spec house/0002). The pure rules live in houseCore.ts.
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { emailBlocked } from "./eraseCore";
 import { fail } from "./helpers";
 import { logAccess, type MemberContext } from "./houseAuth";
 import { INVITE_MS, canInviteRole, memberShapeProblem, belongsToInstitute, type Role } from "./houseCore";
@@ -22,6 +23,8 @@ export async function pendingInviteFor(ctx: Reader, email: string): Promise<Doc<
 export async function emailTaken(ctx: Reader, email: string): Promise<boolean> {
   const member = await ctx.db.query("members").withIndex("by_email", (q) => q.eq("email", email)).first();
   if (member) return true;
+  // An address inside the 30 day block after a student's own erase gets the same neutral refusal (spec house/0005, AC-13).
+  if (await emailBlocked(ctx, email)) return true;
   return (await pendingInviteFor(ctx, email)) !== null;
 }
 

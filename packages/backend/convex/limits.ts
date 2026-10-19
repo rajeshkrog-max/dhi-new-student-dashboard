@@ -51,6 +51,17 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   inviteClaim: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
   inviteBatch: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
   emailInUse: { kind: "fixed window", rate: 50, period: DAY },
+  // Consent and data rights (spec house/0005, AC-17). Each is keyed by a member id found from the session. Agreeing: 10 an hour. Withdrawing and
+  // restoring together: 10 an hour. Starting an export: 5 an hour. Recording parent consent: 20 calls an hour for each institute admin (a call is up
+  // to 50 students). Each is taken in a function that returns its refusals instead of throwing, so a refused try still counts.
+  consentAgree: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  consentWithdraw: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  dataExport: { kind: "token bucket", rate: 5, period: HOUR, capacity: 5 },
+  parentRecord: { kind: "token bucket", rate: 20, period: HOUR, capacity: 20 },
+  // Every page of an export after the start, 300 an hour for each person, so starting a download at a later page (a made up cursor) cannot get
+  // round the 5 an hour. A whole export of 100 row pages fits many times over. The sharing switch: 30 changes an hour for each student.
+  dataExportPage: { kind: "token bucket", rate: 300, period: HOUR, capacity: 300 },
+  sharingChange: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },
   shareBad: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_BAD_SHARDS, start: 0 },

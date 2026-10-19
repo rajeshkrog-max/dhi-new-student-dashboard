@@ -22,6 +22,7 @@ export const ROOMS = [
   "hour",
   "counsel",
   "progress",
+  "data",
 ];
 
 /** The house side menu shows from 1024 pixels; below that the drawer and touch rules apply. */

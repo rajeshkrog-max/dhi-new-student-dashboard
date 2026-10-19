@@ -19,8 +19,8 @@ export function DashboardSkeleton() {
           <>
             <BrandMark size="menu" className="mb-6 px-2" />
             <div className="flex min-h-0 flex-1 flex-col gap-0.5">
-              {/* The house has 11 rooms; their names are not drawn because the exam lock is not known yet. */}
-              {Array.from({ length: 11 }, (_, i) => (
+              {/* The house has 12 menu items; their names are not drawn because the exam lock is not known yet. */}
+              {Array.from({ length: 12 }, (_, i) => (
                 <Skeleton key={i} className="h-10 rounded-control" />
               ))}
             </div>

@@ -2,6 +2,7 @@
 // claim, then invites by staff and a claim by each person). Not application code.
 import { api, internal } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
+import { CONSENT_TEXTS, HOUSE_NOTICE_VERSION, consentHash } from "../convex/consentText";
 import { signInAs, type Backend } from "./convexTestUtils";
 
 export type Person = Awaited<ReturnType<typeof signInAs>> & { memberId: Id<"members"> };
@@ -43,9 +44,27 @@ export async function makeTeacher(t: Backend, admin: Person, email = "teacher@gr
   return teacher;
 }
 
-export async function makeStudent(t: Backend, inviter: Person, classId: Id<"classes">, email = "asha@greenfield.test", under18 = false) {
+// A student agrees to the house notice, and for an under 18 the institute admin records the parent's consent on file (spec house/0005).
+export async function giveConsent(student: Person, admin: Person | null) {
+  must(await student.as.mutation(api.consent.agree, { version: HOUSE_NOTICE_VERSION, hash: await consentHash(CONSENT_TEXTS[HOUSE_NOTICE_VERSION]) }));
+  if (admin) must(await admin.as.mutation(api.consent.recordParent, { memberIds: [student.memberId] }));
+}
+
+// A student who has joined and is through consent, so the house suites that are not about consent can use the rooms. `consent: false` leaves
+// them at the gate. The institute admin passed as `inviter` records the parent's consent for an under 18; a DHI admin inviter cannot, so those
+// callers pass `parentBy`.
+export async function makeStudent(
+  t: Backend,
+  inviter: Person,
+  classId: Id<"classes">,
+  email = "asha@greenfield.test",
+  under18 = false,
+  opts: { consent?: boolean; parentBy?: Person } = {},
+) {
   must(await inviter.as.mutation(api.invites.create, { role: "student", email, name: "Asha Rao", classId, under18 }));
-  return await joinAs(t, email, { name: "Asha Rao" });
+  const student = await joinAs(t, email, { name: "Asha Rao" });
+  if (opts.consent !== false) await giveConsent(student, under18 ? (opts.parentBy ?? inviter) : null);
+  return student;
 }
 
 export const refusal = async (p: Promise<unknown>): Promise<string> => {

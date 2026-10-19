@@ -1,6 +1,7 @@
 // The Join step and the entry states of the house (spec house/0002). Each test names the criterion it covers.
 import { afterEach, describe, expect, test } from "vitest";
 import { api, internal } from "./_generated/api";
+import { CONSENT_TEXTS, HOUSE_NOTICE_VERSION, consentHash } from "./consentText";
 import { finishedStudent, goodConsent, makeBackend, signInAs } from "../tests/convexTestUtils";
 import { joinAs, makeClass, makeDhiAdmin, makeInstitute, makeStudent, refusal } from "../tests/houseTestUtils";
 
@@ -88,8 +89,11 @@ describe("the entry states (AC-2, AC-3)", () => {
     expect(await s.as.query(api.members.me, {})).toEqual({ state: "invitePending", role: "student", instituteName: "Alpha School" });
     expect(await counts(t)).toEqual(before);
     await s.as.mutation(api.members.claimInvite, {});
-    expect(await s.as.query(api.members.me, {})).toMatchObject({ state: "active", role: "student", className: "Class 10 A" });
+    // A student who has joined is at the consent gate until they agree (spec house/0005, AC-1); the entry check passes after that.
+    expect(await s.as.query(api.members.me, {})).toEqual({ state: "consentNeeded", missing: ["self"] });
     expect(await counts(t)).toEqual({ ...before, members: before.members + 1 });
+    await s.as.mutation(api.consent.agree, { version: HOUSE_NOTICE_VERSION, hash: await consentHash(CONSENT_TEXTS[HOUSE_NOTICE_VERSION]) });
+    expect(await s.as.query(api.members.me, {})).toMatchObject({ state: "active", role: "student", className: "Class 10 A" });
   });
 
   test("covers AC-3: a signed out caller gets signedOut, never an error", async () => {
@@ -251,7 +255,7 @@ describe("the demo institute (AC-13)", () => {
     const t = makeBackend();
     process.env.TEST_SIGNIN_ENABLED = "true";
     const first = await t.mutation(internal.demo.seed, {});
-    expect(first.invitesMade).toBe(5);
+    expect(first.invitesMade).toBe(6); // admin, teacher, student, minor, newcomer and the consent gate person (house spec 0005)
     expect((await t.mutation(internal.demo.seed, {})).invitesMade).toBe(0);
     const student = await joinAs(t, "demo-student@example.test", { emailVerified: false });
     expect(await student.as.query(api.members.me, {})).toMatchObject({ state: "active", role: "student", instituteName: "Demo Institute", className: "Class 10 A" });

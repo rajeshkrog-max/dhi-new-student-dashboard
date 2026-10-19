@@ -14,6 +14,8 @@ The screens of the student house: one component per room, plus the shared frame 
 | `room-actions.tsx` | Slot for a room's header actions (`ROOM_ACTIONS_ID`) |
 | `enter-screen.tsx` | The Enter screen (Google, the dev only test form, the demo link), used by `/` and the front door `/enter` (spec 0008) |
 | `convex-session.tsx` | The one place the Convex client and the shared sign in provider are joined, plus the neutral waiting screen |
+| `house-screens.tsx`, `house-session.tsx`, `join-page.tsx`, `staff/` | The people screens (house spec 0002): not in a house, paused, the Join step, and the staff area with its sections (`parent-consent-section.tsx` is the school's parent consent screen, house spec 0005) |
+| `consent-screen.tsx`, `your-data.tsx` | What a student sees before they enter (the notice, I agree locked until the end is read, waiting for the school) and Your data (consent, parent sharing, who has looked, download, erase). `/dashboard` shows `LockedHouse` for `consentNeeded` and `withdrawn`; Your data is also a menu item (house spec 0005) |
 | one folder or file per room | `mood-tracker.tsx`, `meal-tracker.tsx`, `papers-desk.tsx`, `habits/`, `modules/`, `blog/`, `study/`, `desk/` |
 
 ## Conventions

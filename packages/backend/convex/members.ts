@@ -6,6 +6,8 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { env, mutation, query, type QueryCtx } from "./_generated/server";
 import { fail, getSignedInUser, requireSignedIn } from "./helpers";
+import { gateOf } from "./consentState";
+import { recordDemoConsent } from "./demo";
 import { logAccess, memberOfUser, requireMember } from "./houseAuth";
 import { isExpired, mayClaimUnverified, memberShapeProblem, PAGE_SIZE } from "./houseCore";
 import { pendingInviteFor } from "./inviteCore";
@@ -28,6 +30,9 @@ const meValidator = v.union(
   }),
   v.object({ state: v.literal("removed") }),
   v.object({ state: v.literal("suspended"), role: roleValidator, instituteName: v.string() }),
+  // A student who has not yet agreed, or whose school has not recorded a parent's consent (spec house/0005, AC-1), and one who withdrew.
+  v.object({ state: v.literal("consentNeeded"), missing: v.array(v.union(v.literal("self"), v.literal("parent"))) }),
+  v.object({ state: v.literal("withdrawn"), by: v.array(v.union(v.literal("self"), v.literal("school"))) }),
 );
 
 // Which entry state this person is in, so the page never has to guess. No email is returned, and nothing is created.
@@ -38,10 +43,14 @@ export const me = query({
     const user = await getSignedInUser(ctx);
     if (!user) return { state: "signedOut" as const };
     const member = await memberOfUser(ctx, user.authUserId);
-    if (member) {
+    // An erased person is a tombstone and has no entry any more (spec house/0005, AC-13); the sign in account may still be live for a moment.
+    if (member && member.erasedAt === undefined) {
       if (member.status !== "active") return { state: "removed" as const };
       const institute = member.instituteId ? await ctx.db.get(member.instituteId) : null;
       if (institute?.status === "suspended") return { state: "suspended" as const, role: member.role, instituteName: institute.name };
+      const gate = await gateOf(ctx, member);
+      if (gate.state === "withdrawn") return { state: "withdrawn" as const, by: gate.by };
+      if (gate.state === "consentNeeded") return { state: "consentNeeded" as const, missing: gate.missing };
       const cls = member.classId ? await ctx.db.get(member.classId) : null;
       return {
         state: "active" as const,
@@ -105,6 +114,9 @@ export const claimInvite = mutation({
       joinedAt: now,
     });
     await ctx.db.patch(invite._id, { claimedAt: now, claimedBy: memberId });
+    // Only on a test sign in deployment, and only for the fixed demo addresses (spec house/0005, AC-22).
+    const created = await ctx.db.get(memberId);
+    if (created) await recordDemoConsent(ctx, created);
     await logAccess(ctx, { actor: memberId, action: "invite.claim", instituteId: invite.instituteId, targetMemberId: memberId, inviteId: invite._id });
     return { ok: true as const, memberId };
   },
@@ -153,7 +165,7 @@ export const list = query({
       if (!args.classId) fail("class_not_in_scope");
       if (!mc.classIds.includes(args.classId)) fail("class_not_in_scope");
       const page = await ctx.db.query("members").withIndex("by_classId", (q) => q.eq("classId", args.classId)).paginate(opts);
-      return { ...page, page: await Promise.all(page.page.map((m) => toRow(ctx, m))) };
+      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
     }
     if (mc.role !== "institute_admin" && mc.role !== "dhi_admin") fail("forbidden");
 
@@ -169,7 +181,7 @@ export const list = query({
       const cls = await ctx.db.get(args.classId);
       if (!cls || (instituteId !== undefined && cls.instituteId !== instituteId)) fail("class_not_in_scope");
       const page = await ctx.db.query("members").withIndex("by_classId", (q) => q.eq("classId", args.classId)).paginate(opts);
-      return { ...page, page: await Promise.all(page.page.map((m) => toRow(ctx, m))) };
+      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
     }
     if (instituteId !== undefined) {
       const id = instituteId;
@@ -177,12 +189,12 @@ export const list = query({
       const page = role
         ? await ctx.db.query("members").withIndex("by_instituteId_and_role", (q) => q.eq("instituteId", id).eq("role", role)).paginate(opts)
         : await ctx.db.query("members").withIndex("by_instituteId_and_role", (q) => q.eq("instituteId", id)).paginate(opts);
-      return { ...page, page: await Promise.all(page.page.map((m) => toRow(ctx, m))) };
+      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
     }
     // A DHI admin looking at everyone.
     const all = ctx.db.query("members").order("desc");
     const page = await (args.role ? all.filter((q) => q.eq(q.field("role"), args.role)) : all).paginate(opts);
-    return { ...page, page: await Promise.all(page.page.map((m) => toRow(ctx, m))) };
+    return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
   },
 });
 
@@ -191,7 +203,8 @@ export const list = query({
 async function targetFor(ctx: QueryCtx, mc: Awaited<ReturnType<typeof requireMember>>, memberId: Id<"members">): Promise<Doc<"members">> {
   if (mc.role !== "dhi_admin" && mc.role !== "institute_admin") fail("forbidden");
   const target = await ctx.db.get(memberId);
-  if (!target) fail("not_found");
+  // An erased person is a tombstone and is final: nobody reinstates, moves or re flags one (house spec 0005, AC-13).
+  if (!target || target.erasedAt !== undefined) fail("not_found");
   if (mc.role === "dhi_admin") return target;
   if (target.role === "dhi_admin" || target.role === "counselor") fail("forbidden");
   if (target.instituteId !== mc.member.instituteId) fail("not_found");
@@ -269,7 +282,7 @@ export const setUnder18 = mutation({
     const mc = await requireMember(ctx);
     if (mc.role !== "dhi_admin") fail("forbidden");
     const target = await ctx.db.get(args.memberId);
-    if (!target) fail("not_found");
+    if (!target || target.erasedAt !== undefined) fail("not_found");
     if (target.role !== "student") fail("forbidden");
     await ctx.db.patch(target._id, { under18: args.under18 });
     await logAccess(ctx, { actor: mc.member._id, action: "member.under18", instituteId: target.instituteId, targetMemberId: target._id });

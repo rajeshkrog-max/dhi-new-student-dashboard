@@ -14,4 +14,6 @@ crons.interval("make due report copies", { minutes: 1 }, internal.reportMake.run
 crons.daily("delete unattached report files", { hourUTC: 21, minuteUTC: 30 }, internal.reportCopy.sweep, {});
 // The live challenge (spec 0015): every 5 minutes settle pending referrals and recount. Does nothing while CHALLENGE_LIVE is off.
 crons.interval("settle challenge referrals", { minutes: 5 }, internal.challengeBoard.run, {});
+// The house (spec house/0005, AC-15): old view records, long removed members and ended erase blocks.
+crons.daily("house retention sweep", { hourUTC: 22, minuteUTC: 0 }, internal.retention.sweep, {});
 export default crons;

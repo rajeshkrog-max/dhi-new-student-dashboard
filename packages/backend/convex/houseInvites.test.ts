@@ -2,7 +2,7 @@
 import { describe, expect, test } from "vitest";
 import { api } from "./_generated/api";
 import { makeBackend, signInAs } from "../tests/convexTestUtils";
-import { joinAs, makeClass, makeDhiAdmin, makeInstitute, makeStudent, makeTeacher, refusal } from "../tests/houseTestUtils";
+import { giveConsent, joinAs, makeClass, makeDhiAdmin, makeInstitute, makeStudent, makeTeacher, refusal } from "../tests/houseTestUtils";
 
 const page = { numItems: 25, cursor: null };
 
@@ -222,6 +222,7 @@ describe("a person joins and lands in their class", () => {
     const { t, admin } = await school();
     await admin.as.mutation(api.invites.createBatch, { rows: [row(1, { name: "Meera Iyer", email: "meera@alpha.test" })] });
     const meera = await joinAs(t, "meera@alpha.test", { name: "Meera Iyer" });
+    await giveConsent(meera, null);
     expect(await meera.as.query(api.members.me, {})).toMatchObject({ state: "active", role: "student", name: "Meera Iyer", className: "Class 10 A", instituteName: "Alpha School" });
   });
 });

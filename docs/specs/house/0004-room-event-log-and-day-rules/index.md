@@ -1,7 +1,7 @@
 # 0004. Room event log and day rules
 
 **Date**: 2026-10-19
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -145,13 +145,13 @@ Errors use the existing `fail(code)` helper. A refusal inside a room's mutation 
 
 Build approach: Tracer Bullet (from the house scope). The thin thread first: the pure day rule, then one table and the record and read helpers end to end with a test room, then thicken one rule at a time. Everything runs on the development deployment, and nothing real is stored before row 4.
 
-1. **The day rule.** `dayRules.ts` (pure) with its edge tests, and the named package export. Satisfies **AC-2**, **AC-3**, **AC-13**.
-2. **The thread.** The `events` table and indexes, the one static event registry with a test type, `recordEvent` for the happy path with the actor rules, `eventsForDay`, a test room that writes its own row and an event together, and the schema pushed to the development deployment and confirmed live. Satisfies **AC-1**, **AC-3**, **AC-9**, **AC-10**, **AC-16**.
-3. **Retries and the cap.** The key lookup, same content and different content, the 500 a day cap, and a live check on the development deployment that two calls at once store one. Satisfies **AC-4**, **AC-11**.
-4. **Time and not logged.** `late`, the future, 7 day and before joined limits, the removed and reinstated rule, and `dayStatus`. Satisfies **AC-5**, **AC-6**, **AC-9**.
-5. **Corrections.** `about`, `replaces`, `void`, `currentFor`, the inherited `late` and the current only reading. Satisfies **AC-7**, **AC-16**.
-6. **The payload and key rules.** The registry's refusal of free text, the size, shape and key pattern checks, and the source scans (table named writes, no public function, no public function returning an event, no personal data in log lines, an allowlist for the read helpers). Satisfies **AC-8**, **AC-10**, **AC-12**, **AC-14**.
-7. **Proof.** Fixture days for every edge, the access and tenancy cases, the funnel suite run unchanged, and a check that the table and indexes are live on the development deployment. Satisfies **AC-9**, **AC-15**.
+1. [x] **The day rule.** `dayRules.ts` (pure) with its edge tests, and the named package export. Satisfies **AC-2**, **AC-3**, **AC-13**.
+2. [x] **The thread.** The `events` table and indexes, the one static event registry with a test type, `recordEvent` for the happy path with the actor rules, `eventsForDay`, a test room that writes its own row and an event together, and the schema pushed to the development deployment and confirmed live. Satisfies **AC-1**, **AC-3**, **AC-9**, **AC-10**, **AC-16**.
+3. [x] **Retries and the cap.** The key lookup, same content and different content, the 500 a day cap, and a live check on the development deployment that two calls at once store one. Satisfies **AC-4**, **AC-11**.
+4. [x] **Time and not logged.** `late`, the future, 7 day and before joined limits, the removed and reinstated rule, and `dayStatus`. Satisfies **AC-5**, **AC-6**, **AC-9**.
+5. [x] **Corrections.** `about`, `replaces`, `void`, `currentFor`, the inherited `late` and the current only reading. Satisfies **AC-7**, **AC-16**.
+6. [x] **The payload and key rules.** The registry's refusal of free text, the size, shape and key pattern checks, and the source scans (table named writes, no public function, no public function returning an event, no personal data in log lines, an allowlist for the read helpers). Satisfies **AC-8**, **AC-10**, **AC-12**, **AC-14**.
+7. [x] **Proof.** Fixture days for every edge, the access and tenancy cases, the funnel suite run unchanged, and a check that the table and indexes are live on the development deployment. Satisfies **AC-9**, **AC-15**.
 
 ## Consequences
 

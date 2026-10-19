@@ -5,7 +5,7 @@ The Convex backend for the whole platform: the funnel today, the house later (sp
 ## Rules
 
 - Only this package runs the Convex CLI (`convex dev`, `convex deploy`, `convex run`). It reads `CONVEX_DEPLOYMENT` from `packages/backend/.env.local` (git ignored, format in `.env.example`). Apps read only `PUBLIC_CONVEX_URL` and `CONVEX_SITE_URL`.
-- Apps import only the named exports in `package.json`: `@dhi/backend/api` (the generated API), `consentText`, `feedbackRules`, `challengeRules`, `reportVersion`. Add an export when an app needs another file, never a deep import.
+- Apps import only the named exports in `package.json`: `@dhi/backend/api` (the generated API), `consentText`, `dayRules`, `feedbackRules`, `challengeRules`, `reportVersion`. Add an export when an app needs another file, never a deep import.
 - This package must not import or read an app. A check that needs an app file lives in that app's tests.
 - Development deployment only unless the owner says otherwise. A production deploy, `run --prod` or `env set` on production needs the owner's fresh yes in that session (see the `convex-deploy-guard` skill). The funnel's additive rule stays: a table or field is added in one release and removed in a later one.
 - `deploy` is a pnpm built in, so the deploy script is `deploy:convex`.

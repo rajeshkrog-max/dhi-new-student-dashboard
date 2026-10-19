@@ -110,6 +110,8 @@ describe("limits and codes", () => {
       [
         "invite.create", "invite.claim", "invite.revoke", "invite.extend", "invite.update", "member.remove", "member.reinstate", "member.class",
         "member.under18", "class.create", "class.archive", "class.assign", "class.unassign", "inst.create", "inst.suspend", "inst.reinstate",
+        // Added by house spec 0005.
+        "consent.parent", "consent.parentWithdrawn", "consent.parentRestored", "sharing.set", "data.erase", "totals.read",
       ].sort(),
     );
   });

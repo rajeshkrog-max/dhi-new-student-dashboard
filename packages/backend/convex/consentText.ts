@@ -5,7 +5,7 @@
 // Every version belongs to one kind (spec 0003, AC-14): the landing text works only for creating a profile,
 // and the phone text works only for a lead, so the two cannot be swapped.
 
-export type ConsentKind = "landing" | "lead" | "share" | "challenge";
+export type ConsentKind = "landing" | "lead" | "share" | "challenge" | "house" | "house_parent";
 
 // v1 is frozen: consent rows already saved point at its exact text. Never edit it.
 export const CONSENT_VERSION_V1 = "v1";
@@ -94,6 +94,39 @@ export const CHALLENGE_CONSENT_LINES: readonly string[] = [
 export const CHALLENGE_RULES_TICK = "I agree to the rules.";
 export const CHALLENGE_PARENT_TICK = "My parent or guardian agrees.";
 
+// The house notice (spec house/0005, AC-2 and AC-18). Every student, adult or under 18, presses "I agree" on this before any room opens. DRAFT WORDS:
+// the owner has not approved them, and the house stays on made up people until they do (spec house/0005, follow up). A change of wording after
+// the first use is a new version, because a consent record points at the exact text; a version dropped from HOUSE_ACCEPTED_VERSIONS needs a
+// fresh agreement. Versions are never compared by order. The kind `house` works only for the house gate: no funnel text can stand in for it.
+export const HOUSE_NOTICE_VERSION = "house-v1";
+// False until the owner approves the exact words (AC-18). The screen shows the lines as written, with a draft mark while this is false.
+export const HOUSE_WORDS_APPROVED = false;
+
+export const HOUSE_NOTICE_LINES: readonly string[] = [
+  "DHI is your study house. When you use its rooms, DHI saves what you do there, such as your moods, meals, habits, sleep, study hours, writing, exam answers and chats with the desk.",
+  "Only you can see your moods, meals, habits, sleep, study hours, writing and desk chats. Your teacher can see your exam results for your class. Your institute can see your exam results, and totals for a whole class (only when 10 or more students stand behind a total). The DHI team cannot read what you write in any room.",
+  "Each time a teacher or your institute looks at your named results, DHI records their role and the date. You can see this record in Your data. It never holds a name.",
+  "Your parent or guardian sees nothing about you unless you turn sharing on. It is off until you turn it on, and only you can change it.",
+  "If you are under 18, your school must hold your parent or guardian's written consent before you enter, and tells DHI that it does. DHI keeps only who recorded it, when, and which wording. It keeps nothing about your parent.",
+  "You can withdraw your consent, download your data, or erase it at any time in Your data. Withdrawing pauses the house and keeps your data until you erase it. Erasing removes your data for good. A short record that you agreed stays, so the school and DHI can show what was agreed.",
+  "Your data is kept until you erase it. If your institute removes you and does not bring you back within 12 months, DHI erases your data. Your data is stored with our database provider, Convex, on servers outside India. We will name the exact place here once it is confirmed.",
+  "Questions or complaints: privacy@dhirise.com. By tapping I agree, you confirm that you have read this notice.",
+];
+
+// The wording the school relies on when it records that a parent or guardian's consent is on file (spec house/0005, AC-2). The school records it
+// for a student under 18; the house stores who, when and which wording, and nothing about the parent. DRAFT WORDS, like the notice above.
+export const HOUSE_PARENT_VERSION = "house-parent-v1";
+
+export const HOUSE_PARENT_LINES: readonly string[] = [
+  "I am the parent or guardian of the student named by the school. I have read the DHI house notice.",
+  "I agree that my child uses the DHI house, and that DHI saves what they do in its rooms as the notice says.",
+  "I understand that I can ask the school to record that I withdraw this consent at any time, and that the school keeps my written consent.",
+];
+
+// The versions whose agreement still counts (spec house/0005, AC-2). Never compared by order: a version dropped from a set needs a fresh agreement.
+export const HOUSE_ACCEPTED_VERSIONS: readonly string[] = [HOUSE_NOTICE_VERSION];
+export const HOUSE_PARENT_ACCEPTED_VERSIONS: readonly string[] = [HOUSE_PARENT_VERSION];
+
 // Every known version, by version string. Add a new key for new wording; keep the old ones.
 export const CONSENT_TEXTS: Readonly<Record<string, string>> = {
   [CONSENT_VERSION_V1]: CONSENT_LINES_V1.join("\n\n"),
@@ -103,6 +136,8 @@ export const CONSENT_TEXTS: Readonly<Record<string, string>> = {
   [LEAD_CONSENT_VERSION]: LEAD_CONSENT_LINES.join("\n\n"),
   [SHARE_CONSENT_VERSION]: SHARE_CONSENT_LINES.join("\n\n"),
   [CHALLENGE_CONSENT_VERSION]: CHALLENGE_CONSENT_LINES.join("\n\n"),
+  [HOUSE_NOTICE_VERSION]: HOUSE_NOTICE_LINES.join("\n\n"),
+  [HOUSE_PARENT_VERSION]: HOUSE_PARENT_LINES.join("\n\n"),
 };
 
 // The kind each version belongs to.
@@ -114,6 +149,8 @@ export const CONSENT_KINDS: Readonly<Record<string, ConsentKind>> = {
   [LEAD_CONSENT_VERSION]: "lead",
   [SHARE_CONSENT_VERSION]: "share",
   [CHALLENGE_CONSENT_VERSION]: "challenge",
+  [HOUSE_NOTICE_VERSION]: "house",
+  [HOUSE_PARENT_VERSION]: "house_parent",
 };
 
 // SHA 256 of the text with line endings turned into \n, as lowercase hex. Same code in the page and on the server.

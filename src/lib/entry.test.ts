@@ -62,4 +62,7 @@ test("spec house/0002: a member goes to their own place, an invited person to Jo
   for (const role of ["teacher", "institute_admin", "dhi_admin", "counselor"] as const) assert.equal(houseTarget({ state: "active", role }), "staff");
   assert.equal(houseTarget({ state: "removed" }), "dashboard");
   assert.equal(houseTarget({ state: "suspended", role: "teacher" }), "dashboard");
+  // A student at the consent gate or who withdrew goes to the dashboard, which shows the consent screen (spec house/0005).
+  assert.equal(houseTarget({ state: "consentNeeded", missing: ["self", "parent"] }), "dashboard");
+  assert.equal(houseTarget({ state: "withdrawn", by: ["school"] }), "dashboard");
 });

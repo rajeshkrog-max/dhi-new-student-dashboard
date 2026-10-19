@@ -13,6 +13,7 @@
       "default": "./convex/_generated/api.js"
     },
     "./consentText": "./convex/consentText.ts",
+    "./dayRules": "./convex/dayRules.ts",
     "./feedbackRules": "./convex/feedbackRules.ts",
     "./challengeRules": "./convex/challengeRules.ts",
     "./reportVersion": "./convex/reportVersion.ts"

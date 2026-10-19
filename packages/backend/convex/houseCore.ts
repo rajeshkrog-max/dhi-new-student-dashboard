@@ -122,5 +122,11 @@ export const ACCESS_CODES = [
   "inst.create",
   "inst.suspend",
   "inst.reinstate",
+  "consent.parent",
+  "consent.parentWithdrawn",
+  "consent.parentRestored",
+  "sharing.set",
+  "data.erase",
+  "totals.read",
 ] as const;
 export type AccessCode = (typeof ACCESS_CODES)[number];

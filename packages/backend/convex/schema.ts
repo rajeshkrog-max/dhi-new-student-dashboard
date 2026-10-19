@@ -43,6 +43,13 @@ export const accessActionValidator = v.union(
   v.literal("inst.create"),
   v.literal("inst.suspend"),
   v.literal("inst.reinstate"),
+  // Consent, sharing, erase and class totals (spec house/0005).
+  v.literal("consent.parent"),
+  v.literal("consent.parentWithdrawn"),
+  v.literal("consent.parentRestored"),
+  v.literal("sharing.set"),
+  v.literal("data.erase"),
+  v.literal("totals.read"),
 );
 
 export const styleKeyValidator = v.union(v.literal("v"), v.literal("p"), v.literal("k"));
@@ -340,11 +347,15 @@ export default defineSchema({
     status: v.union(v.literal("active"), v.literal("removed")),
     joinedAt: v.number(),
     removedAt: v.optional(v.number()),
+    // Set when the person is erased (spec house/0005, AC-13). The row stays as a tombstone: name and email empty, `authUserId` replaced by
+    // `erased:<id>`, and the role, institute, class and under18 flag kept as the proof of what consent applied. It is locked and invisible at once.
+    erasedAt: v.optional(v.number()),
   })
     .index("by_authUserId", ["authUserId"])
     .index("by_email", ["email"])
     .index("by_instituteId_and_role", ["instituteId", "role"])
-    .index("by_classId", ["classId"]),
+    .index("by_classId", ["classId"])
+    .index("by_status_and_removedAt", ["status", "removedAt"]), // the daily sweep of members removed for 12 months (spec house/0005, AC-15)
 
   // Which classes a teacher is assigned to.
   teacherClasses: defineTable({
@@ -383,6 +394,95 @@ export default defineSchema({
     targetMemberId: v.optional(v.id("members")),
     inviteId: v.optional(v.id("invites")),
   }).index("by_instituteId_and_at", ["instituteId", "at"]),
+
+  // What a student and their school agreed to, and every withdrawal (spec house/0005). Append only: no app code changes a row, and none deletes one
+  // (the erase of a student keeps them as the proof of what consent applied). Erase class `kept`. Holds ids, codes and a wording version only:
+  // never a parent's name, phone or form. `kind`: `self` is the student pressing I agree; `parent` is the school recording that a parent's consent
+  // is on file; `withdrawn` and `restored` move one side (`by`) off and on. The order of rows is their creation order.
+  consentRecords: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.optional(v.id("institutes")),
+    kind: v.union(v.literal("self"), v.literal("parent"), v.literal("withdrawn"), v.literal("restored")),
+    by: v.union(v.literal("self"), v.literal("school")),
+    byMemberId: v.id("members"), // the student for `self`, the institute admin for `school`
+    textVersion: v.string(), // the wording version for `self` and `parent`; the version in force for a withdrawal or a restore
+    under18AtTime: v.boolean(), // the flag when the row was made; a missing flag counts as under 18
+  })
+    .index("by_memberId_and_kind", ["memberId", "kind"])
+    .index("by_memberId_and_by", ["memberId", "by"]),
+
+  // The student's own choice of what a parent may see (spec house/0005, AC-9). Erase class `erased`. No row means `none`. No parent account exists yet.
+  sharingSettings: defineTable({
+    memberId: v.id("members"),
+    parentLevel: v.union(v.literal("none"), v.literal("summary")),
+    at: v.number(),
+  }).index("by_memberId", ["memberId"]),
+
+  // One row each time staff looked at a student's named personal data (spec house/0005, AC-10). Ids and codes only, never a name. Erase class
+  // `kept` for 3 years, then deleted by the daily sweep. `viewerId` is absent for the DHI team. Never changed.
+  viewLog: defineTable({
+    viewerId: v.optional(v.id("members")),
+    viewerRole: v.union(roleValidator, v.literal("team")),
+    targetMemberId: v.id("members"),
+    instituteId: v.optional(v.id("institutes")),
+    kind: v.string(), // a data kind code (accessRules.ts)
+    at: v.number(),
+  })
+    .index("by_targetMemberId_and_at", ["targetMemberId", "at"])
+    .index("by_at", ["at"]),
+
+  // The receipt of an erase (spec house/0005, AC-13, AC-19): counts of rows deleted, never a student id, name or email. Erase class `kept`. Readable
+  // by internal code only.
+  houseErasures: defineTable({
+    at: v.number(),
+    by: v.union(v.literal("self"), v.literal("team"), v.literal("retention")),
+    counts: v.record(v.string(), v.number()),
+  }),
+
+  // The 30 day block on a student's own erase (spec house/0005, AC-13): a keyed hash of the lowercase email, never the email. Class `system`.
+  houseErasedEmails: defineTable({
+    hash: v.string(),
+    until: v.number(),
+  })
+    .index("by_hash", ["hash"])
+    .index("by_until", ["until"]),
+
+  // The room event log (spec house/0004). Append only: no app code updates or deletes a row (the only removal is the erase of spec house/0005).
+  // Written only by `recordEvent` in eventLog.ts, inside a room's own mutation; no public function reads or writes it. Erase class `erased`:
+  // an event is personal data, and a student's export and erase (house/0005) are the only ways one leaves. `payload` holds ids, numbers,
+  // booleans and fixed codes only (eventShapes.ts), at most 2 KB, never a student's own words. `loggedFor` is a `YYYY-MM-DD` India day (dayRules.ts)
+  // worked out by the server. Uniqueness of (memberId, eventKey) holds only because `recordEvent` looks it up first.
+  events: defineTable({
+    memberId: v.id("members"), // the student it is about
+    actorId: v.union(v.id("members"), v.literal("system")), // who caused it
+    instituteId: v.id("institutes"), // at the moment of writing
+    classId: v.optional(v.id("classes")), // at the moment of writing; a later class change never rewrites it
+    room: v.string(), // a code from ROOMS
+    type: v.string(), // a code from the registry
+    schemaVer: v.number(), // the registry version the payload was checked against
+    payload: v.any(),
+    occurredAt: v.number(),
+    loggedFor: v.string(),
+    late: v.boolean(),
+    voided: v.optional(v.boolean()), // true when this event undoes the thing it is about
+    eventKey: v.string(), // `table:id`, at most 100; one stored event for each (memberId, eventKey)
+    about: v.optional(v.string()), // `table:id`: the thing, so the latest event for a thing and day is the current one
+    replaces: v.optional(v.id("events")), // an audit link to the earlier event this one corrects
+  })
+    .index("by_memberId_and_loggedFor", ["memberId", "loggedFor"])
+    .index("by_memberId_and_eventKey", ["memberId", "eventKey"])
+    .index("by_memberId_and_about_and_loggedFor", ["memberId", "about", "loggedFor"])
+    .index("by_memberId_and_room_and_loggedFor", ["memberId", "room", "loggedFor"]), // class totals probe one room at a time (house spec 0005, AC-23)
+
+  // The first answer of a class total (spec house/0005, AC-23). A total for one class, one kind and one complete month is worked out once and
+  // then served as it was, so an institute admin cannot take two answers, pause or move one student between them, and subtract. Counts only, no
+  // person in it. Erase class `kept`. `count` is absent when fewer than 10 students stood behind it.
+  classTotals: defineTable({
+    classId: v.id("classes"),
+    kind: v.string(),
+    month: v.string(), // YYYY-MM
+    count: v.optional(v.number()),
+  }).index("by_classId_and_kind_and_month", ["classId", "kind", "month"]),
 
   // One row: the one at a time lease of the copy job, and the numbers the Sync status tab shows.
   sheetStatus: defineTable({

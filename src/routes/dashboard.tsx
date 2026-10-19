@@ -3,7 +3,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
 import { ConvexSession } from "@/components/dhi/convex-session";
-import { AccessPaused, NotInHouse } from "@/components/dhi/house-screens";
+import { LockedHouse, PausedHouse } from "@/components/dhi/consent-screen";
+import { NotInHouse } from "@/components/dhi/house-screens";
 import { LeaveFailedNotice, useLeave } from "@/components/dhi/house-session";
 import { DashboardSkeleton } from "@/components/dhi/ui/loading-screens";
 import { devThrow } from "@/lib/dev-throw";
@@ -44,8 +45,10 @@ function Dashboard() {
 
   if (!auth.isAuthenticated || me === undefined) return <DashboardSkeleton />;
   if (me.state === "noHouse") return <NotInHouse />;
-  if (me.state === "removed") return <AccessPaused kind="removed" />;
-  if (me.state === "suspended") return <AccessPaused kind="suspended" />;
+  if (me.state === "removed") return <PausedHouse kind="removed" />;
+  if (me.state === "suspended") return <PausedHouse kind="suspended" />;
+  // A student who has not agreed, whose school has not recorded a parent's consent, or who withdrew sees only the consent steps (spec house/0005).
+  if (me.state === "consentNeeded" || me.state === "withdrawn") return <LockedHouse me={me} />;
   if (me.state !== "active" || me.role !== "student") return <DashboardSkeleton />;
 
   return (

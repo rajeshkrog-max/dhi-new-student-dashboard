@@ -351,6 +351,30 @@ const SCREENS = {
   "staff-people": staffScreen("people", "People"),
   "staff-invites": staffScreen("invites", "Invites"),
   "staff-list": staffScreen("list", "Class list"),
+  "staff-parent": staffScreen("parent", "Parent consent"),
+  // The consent screen (spec house/0005, AC-20): the notice, the locked I agree, and Your data for a student who is not through consent.
+  consent: {
+    auth: "gate",
+    path: "/dashboard",
+    ready: (p) => p.getByRole("heading", { name: "Before you enter" }),
+    run: async (p) => {
+      await p.waitForFunction(() => (document.querySelector('[data-testid="notice-box"]')?.textContent ?? "").includes("privacy@"), null, { timeout: 20_000 });
+    },
+    expect: { h1: "Before you enter", brandBar: true },
+    leakNames: [PEOPLE.gate.name],
+  },
+  "consent-data": {
+    auth: "gate",
+    path: "/dashboard",
+    ready: (p) => p.getByRole("heading", { name: "Before you enter" }),
+    run: async (p) => {
+      await p.getByTestId("toggle-data").click();
+      await p.getByTestId("your-data").waitFor({ timeout: 20_000 });
+      await p.waitForTimeout(800);
+    },
+    expect: { h1: "Your data", brandBar: true },
+    leakNames: [PEOPLE.gate.name],
+  },
   door: { auth: "anon", path: "/enter", ready: (p) => p.getByTestId("landing-signin") },
   "door-day": {
     auth: "anon",
@@ -453,6 +477,7 @@ async function main() {
       staff: await signInMember(browser, new URL(base), PEOPLE.admin),
       newcomer: await signInMember(browser, new URL(base), PEOPLE.newcomer, { join: false }),
       stranger: await signInMember(browser, new URL(base), PEOPLE.stranger, { join: false }),
+      gate: await signInMember(browser, new URL(base), PEOPLE.gate),
     };
     for (const width of widths) {
       const touch = isTouchWidth(width);

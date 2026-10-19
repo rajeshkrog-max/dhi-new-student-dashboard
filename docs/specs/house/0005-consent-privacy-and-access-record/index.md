@@ -1,7 +1,7 @@
 # 0005. Consent, privacy and access record for minors' house data
 
 **Date**: 2026-10-19
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -174,13 +174,13 @@ Data kinds (codes): `profile`, `academic`, `mood`, `meals`, `habits`, `sleep`, `
 
 Build approach: Tracer Bullet (from the house scope). The thin thread first: the gate with the student's own agreement end to end (table, notice, agree, the refusal in `requireMember`, the consent screen), then the school's parent record, then the rest one strand at a time. Everything runs on the development deployment with synthetic people only until the legal check and the owner's words are done.
 
-1. **The thread.** The `consentRecords` table, the draft house notice version with `HOUSE_NOTICE_VERSION` and the accepted sets, the new consent kinds, `consent.notice`, `consent.state` and `consent.agree`, the consent check inside `requireMember` with the new `members.me` states, and the consent screen on `/dashboard`. Satisfies **AC-1**, **AC-2**, **AC-18**, **AC-20**.
-2. **The school's record.** `consent.parentList`, `consent.recordParent`, the under 18 requirement in the gate, the age correction rules, the new access log codes, and the institute admin's parent consent screen. Satisfies **AC-3**, **AC-4**, **AC-17**, **AC-20**.
-3. **Withdrawal and Your data.** `consent.withdraw`, `consent.restore`, the school's withdrawal and restore, `requireMemberAllowLocked` and its scan, and the Your data page shell. Satisfies **AC-5**, **AC-6**, **AC-20**.
-4. **Who sees what.** The pure `canView` and its table, the code to room kind table, the `sharingSettings` table with `sharing.get` and `sharing.set`, the `viewLog` table, the `staffRead` wrapper, `classTotal`, `access.mine` and its screen. Satisfies **AC-7**, **AC-8**, **AC-9**, **AC-10**, **AC-11**, **AC-16**, **AC-23**, **AC-24**.
-5. **Export, erase and the data map.** `dataRights.exportMine` in pages, `eraseMine` with the atomic tombstone and the paged erasers, the team's `adminExport` and `adminErase`, the receipts, the invite clearing and the 30 day block with its neutral refusal in invites and claim, the data map with its guard test, and the room registry. Satisfies **AC-12**, **AC-13**, **AC-14**, **AC-19**.
-6. **Retention and seeds.** `retention.sweep` in pages and its schedule, the demo seed's consent, and the rate limit buckets. Satisfies **AC-15**, **AC-17**, **AC-22**.
-7. **Proof.** The access matrix tests, the multi page erase test, the source scans (staff reads use the wrapper, the lock tolerant check, no personal data in logs, no event returned), a browser run of the whole flow, and the funnel suite unchanged. Satisfies **AC-6**, **AC-8**, **AC-16**, **AC-19**, **AC-21**.
+1. [x] **The thread.** The `consentRecords` table, the draft house notice version with `HOUSE_NOTICE_VERSION` and the accepted sets, the new consent kinds, `consent.notice`, `consent.state` and `consent.agree`, the consent check inside `requireMember` with the new `members.me` states, and the consent screen on `/dashboard`. Satisfies **AC-1**, **AC-2**, **AC-18**, **AC-20**.
+2. [x] **The school's record.** `consent.parentList`, `consent.recordParent`, the under 18 requirement in the gate, the age correction rules, the new access log codes, and the institute admin's parent consent screen. Satisfies **AC-3**, **AC-4**, **AC-17**, **AC-20**.
+3. [x] **Withdrawal and Your data.** `consent.withdraw`, `consent.restore`, the school's withdrawal and restore, `requireMemberAllowLocked` and its scan, and the Your data page shell. Satisfies **AC-5**, **AC-6**, **AC-20**.
+4. [x] **Who sees what.** The pure `canView` and its table, the code to room kind table, the `sharingSettings` table with `sharing.get` and `sharing.set`, the `viewLog` table, the `staffRead` wrapper, `classTotal`, `access.mine` and its screen. Satisfies **AC-7**, **AC-8**, **AC-9**, **AC-10**, **AC-11**, **AC-16**, **AC-23**, **AC-24**.
+5. [x] **Export, erase and the data map.** `dataRights.exportMine` in pages, `eraseMine` with the atomic tombstone and the paged erasers, the team's `adminExport` and `adminErase`, the receipts, the invite clearing and the 30 day block with its neutral refusal in invites and claim, the data map with its guard test, and the room registry. Satisfies **AC-12**, **AC-13**, **AC-14**, **AC-19**.
+6. [x] **Retention and seeds.** `retention.sweep` in pages and its schedule, the demo seed's consent, and the rate limit buckets. Satisfies **AC-15**, **AC-17**, **AC-22**.
+7. [x] **Proof.** The access matrix tests, the multi page erase test, the source scans (staff reads use the wrapper, the lock tolerant check, no personal data in logs, no event returned), a browser run of the whole flow, and the funnel suite unchanged. Satisfies **AC-6**, **AC-8**, **AC-16**, **AC-19**, **AC-21**.
 
 ## Consequences
 

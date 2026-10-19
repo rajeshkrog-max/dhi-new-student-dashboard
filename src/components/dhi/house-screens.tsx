@@ -37,7 +37,8 @@ export function NotInHouse() {
 }
 
 // A removed member, or a member of a paused institute. Nothing about them is shown, and nothing they own is touched.
-export function AccessPaused({ kind }: { kind: "removed" | "suspended" }) {
+// `onData` opens Your data (consent state, download and erase): a paused student keeps these rights (spec house/0005, AC-6).
+export function AccessPaused({ kind, onData }: { kind: "removed" | "suspended"; onData?: () => void }) {
   const { leave, failed } = useLeave();
   return (
     <StatusPage
@@ -49,6 +50,11 @@ export function AccessPaused({ kind }: { kind: "removed" | "suspended" }) {
           : "Your institute's house is paused for now. Please ask your institute. Everything you wrote and saved is still here."
       }
     >
+      {onData && (
+        <Button variant="quiet" data-testid="paused-data" onClick={onData}>
+          Your data
+        </Button>
+      )}
       <WithLeave leave={leave} failed={failed} />
     </StatusPage>
   );

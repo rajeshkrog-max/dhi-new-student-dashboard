@@ -24,30 +24,30 @@ Spec [0002](../../specs/house/0002-people-roles-invites-institutes/index.md) · 
 The one contract every room writes through: each finished action becomes an event with who did it, when it happened, which day it counts for and what it says. It fixes the day boundary (04:00 to 04:00 India time), how a day with no log is kept (not logged, never zero), how late entries are marked, and that a rerun never counts twice. Every number the Brain shows is rebuilt from these events. (basis: the Master Spec storage rules; an event log means a changed formula never loses data)
 **Done when:** a room can add an event and read it back by student and day, a meal at 01:00 counts for the day before, an unlogged day reads as not logged, and the same event sent twice is stored once.
 - [x] Design it (spec): `/architect room event log and day rules`
-- [ ] Build it: `/develop room event log and day rules`
-   - [ ] The day rule as one pure shared file (AC-2, AC-3, AC-13)
-   - [ ] The events table, the static registry, record and read helpers, and the test room (AC-1, AC-3, AC-9, AC-10, AC-16)
-   - [ ] Retries, the 500 a day cap and the live concurrency check (AC-4, AC-11)
-   - [ ] Time limits, not logged, corrections and undo (AC-5, AC-6, AC-7)
-   - [ ] The payload and key rules, the source scans and the proof (AC-8, AC-12, AC-14, AC-15)
-- [ ] Verify it: `/check verify room event log and day rules`
-- [ ] Test it: `/test room event log and day rules`
-- [ ] Review it (fresh model): `/check review room event log and day rules`
-- [ ] Document it: `/document room event log and day rules`
-Spec [0004](../../specs/house/0004-room-event-log-and-day-rules/index.md) · code (filled by /develop). Builds on row 2 (members and `joinedAt`). Runs on the development deployment with synthetic people only until row 4. Every room row after this one calls it.
+- [x] Build it: `/develop room event log and day rules`
+   - [x] The day rule as one pure shared file (AC-2, AC-3, AC-13)
+   - [x] The events table, the static registry, record and read helpers, and the test room (AC-1, AC-3, AC-9, AC-10, AC-16)
+   - [x] Retries, the 500 a day cap and the live concurrency check (AC-4, AC-11)
+   - [x] Time limits, not logged, corrections and undo (AC-5, AC-6, AC-7)
+   - [x] The payload and key rules, the source scans and the proof (AC-8, AC-12, AC-14, AC-15)
+- [x] Verify it: `/check verify room event log and day rules`
+- [x] Test it: `/test room event log and day rules`
+- [x] Review it (fresh model): `/check review room event log and day rules`
+- [x] Document it: `/document room event log and day rules`
+Spec [0004](../../specs/house/0004-room-event-log-and-day-rules/index.md) · code in `packages/backend/convex/{dayRules,eventShapes,eventRegistry,eventLog,eventProof}.ts`, `packages/backend/convex/eventTypes/test.ts`, tests `dayRules.test.ts` and `eventLog.test.ts`, `src/lib/dhi/day-rules.test.ts`. Built 2026-10-19; the table and its three indexes are live on the development deployment, and the live race check passed there with `eventProof:race` (one stored event for one key at 2 to 14 callers at once; 20 different keys for one student and day at once ran out of Convex retries, as the spec's tradeoff expects). Builds on row 2 (members and `joinedAt`). Runs on the development deployment with synthetic people only until row 4. Every room row after this one calls it.
 
 ### 4. Consent, privacy and access record for minors' house data · in-progress
 Before any real student logs a mood or a meal: recorded parent consent for students under 18, what each person may see (student, parent, teacher, institute), the parent sharing switch (the Master Spec recommends off until the student turns it on), a record of who looked at a student's personal data, export and erasure of house data, and the privacy notice saying where the data is stored. It reuses the funnel's consent rules rather than inventing new ones.
 **Done when:** a student under 18 cannot enter without recorded parent consent, mood notes and meal logs are never shown to staff or parents beyond what the student shares, every staff read of personal data leaves a record with no personal data inside the record itself, and export and erasure work for house data.
 - [x] Design it (spec): `/architect consent, privacy and access record for minors' house data`
-- [ ] Build it: `/develop consent, privacy and access record for minors' house data`
-   - [ ] The consent gate: notice, the student agrees, the check in the entry function, the consent screen (AC-1, AC-2, AC-18, AC-20)
-   - [ ] The school records a parent's consent, age rules, withdrawal and the Your data shell (AC-3, AC-4, AC-5, AC-6, AC-17)
-   - [ ] Who sees what: the access rule, the logged staff read, class totals and the access record (AC-7 to AC-11, AC-16, AC-23, AC-24)
-   - [ ] Export, erase in pages, the data map and the 30 day block (AC-12, AC-13, AC-14, AC-19)
-   - [ ] Retention, demo consent, limits and the proof (AC-15, AC-21, AC-22)
+- [x] Build it: `/develop consent, privacy and access record for minors' house data`
+   - [x] The consent gate: notice, the student agrees, the check in the entry function, the consent screen (AC-1, AC-2, AC-18, AC-20)
+   - [x] The school records a parent's consent, age rules, withdrawal and the Your data shell (AC-3, AC-4, AC-5, AC-6, AC-17)
+   - [x] Who sees what: the access rule, the logged staff read, class totals and the access record (AC-7 to AC-11, AC-16, AC-23, AC-24)
+   - [x] Export, erase in pages, the data map and the 30 day block (AC-12, AC-13, AC-14, AC-19)
+   - [x] Retention, demo consent, limits and the proof (AC-15, AC-21, AC-22)
 - [ ] Verify it: `/check verify consent, privacy and access record for minors' house data`
-- [ ] Test it: `/test consent, privacy and access record for minors' house data`
-- [ ] Review it (fresh model): `/check review consent, privacy and access record for minors' house data`
-- [ ] Document it: `/document consent, privacy and access record for minors' house data`
-Spec [0005](../../specs/house/0005-consent-privacy-and-access-record/index.md) · code (filled by /develop). Builds on rows 2 and 3. Two things must happen before any real student enters: the owner approves the exact words, and a legal check on the school recording a parent's consent. Until then only made up people are loaded.
+- [x] Test it: `/test consent, privacy and access record for minors' house data`
+- [x] Review it (fresh model): `/check review consent, privacy and access record for minors' house data`
+- [x] Document it: `/document consent, privacy and access record for minors' house data`
+Spec [0005](../../specs/house/0005-consent-privacy-and-access-record/index.md) · code in `packages/backend/convex/{consent,consentState,consentRules,accessRules,access,sharing,staffRead,dataRights,eraseCore,eventData,roomRegistry,dataMap,retention}.ts` (plus the gate in `houseAuth.ts`, the states in `members.ts`, the notice words in `consentText.ts`), `src/components/dhi/{consent-screen,your-data}.tsx`, `src/components/dhi/staff/parent-consent-section.tsx`, `src/lib/dhi/your-data.ts`, `scripts/consent-check.mjs`. Built 2026-10-19 on the development deployment (tables live, `ERASURE_HASH_SECRET` set there). The notice and the parent wording are drafts (`HOUSE_WORDS_APPROVED` is false). Builds on rows 2 and 3. Two things must happen before any real student enters: the owner approves the exact words, and a legal check on the school recording a parent's consent. Until then only made up people are loaded.

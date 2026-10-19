@@ -12,6 +12,8 @@ export const PEOPLE = {
   // The invite stays pending: the browser scripts look at the Join page and never press Join for this person.
   newcomer: { email: "demo-newcomer@example.test", name: "Demo Newcomer", place: "/join" },
   // Signed in, but no invite and no membership. The front door sends such a person to the funnel's interview, as it does any new account.
+  // Joined, and left at the consent gate: the consent screen is always there to look at (spec house/0005).
+  gate: { email: "demo-gate@example.test", name: "Demo Gate", place: "/dashboard" },
   stranger: { email: "demo-stranger@example.test", name: "Demo Stranger", place: "/dhiinterviews" },
 };
 // What the sweep's student checks look for (the demo student's name is on the dashboard, and must be on no status page).

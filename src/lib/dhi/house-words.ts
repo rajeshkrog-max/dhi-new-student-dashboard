@@ -39,6 +39,17 @@ const WORDS: Record<string, string> = {
   removed: "Your access is paused. Please ask your institute.",
   not_a_member: "You are not in a house yet.",
   not_signed_in: "Please sign in again.",
+  // Consent and your data (spec house/0005)
+  consent_required: "Please agree to the house notice first.",
+  consent_withdrawn: "Consent is withdrawn, so the house is paused for you.",
+  consent_text_changed: "The notice changed. Please read it again and then agree.",
+  not_withdrawn_by_you: "Your school withdrew this, so only your school can bring it back.",
+  not_under18: "Only a student marked under 18 needs a parent record.",
+  too_many: "Please send up to 50 students at a time.",
+  bad_request: "Please choose students or a class.",
+  bad_cursor: "That download could not continue. Please start again.",
+  erase_not_configured: "Erasing is not switched on yet. Please write to privacy@dhirise.com.",
+  erase_failed: "We could not erase your data just now. Please try again.",
 };
 
 export function refusalWords(code: string | undefined): string {

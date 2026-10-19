@@ -19,6 +19,7 @@ Each student room has a store or catalog here, plus a header comment that names 
 | `modules/catalog.ts` | House films and watch progress (key `dhi-modules-v1`) |
 | `blog/posts.ts` | Student posts (key `dhi-blog-v1`) |
 | `study/` | `schema.ts` and `hours.ts`; study hours are generated, not stored |
+| `your-data.ts` | The pure pieces of Your data: the India date label and the join of the download's pages into one file (house spec 0005) |
 | `id.ts` | `uid()`, a safe id helper (`crypto.randomUUID` is missing in some preview iframes) |
 
 ## Conventions

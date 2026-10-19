@@ -2,9 +2,11 @@
 // fixed `@example.test` addresses, which a test sign in can claim, so the house can be shown and tested with no real person. Production has
 // no demo seat, and the seed refuses to run there. Run: `npx convex run demo:seed` on the development deployment.
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { env, internalMutation, type MutationCtx } from "./_generated/server";
 import { fail } from "./helpers";
+import { ensureConsentText } from "./consentState";
+import { HOUSE_NOTICE_VERSION, HOUSE_PARENT_VERSION } from "./consentText";
 import { emailTaken, insertInvite } from "./inviteCore";
 
 export const DEMO_INSTITUTE = "Demo Institute";
@@ -15,7 +17,31 @@ export const DEMO_PEOPLE = {
   minor: { email: "demo-minor@example.test", name: "Demo Minor" },
   // Its invite is never claimed by the browser scripts, so the Join page can be looked at again and again.
   newcomer: { email: "demo-newcomer@example.test", name: "Demo Newcomer" },
+  // Joins and is left at the consent gate on purpose (spec house/0005), so the consent screen can be looked at again and again.
+  gate: { email: "demo-gate@example.test", name: "Demo Gate" },
 } as const;
+
+const DEMO_EMAILS: readonly string[] = Object.values(DEMO_PEOPLE)
+  .map((p) => p.email)
+  .filter((email) => email !== DEMO_PEOPLE.gate.email);
+
+// The demo students arrive with their consent recorded (spec house/0005, AC-22), so the browser scripts that sign in as them keep working. This
+// runs only where the test sign in is on and only for the fixed demo addresses, and only a student gets records: the demo minor also gets the
+// school's parent record, made in the name of the demo institute admin if that person has joined, else in their own name. It is idempotent.
+export async function recordDemoConsent(ctx: MutationCtx, member: Doc<"members">): Promise<void> {
+  if (env.TEST_SIGNIN_ENABLED !== "true" || member.role !== "student" || !DEMO_EMAILS.includes(member.email)) return;
+  await ensureConsentText(ctx, HOUSE_NOTICE_VERSION, "house");
+  const has = async (kind: "self" | "parent") =>
+    (await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", member._id).eq("kind", kind)).first()) !== null;
+  if (!(await has("self"))) {
+    await ctx.db.insert("consentRecords", { memberId: member._id, instituteId: member.instituteId, kind: "self", by: "self", byMemberId: member._id, textVersion: HOUSE_NOTICE_VERSION, under18AtTime: member.under18 !== false });
+  }
+  if (member.under18 !== false && !(await has("parent"))) {
+    await ensureConsentText(ctx, HOUSE_PARENT_VERSION, "house_parent");
+    const admin = await ctx.db.query("members").withIndex("by_email", (q) => q.eq("email", DEMO_PEOPLE.institute_admin.email)).first();
+    await ctx.db.insert("consentRecords", { memberId: member._id, instituteId: member.instituteId, kind: "parent", by: "school", byMemberId: admin?._id ?? member._id, textVersion: HOUSE_PARENT_VERSION, under18AtTime: true });
+  }
+}
 
 async function inviteOnce(
   ctx: MutationCtx,
@@ -48,6 +74,12 @@ export const seed = internalMutation({
     if (await inviteOnce(ctx, DEMO_PEOPLE.student, { role: "student", instituteId, classId, under18: false })) made += 1;
     if (await inviteOnce(ctx, DEMO_PEOPLE.minor, { role: "student", instituteId, classId, under18: true })) made += 1;
     if (await inviteOnce(ctx, DEMO_PEOPLE.newcomer, { role: "student", instituteId, classId, under18: false })) made += 1;
+    if (await inviteOnce(ctx, DEMO_PEOPLE.gate, { role: "student", instituteId, classId, under18: false })) made += 1;
+    // A demo student who joined before this ran gets their consent now.
+    for (const p of [DEMO_PEOPLE.student, DEMO_PEOPLE.minor, DEMO_PEOPLE.newcomer]) {
+      const member = await ctx.db.query("members").withIndex("by_email", (q) => q.eq("email", p.email)).first();
+      if (member) await recordDemoConsent(ctx, member);
+    }
     return { instituteId, invitesMade: made };
   },
 });

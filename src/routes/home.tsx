@@ -7,6 +7,7 @@ import {
   Flame,
   BookOpen,
   Newspaper,
+  ShieldCheck,
   Heart,
   Home as HomeIcon,
   Lamp,
@@ -39,6 +40,7 @@ import { TopBar } from "@/components/dhi/ui/top-bar";
 import { StudyHourRoom } from "@/components/dhi/study/study-hour";
 import { ModulesRoom } from "@/components/dhi/modules/modules-room";
 import { BlogRoom } from "@/components/dhi/blog/blog-room";
+import { YourData } from "@/components/dhi/your-data";
 import { DevRoomThrow } from "@/lib/dev-throw";
 import { HOME } from "@/lib/dhi/home-demo";
 import { useStudent } from "@/lib/dhi/student";
@@ -64,6 +66,7 @@ const NAV = [
   { id: "hour", label: "Study hour", icon: Calendar },
   { id: "counsel", label: "Counseling", icon: MessageCircle },
   { id: "progress", label: "Progress", icon: Flame },
+  { id: "data", label: "Your data", icon: ShieldCheck },
 ];
 
 export function StudentHome() {
@@ -203,7 +206,9 @@ export function StudentHome() {
                             ? "House films. Watch from the start. A small score when the film is kept."
                             : tab === "blog"
                               ? "Write slowly. Read each other. Leave a line if it helped."
-                              : "Your house for today"}
+                              : tab === "data"
+                                ? "Your consent, who has looked, a download and erase."
+                                : "Your house for today"}
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -261,6 +266,8 @@ export function StudentHome() {
         <ModulesRoom />
       ) : tab === "blog" ? (
         <BlogRoom />
+      ) : tab === "data" ? (
+        <YourData onErased={() => student.signOut()} />
       ) : (
         <ComingSoon name={NAV.find((n) => n.id === tab)?.label ?? "This room"} />
       )}

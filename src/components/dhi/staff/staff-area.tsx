@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Building2, FileUp, GraduationCap, Mail, Menu, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, Building2, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 import { HouseMenu } from "@/components/dhi/house-menu";
 import { Sheet } from "@/components/dhi/sheet";
 import { ClassListSection } from "@/components/dhi/staff/class-list-section";
 import { ClassesSection } from "@/components/dhi/staff/classes-section";
 import { InstitutesSection } from "@/components/dhi/staff/institutes-section";
 import { InvitesSection } from "@/components/dhi/staff/invites-section";
+import { ParentConsentSection } from "@/components/dhi/staff/parent-consent-section";
 import { PeopleSection } from "@/components/dhi/staff/people-section";
 import { ScopeProvider, type InstituteId, type StaffScope } from "@/components/dhi/staff/staff-parts";
 import { BrandMark } from "@/components/dhi/ui/brand-mark";
@@ -17,7 +18,7 @@ import { ROLE_LABEL } from "@/lib/dhi/house-words";
 import type { HouseRole } from "@/lib/entry";
 import { useStudent } from "@/lib/dhi/student";
 
-type Tab = "institutes" | "classes" | "people" | "invites" | "list";
+type Tab = "institutes" | "classes" | "people" | "invites" | "list" | "parent";
 type NavItem = { id: Tab; label: string; icon: LucideIcon; about: string };
 
 // The staff area (spec house/0002), built from the house's own frame and menu so it looks like the rest. What each role sees:
@@ -28,13 +29,15 @@ const NAV_ALL: NavItem[] = [
   { id: "people", label: "People", icon: Users, about: "Everyone who has joined. Pause someone, bring them back, or move a student." },
   { id: "invites", label: "Invites", icon: Mail, about: "Invite people by Google email. They join by pressing Join." },
   { id: "list", label: "Class list", icon: FileUp, about: "Invite a whole class at once from a list." },
+  { id: "parent", label: "Parent consent", icon: ShieldCheck, about: "Say that a parent's written consent is on file for students under 18." },
 ];
 
 function navFor(role: HouseRole): NavItem[] {
-  if (role === "dhi_admin") return NAV_ALL;
+  // Parent consent is the school's alone: a DHI admin cannot record it (spec house/0005, AC-3).
+  if (role === "dhi_admin") return NAV_ALL.filter((n) => n.id !== "parent");
   if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "institutes");
   if (role === "teacher") {
-    return NAV_ALL.filter((n) => n.id !== "institutes").map((n) =>
+    return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "parent").map((n) =>
       n.id === "classes"
         ? { ...n, label: "My classes", about: "The classes your institute gave you." }
         : n.id === "people"
@@ -160,7 +163,7 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
         </header>
 
         <Notice className="shrink-0">
-          This is the staff area. Rooms and students' own data are not shown here. Use only people made up for testing until consent is built.
+          This is the staff area. Rooms and students' own data are not shown here. Use only people made up for testing until the owner approves the consent words and the legal check is done.
         </Notice>
 
         {role === "counselor" || !current ? (
@@ -173,6 +176,8 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
           <PeopleSection />
         ) : current.id === "invites" ? (
           <InvitesSection />
+        ) : current.id === "parent" ? (
+          <ParentConsentSection />
         ) : (
           <ClassListSection />
         )}

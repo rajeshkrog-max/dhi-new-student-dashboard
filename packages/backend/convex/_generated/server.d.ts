@@ -36,6 +36,7 @@ type Env = {
   readonly CHALLENGE_LIVE: string | undefined;
   readonly CLOUDFLARE_ACCOUNT_ID: string | undefined;
   readonly CLOUDFLARE_API_TOKEN: string | undefined;
+  readonly ERASURE_HASH_SECRET: string | undefined;
   readonly GOOGLE_CLIENT_ID: string | undefined;
   readonly GOOGLE_CLIENT_SECRET: string | undefined;
   readonly GOOGLE_SERVICE_ACCOUNT_KEY: string | undefined;
