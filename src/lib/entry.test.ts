@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { backToHouse, entryTarget, interviewUrl, referralParam, type EntryMe } from "./entry.ts";
+import { backToHouse, entryTarget, houseTarget, interviewUrl, referralParam, type EntryMe } from "./entry.ts";
 
 const signedIn = { isLoading: false, isAuthenticated: true };
 const finished: EntryMe = { state: "ready", check: { completedAt: 1_700_000_000_000 } };
@@ -51,4 +51,15 @@ test("spec house/0003: Back to the house leads to the front door from /enter and
   assert.equal(backToHouse("/enter/nothing-here"), "/");
   assert.equal(backToHouse("/dashboard/nothing-here"), "/dashboard");
   assert.equal(backToHouse("/anything"), "/dashboard");
+});
+
+test("spec house/0002: a member goes to their own place, an invited person to Join, and everyone else to the funnel's rule", () => {
+  assert.equal(houseTarget(undefined), "waiting");
+  assert.equal(houseTarget({ state: "signedOut" }), "funnel");
+  assert.equal(houseTarget({ state: "noHouse" }), "funnel");
+  assert.equal(houseTarget({ state: "invitePending", role: "student", instituteName: "Alpha" }), "join");
+  assert.equal(houseTarget({ state: "active", role: "student" }), "dashboard");
+  for (const role of ["teacher", "institute_admin", "dhi_admin", "counselor"] as const) assert.equal(houseTarget({ state: "active", role }), "staff");
+  assert.equal(houseTarget({ state: "removed" }), "dashboard");
+  assert.equal(houseTarget({ state: "suspended", role: "teacher" }), "dashboard");
 });

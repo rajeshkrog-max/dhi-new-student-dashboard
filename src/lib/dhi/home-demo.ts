@@ -20,11 +20,6 @@ export type HouseNotice = {
 export type DayMark = { day: number; kind?: "paper" | "hour" | "today" };
 
 export const HOME = {
-  student: {
-    name: "Suzzy Glass",
-    initials: "SG",
-    house: "Invited house",
-  },
   greeting: {
     line: "Good morning",
     sub: "Stay with the sitting. Physics still waits for your accept.",

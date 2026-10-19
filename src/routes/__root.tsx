@@ -1,14 +1,13 @@
 import type { ReactNode } from "react";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { GateProvider } from "@/lib/dhi/gate";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { NotFoundPage } from "@/components/dhi/ui/status-page";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "DHI";
 
-// The document (html, head, body) is the shell, and the app is the component inside it. If the app fails at the very top (say inside
-// GateProvider) the error page still shows inside this shell, so it keeps its stylesheet (spec house/0003, AC-7).
+// The document (html, head, body) is the shell, and the app is the component inside it. If the app fails at the very top (say in
+// the preview bridge) the error page still shows inside this shell, so it keeps its stylesheet (spec house/0003, AC-7).
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -27,9 +26,7 @@ function RootComponent() {
   return (
     <>
       <PreviewHostBridge />
-      <GateProvider>
-        <Outlet />
-      </GateProvider>
+      <Outlet />
     </>
   );
 }

@@ -1,20 +1,21 @@
-import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
 import { ConvexSession } from "@/components/dhi/convex-session";
+import { AccessPaused, NotInHouse } from "@/components/dhi/house-screens";
+import { LeaveFailedNotice, useLeave } from "@/components/dhi/house-session";
 import { DashboardSkeleton } from "@/components/dhi/ui/loading-screens";
-import { Notice } from "@/components/dhi/ui/notice";
-import { signOutNow } from "@/lib/auth/client";
+import { devThrow } from "@/lib/dev-throw";
+import { ENTER_PATH, JOIN_PATH, STAFF_PATH } from "@/lib/entry";
 import { initialsOf } from "@/lib/dhi/initials";
 import { StudentProvider } from "@/lib/dhi/student";
-import { devThrow } from "@/lib/dev-throw";
-import { ENTER_PATH, entryTarget } from "@/lib/entry";
 import { StudentHome } from "@/routes/home";
 
-// The dashboard for a signed in student (spec 0008). The rooms still run on demo data (the real ones come in later rows); the student's own
-// name and class come from their account, which already holds them from the interview. Anyone who is not signed in, or has not finished the
-// interview, goes back to the front door.
+// The student's dashboard (spec 0008, spec house/0002). Every house route needs a real member: the page reads the person's own entry state
+// from `members.me` and shows the rooms only to an active student. The rooms still run on demo data (the real ones come in later rows); the
+// student's own name and class come from their `members` row, nothing else about them is carried here. A staff member goes to the staff area,
+// an invited person to Join, and anyone not signed in goes back to the front door.
 export const Route = createFileRoute("/dashboard")({
   ssr: false,
   // The server sends this shape instead of a blank page, and the page keeps it while sign in is checked (spec house/0003).
@@ -29,37 +30,27 @@ export const Route = createFileRoute("/dashboard")({
 
 function Dashboard() {
   devThrow("1");
+  const navigate = useNavigate();
   const auth = useConvexAuth();
-  const me = useQuery(api.students.me, auth.isAuthenticated ? {} : "skip");
-  const target = entryTarget(auth, me);
-  const [signOutFailed, setSignOutFailed] = useState(false);
+  const me = useQuery(api.members.me, auth.isAuthenticated ? {} : "skip");
+  const { leave, failed } = useLeave();
 
   useEffect(() => {
-    if (target === "sign-in" || target === "interview") window.location.replace(ENTER_PATH);
-  }, [target]);
+    if (!auth.isLoading && !auth.isAuthenticated) window.location.replace(ENTER_PATH);
+    if (me?.state === "signedOut") window.location.replace(ENTER_PATH);
+    if (me?.state === "invitePending") void navigate({ to: JOIN_PATH, replace: true });
+    if (me?.state === "active" && me.role !== "student") void navigate({ to: STAFF_PATH, replace: true });
+  }, [auth.isLoading, auth.isAuthenticated, me, navigate]);
 
-  if (target !== "dashboard" || me?.state !== "ready") return <DashboardSkeleton />;
-
-  // Leave signs out for real, then lets the front door start again. A failed sign out keeps the student here (the cookie is still alive)
-  // and says so, so the button never looks broken.
-  async function signOut() {
-    setSignOutFailed(false);
-    if (await signOutNow()) window.location.assign(ENTER_PATH);
-    else setSignOutFailed(true);
-  }
+  if (!auth.isAuthenticated || me === undefined) return <DashboardSkeleton />;
+  if (me.state === "noHouse") return <NotInHouse />;
+  if (me.state === "removed") return <AccessPaused kind="removed" />;
+  if (me.state === "suspended") return <AccessPaused kind="suspended" />;
+  if (me.state !== "active" || me.role !== "student") return <DashboardSkeleton />;
 
   return (
-    <StudentProvider value={{ name: me.student.name, initials: initialsOf(me.student.name), house: me.student.class, signOut }}>
-      {signOutFailed && (
-        <Notice
-          tone="danger"
-          role="alert"
-          data-testid="signout-error"
-          className="fixed inset-x-3 top-3 z-[60] mx-auto max-w-md py-3 text-center text-sm shadow-lg"
-        >
-          We could not sign you out just now. You are still signed in. Please try again.
-        </Notice>
-      )}
+    <StudentProvider value={{ name: me.name, initials: initialsOf(me.name), house: me.className ?? me.instituteName ?? "", signOut: () => void leave() }}>
+      {failed && <LeaveFailedNotice />}
       <StudentHome />
     </StudentProvider>
   );

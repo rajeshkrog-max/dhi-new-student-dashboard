@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// `pnpm responsive:sweep`: signs in as a test student, then opens every room, the door, the error page, the not found page and each loading
-// screen at four widths against the running dev server, and prints a table. Exits 1 on any overflow, small target, small text, wrong screen
+// `pnpm responsive:sweep`: signs in as the demo student and the demo institute admin (joined through the real Join step), then opens every
+// room, the staff screens, the Join page, the "not in a house" page, the door, the error page, the not found page and each loading screen at four widths against the running dev server, and prints a table. Exits 1 on any overflow, small target, small text, wrong screen
 // or layout shift. Rules live in responsive-verdict.mjs. It needs the dev server, the funnel built (`pnpm --filter dhirise build`), the
-// development backend and the test sign in (VITE_TEST_SIGNIN=true), so it stays manual like `enter:check`, and it refuses production.
-// Usage: pnpm responsive:sweep [--url http://localhost:8080] [--room mood] [--width 360] [--shots dir] [-v]
+// development backend with the demo institute seeded (`pnpm --filter @dhi/backend exec convex run demo:seed`) and the test sign in
+// (VITE_TEST_SIGNIN=true), so it stays manual like `enter:check`, and it refuses production.
+// Usage: pnpm responsive:sweep [--url http://localhost:8080] [--room mood,staff-people] [--width 360] [--shots dir] [-v]
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
@@ -17,7 +18,7 @@ import {
   isTouchWidth,
   judge,
 } from "./responsive-verdict.mjs";
-import { TEST_STUDENT, signInFinishedStudent } from "./test-student.mjs";
+import { PEOPLE, TEST_STUDENT, signInMember } from "./test-student.mjs";
 
 function parseArgs(argv) {
   const out = {
@@ -316,7 +317,40 @@ const RAW_ERROR = ["thrown on purpose", "__throw"];
 // Loading, error and not found screens must show no student name. A screen that ends on the real dashboard (`showsStudent`) legitimately does.
 const LEAKS = [NAME, ...RAW_ERROR];
 const BACK_DASHBOARD = { h1: "This page is not here", buttons: ["Back to the house"], backHref: "/dashboard", brandBar: true };
+// The staff screens (spec house/0002, AC-18) are reached as the demo institute admin, through the menu like a person does.
+const staffScreen = (room, title) => ({
+  auth: "staff",
+  path: "/staff",
+  // The staff area opens on Classes, whatever the screen asked for; `run` then opens its own screen through the menu.
+  ready: (p) => p.getByRole("heading", { name: "Classes", level: 1 }),
+  run: async (p, width) => {
+    await openMenuIfDrawer(p, width);
+    await p.locator(`[data-room="${room}"]:visible`).click();
+    await p.getByRole("heading", { name: title, level: 1 }).waitFor({ timeout: 20_000 });
+    await p.waitForTimeout(800);
+  },
+  expect: { h1: title },
+  showsStudent: true,
+});
 const SCREENS = {
+  join: {
+    auth: "newcomer",
+    path: "/join",
+    ready: (p) => p.getByRole("heading", { name: "You are invited" }),
+    expect: { h1: "You are invited", buttons: ["Join", "Not now"], brandBar: true },
+    leakNames: [PEOPLE.newcomer.name],
+  },
+  "not-in-house": {
+    auth: "stranger",
+    path: "/dashboard",
+    ready: (p) => p.getByRole("heading", { name: "You are not in a house yet" }),
+    expect: { h1: "You are not in a house yet", buttons: ["Leave"], brandBar: true },
+    leakNames: [PEOPLE.stranger.name],
+  },
+  "staff-classes": staffScreen("classes", "Classes"),
+  "staff-people": staffScreen("people", "People"),
+  "staff-invites": staffScreen("invites", "Invites"),
+  "staff-list": staffScreen("list", "Class list"),
   door: { auth: "anon", path: "/enter", ready: (p) => p.getByTestId("landing-signin") },
   "door-day": {
     auth: "anon",
@@ -379,14 +413,14 @@ async function visitRoom(page, base, target, width) {
   return { facts: await page.evaluate(collectFacts, []) };
 }
 
-async function visitScreen(page, base, screen) {
+async function visitScreen(page, base, screen, width) {
   const logged = [];
   page.on("console", (message) => logged.push(message.text()));
   const held = [];
   if (screen.hold) await page.route("**/api/auth/**", (route) => void held.push(route));
   await page.goto(`${base}${screen.path}`, { waitUntil: screen.hold ? "commit" : "networkidle" });
   if (screen.ready) await screen.ready(page).first().waitFor({ timeout: 30_000 });
-  if (screen.run) await screen.run(page);
+  if (screen.run) await screen.run(page, width);
   if (screen.wait) await page.waitForTimeout(screen.wait);
   await page.waitForTimeout(400);
   if (screen.settle) {
@@ -399,29 +433,32 @@ async function visitScreen(page, base, screen) {
   if (screen.consoleHas && !logged.some((line) => line.includes(screen.consoleHas))) {
     throw new Error(`the console never got the error text "${screen.consoleHas}"`);
   }
-  return { facts: await page.evaluate(collectFacts, screen.showsStudent ? RAW_ERROR : LEAKS), expect: screen.expect };
+  return { facts: await page.evaluate(collectFacts, screen.showsStudent ? RAW_ERROR : screen.leakNames ? [...screen.leakNames, ...RAW_ERROR] : LEAKS), expect: screen.expect };
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const base = assertLocalDevelopment("responsive-sweep", args.url).origin;
   const everything = [...ROOMS, ...Object.keys(SCENES), ...Object.keys(SCREENS)];
-  const rooms = args.room ? [args.room] : everything;
+  const rooms = args.room ? args.room.split(",") : everything;
   const widths = args.width ? [args.width] : WIDTHS;
   if (args.shots) mkdirSync(args.shots, { recursive: true });
 
   const browser = await chromium.launch();
   const rows = [];
   try {
-    console.log(`Signing in as the test student (${TEST_STUDENT.email}) ...`);
-    const signedIn = await signInFinishedStudent(browser, new URL(base));
+    console.log(`Signing in as the demo people (${TEST_STUDENT.email} and the others) ...`);
+    const states = {
+      user: await signInMember(browser, new URL(base), PEOPLE.student),
+      staff: await signInMember(browser, new URL(base), PEOPLE.admin),
+      newcomer: await signInMember(browser, new URL(base), PEOPLE.newcomer, { join: false }),
+      stranger: await signInMember(browser, new URL(base), PEOPLE.stranger, { join: false }),
+    };
     for (const width of widths) {
       const touch = isTouchWidth(width);
       const options = { viewport: { width, height: touch ? 740 : 800 }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 };
-      const contexts = {
-        user: await browser.newContext({ ...options, storageState: signedIn }),
-        anon: await browser.newContext(options),
-      };
+      const contexts = { anon: await browser.newContext(options) };
+      for (const [key, state] of Object.entries(states)) contexts[key] = await browser.newContext({ ...options, storageState: state });
       // The layout shift score, from navigation until the page settles (spec house/0003, AC-5).
       for (const context of Object.values(contexts)) {
         await context.addInitScript(() => {
@@ -436,7 +473,7 @@ async function main() {
         // A fresh page for every visit, so held calls, listeners and the layout shift score never leak into the next one.
         const page = await contexts[screen ? screen.auth : "user"].newPage();
         try {
-          const { facts, expect } = screen ? await visitScreen(page, base, screen) : await visitRoom(page, base, room, width);
+          const { facts, expect } = screen ? await visitScreen(page, base, screen, width) : await visitRoom(page, base, room, width);
           rows.push(judge(room, width, facts, expect));
           if (args.shots) {
             // A fixed Sheet is only placed right in a viewport shot, so use one while a dialog is open.

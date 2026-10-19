@@ -40,7 +40,6 @@ import { StudyHourRoom } from "@/components/dhi/study/study-hour";
 import { ModulesRoom } from "@/components/dhi/modules/modules-room";
 import { BlogRoom } from "@/components/dhi/blog/blog-room";
 import { DevRoomThrow } from "@/lib/dev-throw";
-import { useGate } from "@/lib/dhi/gate";
 import { HOME } from "@/lib/dhi/home-demo";
 import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
@@ -69,7 +68,6 @@ const NAV = [
 
 export function StudentHome() {
   const student = useStudent();
-  const { leave } = useGate();
   const [tab, setTab] = useState("home");
   const [locked, setLocked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -94,9 +92,8 @@ export function StudentHome() {
   };
   const exit = () => {
     setMenuOpen(false);
-    // A real student's Leave ends their session (spec 0008); the demo's only closes the demo gate.
-    if (student.signOut) student.signOut();
-    else leave();
+    // Leave ends the member's session (spec 0008); there is no demo seat to close any more (spec house/0002).
+    student.signOut();
   };
 
   return (
@@ -164,11 +161,9 @@ export function StudentHome() {
       }
     >
       {/* The DHI desk below 1024 px is sized to fit the first screen with no note above it (house/0001, AC-13), so the note waits for the other rooms. */}
-      {student.signOut && (
-        <Notice data-testid="sample-note" className={cn("shrink-0", tab === "dhi" && "max-lg:hidden")}>
-          The rooms show sample data for now. Your own marks, meals and notes arrive as each room is built.
-        </Notice>
-      )}
+      <Notice data-testid="sample-note" className={cn("shrink-0", tab === "dhi" && "max-lg:hidden")}>
+        The rooms show sample data for now. Your own marks, meals and notes arrive as each room is built.
+      </Notice>
       <header className="relative z-10 flex flex-wrap items-center gap-3">
         <div className="min-w-0 max-sm:w-full">
           <div className="flex items-center gap-3">

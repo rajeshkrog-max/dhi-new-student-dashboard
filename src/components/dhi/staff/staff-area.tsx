@@ -1,0 +1,182 @@
+import { useEffect, useRef, useState } from "react";
+import { BookOpen, Building2, FileUp, GraduationCap, Mail, Menu, Users, type LucideIcon } from "lucide-react";
+import { HouseMenu } from "@/components/dhi/house-menu";
+import { Sheet } from "@/components/dhi/sheet";
+import { ClassListSection } from "@/components/dhi/staff/class-list-section";
+import { ClassesSection } from "@/components/dhi/staff/classes-section";
+import { InstitutesSection } from "@/components/dhi/staff/institutes-section";
+import { InvitesSection } from "@/components/dhi/staff/invites-section";
+import { PeopleSection } from "@/components/dhi/staff/people-section";
+import { ScopeProvider, type InstituteId, type StaffScope } from "@/components/dhi/staff/staff-parts";
+import { BrandMark } from "@/components/dhi/ui/brand-mark";
+import { Card } from "@/components/dhi/ui/card";
+import { HouseFrame } from "@/components/dhi/ui/house-frame";
+import { Notice } from "@/components/dhi/ui/notice";
+import { TopBar } from "@/components/dhi/ui/top-bar";
+import { ROLE_LABEL } from "@/lib/dhi/house-words";
+import type { HouseRole } from "@/lib/entry";
+import { useStudent } from "@/lib/dhi/student";
+
+type Tab = "institutes" | "classes" | "people" | "invites" | "list";
+type NavItem = { id: Tab; label: string; icon: LucideIcon; about: string };
+
+// The staff area (spec house/0002), built from the house's own frame and menu so it looks like the rest. What each role sees:
+// a DHI admin all five screens, an institute admin four (no Institutes), a teacher their classes, their students and invites for their classes.
+const NAV_ALL: NavItem[] = [
+  { id: "institutes", label: "Institutes", icon: Building2, about: "Add institutes, open one to work in it, and pause or resume it." },
+  { id: "classes", label: "Classes", icon: BookOpen, about: "Classes of the institute, and which teachers have them." },
+  { id: "people", label: "People", icon: Users, about: "Everyone who has joined. Pause someone, bring them back, or move a student." },
+  { id: "invites", label: "Invites", icon: Mail, about: "Invite people by Google email. They join by pressing Join." },
+  { id: "list", label: "Class list", icon: FileUp, about: "Invite a whole class at once from a list." },
+];
+
+function navFor(role: HouseRole): NavItem[] {
+  if (role === "dhi_admin") return NAV_ALL;
+  if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "institutes");
+  if (role === "teacher") {
+    return NAV_ALL.filter((n) => n.id !== "institutes").map((n) =>
+      n.id === "classes"
+        ? { ...n, label: "My classes", about: "The classes your institute gave you." }
+        : n.id === "people"
+          ? { ...n, label: "My students", about: "The students of your classes." }
+          : n.id === "invites"
+            ? { ...n, about: "Invite students into your classes by Google email." }
+            : n.id === "list"
+              ? { ...n, about: "Invite the students of one of your classes from a list." }
+              : n,
+    );
+  }
+  return [];
+}
+
+// A counselor signs in and sees their own place only. Counseling is not built yet.
+function CounselorHome() {
+  return (
+    <Card className="flex min-h-60 flex-col items-center justify-center text-center">
+      <GraduationCap className="mb-3 size-8 text-lilac" aria-hidden />
+      <h2 className="font-display text-2xl">Counseling opens later</h2>
+      <p className="mt-2 max-w-sm text-sm text-mute">You are in the house as a counselor. There is nothing for you to do here yet.</p>
+    </Card>
+  );
+}
+
+export function StaffArea({ role, instituteName }: { role: HouseRole; instituteName: string | null }) {
+  const person = useStudent();
+  const items = navFor(role);
+  const [tab, setTab] = useState<Tab>(items[0]?.id ?? "classes");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [opened, setOpened] = useState<{ id: InstituteId; name: string } | undefined>(undefined);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  // The drawer only exists below 1024. Rotating or resizing past it closes the drawer.
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 1024px)");
+    const close = () => wide.matches && setMenuOpen(false);
+    wide.addEventListener("change", close);
+    return () => wide.removeEventListener("change", close);
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [tab]);
+
+  const isDhi = role === "dhi_admin";
+  const scope: StaffScope = {
+    role,
+    instituteId: isDhi ? opened?.id : undefined,
+    instituteName: isDhi ? (opened?.name ?? null) : instituteName,
+    needsInstitute: isDhi && !opened,
+  };
+  const current = items.find((n) => n.id === tab) ?? items[0];
+
+  const pick = (id: string) => {
+    setTab(id as Tab);
+    setMenuOpen(false);
+  };
+  const exit = () => {
+    setMenuOpen(false);
+    person.signOut();
+  };
+  const menu = items.map((n) => ({ id: n.id, label: n.label, icon: n.icon }));
+
+  return (
+    <ScopeProvider value={scope}>
+      <HouseFrame
+        sectionClassName="lg:overflow-y-auto"
+        topBar={
+          <>
+            <TopBar
+              belowLargeOnly
+              start={
+                <button
+                  ref={menuButton}
+                  type="button"
+                  data-testid="menu-button"
+                  aria-label="Open menu"
+                  aria-haspopup="dialog"
+                  aria-expanded={menuOpen}
+                  onClick={() => setMenuOpen(true)}
+                  className="grid size-11 place-items-center rounded-control border border-white/80 bg-white/70"
+                >
+                  <Menu className="size-5" aria-hidden />
+                </button>
+              }
+            />
+            <Sheet
+              open={menuOpen}
+              onOpenChange={setMenuOpen}
+              side="left"
+              title="Menu"
+              heading={<BrandMark />}
+              onCloseAutoFocus={(e) => {
+                e.preventDefault();
+                menuButton.current?.focus();
+              }}
+            >
+              <HouseMenu rooms={menu} tab={tab} locked={false} variant="drawer" onPick={pick} onLeave={exit} />
+            </Sheet>
+          </>
+        }
+        side={
+          <>
+            <BrandMark size="menu" className="mb-6 px-2" />
+            <HouseMenu rooms={menu} tab={tab} locked={false} variant="side" onPick={pick} onLeave={exit} />
+          </>
+        }
+      >
+        <header className="relative z-10 flex flex-wrap items-center gap-3">
+          <div className="min-w-0 max-sm:w-full">
+            <h1 className="font-display text-2xl font-medium lg:text-3xl">{current?.label ?? "Staff"}</h1>
+            <p className="text-sm text-mute">{current?.about ?? "Your place in the house"}</p>
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {isDhi && (
+              <span data-testid="working-in" className="rounded-control border border-white/80 bg-white/70 px-3 py-2 text-sm">
+                Working in: <strong className="font-medium">{opened?.name ?? "no institute yet"}</strong>
+              </span>
+            )}
+            <span className="rounded-control border border-white/80 bg-white/70 px-3 py-2 text-sm">{ROLE_LABEL[role]}</span>
+          </div>
+        </header>
+
+        <Notice className="shrink-0">
+          This is the staff area. Rooms and students' own data are not shown here. Use only people made up for testing until consent is built.
+        </Notice>
+
+        {role === "counselor" || !current ? (
+          <CounselorHome />
+        ) : current.id === "institutes" ? (
+          <InstitutesSection onOpen={(id, name) => setOpened({ id, name })} openId={opened?.id} />
+        ) : current.id === "classes" ? (
+          <ClassesSection />
+        ) : current.id === "people" ? (
+          <PeopleSection />
+        ) : current.id === "invites" ? (
+          <InvitesSection />
+        ) : (
+          <ClassListSection />
+        )}
+      </HouseFrame>
+    </ScopeProvider>
+  );
+}

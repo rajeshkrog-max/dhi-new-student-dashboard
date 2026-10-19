@@ -20,7 +20,7 @@
     "typecheck": "pnpm typecheck:house && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run typecheck",
     "deploy:house": "node scripts/deploy-house.mjs",
     "enter:check": "node scripts/enter-check.mjs",
-    "test:house": "node --test \"scripts/**/*.test.mjs\" && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/entry.test.ts src/lib/dhi/initials.test.ts",
+    "test:house": "node --test \"scripts/**/*.test.mjs\" && node --experimental-strip-types --test src/lib/app-data/app-data.test.ts src/lib/app-data/readiness-schedule.test.ts src/lib/entry.test.ts src/lib/dhi/initials.test.ts src/lib/dhi/class-list.test.ts",
     "test": "pnpm test:house && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run test",
     "test:e2e": "pnpm --filter dhirise test:e2e",
     "responsive:sweep": "node scripts/responsive-sweep.mjs",

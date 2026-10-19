@@ -5,7 +5,7 @@
 //
 // ROUTES. The funnel stays on its Cloudflare Pages project (custom domain dhirise.com). The house takes only the paths it serves, so every
 // other path (/dhiinterviews*, /s/*, /api/*, /_astro/* and anything unknown) still reaches the funnel exactly as before. This is the list of
-// the house's own paths: `/`, its three pages, its built files under /assets, and the picture folders of public/. A new top level folder
+// the house's own paths: `/`, its pages (enter, dashboard, home, join and staff), its built files under /assets, and the picture folders of public/. A new top level folder
 // in public/ must be added here, or it will be served by the funnel (a 404). To take the house off the domain, delete the Worker
 // (`pnpm exec wrangler delete --name dhirise-house`): the funnel's own `/` redirect to the interview is still in public/_redirects.
 // Public values only. Secrets are never put here.
@@ -25,6 +25,8 @@
     // public/_redirects, which keeps the query string and lands on the interview with the code intact. That is what those links need.
     { "pattern": "dhirise.com/enter*", "zone_name": "dhirise.com" },
     { "pattern": "dhirise.com/dashboard*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/join*", "zone_name": "dhirise.com" },
+    { "pattern": "dhirise.com/staff*", "zone_name": "dhirise.com" },
     { "pattern": "dhirise.com/home*", "zone_name": "dhirise.com" },
     { "pattern": "dhirise.com/assets/*", "zone_name": "dhirise.com" },
     { "pattern": "dhirise.com/__grok/*", "zone_name": "dhirise.com" },

@@ -48,3 +48,36 @@ export function interviewUrl(referral?: string): string {
 export function backToHouse(pathname: string): string {
   return pathname.startsWith(ENTER_PATH) ? "/" : DASHBOARD_PATH;
 }
+
+// The house's own entry states (spec house/0002), as `members.me` answers them. Kept small so the rule is easy to test.
+export type HouseRole = "student" | "teacher" | "institute_admin" | "dhi_admin" | "counselor";
+export type HouseMe =
+  | { state: "signedOut" }
+  | { state: "noHouse" }
+  | { state: "invitePending"; role: HouseRole; instituteName: string | null }
+  | { state: "active"; role: HouseRole }
+  | { state: "removed" }
+  | { state: "suspended"; role: HouseRole };
+
+export const JOIN_PATH = "/join";
+export const STAFF_PATH = "/staff";
+
+// Where a person who is signed in goes, by their place in the house. `funnel` means the house has nothing for them yet (no membership and no
+// invite), so the funnel's own rule (`entryTarget`) decides. A removed or suspended member goes to the dashboard, which says so plainly.
+export type HouseTarget = "waiting" | "join" | "dashboard" | "staff" | "funnel";
+
+export function houseTarget(me: HouseMe | undefined): HouseTarget {
+  if (me === undefined) return "waiting";
+  switch (me.state) {
+    case "signedOut":
+    case "noHouse":
+      return "funnel";
+    case "invitePending":
+      return "join";
+    case "removed":
+    case "suspended":
+      return "dashboard";
+    case "active":
+      return me.role === "student" ? "dashboard" : "staff";
+  }
+}

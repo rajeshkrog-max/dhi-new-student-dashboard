@@ -11,7 +11,7 @@ const PILL = "h-10 touch:h-11 rounded-full px-5";
 const VARIANT: Record<ButtonVariant, string> = {
   solid: `${PILL} bg-home text-paper hover:bg-home/90`,
   gold: `${PILL} bg-gold text-gold-ink hover:bg-gold/90`,
-  quiet: `${PILL} border border-white/80 bg-white/70 text-home hover:bg-white`,
+  quiet: `${PILL} border border-home/15 bg-white/70 text-home hover:bg-white`,
   link: "tap text-xs font-normal text-grove touch:-mr-2 touch:px-2",
 };
 
