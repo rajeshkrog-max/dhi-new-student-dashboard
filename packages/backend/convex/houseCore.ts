@@ -8,6 +8,8 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 // An invite lives 14 days from creation or from the last extend.
 export const INVITE_DAYS = 14;
 export const INVITE_MS = INVITE_DAYS * DAY_MS;
+// The most refused "address in use" answers an institute may have in a day (the rate limit `emailInUse` in limits.ts).
+export const IN_USE_PER_DAY = 50;
 // One class list is checked as a whole, up to this many rows.
 export const BATCH_MAX = 300;
 // Every list the house returns is a page of this many rows.

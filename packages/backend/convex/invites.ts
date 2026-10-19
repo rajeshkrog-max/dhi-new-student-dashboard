@@ -10,6 +10,7 @@ import { cleanName, fail } from "./helpers";
 import { logAccess, requireMember, type MemberContext } from "./houseAuth";
 import {
   BATCH_MAX,
+  IN_USE_PER_DAY,
   INVITE_MS,
   PAGE_SIZE,
   checkRowShape,
@@ -135,7 +136,13 @@ export const createBatch = mutation({
       good.push({ name: shape.name, email: shape.email, under18: shape.under18, classId: cls._id });
     }
 
-    if (inUse > 0) await countInUse(ctx, key, inUse);
+    // The refused addresses are charged before any of the answers go out. A list may charge at most a whole day's worth (the limiter throws on a
+    // bigger count), and if the day's window cannot take the charge the list answers `rate_limited` instead of the per row answers, so a staff
+    // member cannot keep probing addresses once the cap is nearly used (AC-19).
+    if (inUse > 0) {
+      const charged = await rateLimiter.limit(ctx, "emailInUse", { key, count: Math.min(inUse, IN_USE_PER_DAY), throws: false });
+      if (!charged.ok) return { ok: false as const, code: "rate_limited" };
+    }
     if (bad.length > 0) return { ok: false as const, code: "bad_rows", badRows: bad };
 
     for (const g of good) {

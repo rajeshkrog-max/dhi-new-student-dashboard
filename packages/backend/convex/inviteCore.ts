@@ -11,11 +11,11 @@ type Reader = QueryCtx | MutationCtx;
 
 // The one pending invite for an address (not claimed and not revoked, expired or not), or null. There is never more than one.
 export async function pendingInviteFor(ctx: Reader, email: string): Promise<Doc<"invites"> | null> {
-  const rows = await ctx.db
+  // Not claimed and not revoked are both in the index range, so any number of revoked invites for the address cannot hide the pending one.
+  return await ctx.db
     .query("invites")
-    .withIndex("by_email_and_claimedAt", (q) => q.eq("email", email).eq("claimedAt", undefined))
-    .take(20);
-  return rows.find((r) => r.revokedAt === undefined) ?? null;
+    .withIndex("by_email_and_claimedAt_and_revokedAt", (q) => q.eq("email", email).eq("claimedAt", undefined).eq("revokedAt", undefined))
+    .first();
 }
 
 // An address cannot be invited when a person with it is already a member (removed or not: a removed member is reinstated, never re invited)

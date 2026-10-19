@@ -255,3 +255,49 @@ describe("review major 5: a paused student keeps the data rights", () => {
     expect(await joinAs(w.t, "adult@alpha.test", { name: "x" }).catch(() => "joined")).toBeDefined();
   });
 });
+
+describe("row 2 review: the invite cap and the pending invite", () => {
+  const takenRows = (from: number, n: number) => Array.from({ length: n }, (_, i) => ({ name: `Taken ${from + i}`, email: `taken${from + i}@alpha.test`, class: "10A", under18: false as boolean | null }));
+  async function withTaken(w: World, n: number) {
+    await w.t.run(async (ctx) => {
+      for (let i = 0; i < n; i++) {
+        await ctx.db.insert("members", { authUserId: `taken:${i}`, role: "student", instituteId: w.A.instituteId, classId: w.a1, name: `T ${i}`, email: `taken${i}@alpha.test`, under18: false, status: "active", joinedAt: NOW });
+      }
+    });
+  }
+
+  test("covers AC-19: a class list cannot keep probing addresses once the day's cap is nearly used", async () => {
+    const w = await world();
+    await withTaken(w, 60);
+    // 49 refused addresses use 49 of the day's 50.
+    expect(await w.A.admin.as.mutation(api.invites.createBatch, { rows: takenRows(0, 49) })).toMatchObject({ ok: false, code: "bad_rows" });
+    // One left: a list with 10 refused addresses cannot be charged, so it answers nothing about them.
+    expect(await w.A.admin.as.mutation(api.invites.createBatch, { rows: takenRows(0, 10) })).toEqual({ ok: false, code: "rate_limited" });
+    // And a single invite for a taken address can use the last one, then the next is refused outright.
+    expect(await w.A.admin.as.mutation(api.invites.create, { role: "student", email: "taken1@alpha.test", name: "X", classId: w.a1, under18: false })).toEqual({ ok: false, code: "email_in_use" });
+    expect(await w.A.admin.as.mutation(api.invites.create, { role: "student", email: "taken2@alpha.test", name: "X", classId: w.a1, under18: false })).toEqual({ ok: false, code: "rate_limited" });
+  });
+
+  test("covers AC-19: a class list with more than 50 refused addresses answers its bad rows instead of failing", async () => {
+    const w = await world();
+    await withTaken(w, 60);
+    const r = await w.A.admin.as.mutation(api.invites.createBatch, { rows: takenRows(0, 60) });
+    expect(r).toMatchObject({ ok: false, code: "bad_rows" });
+    expect((r as { badRows: unknown[] }).badRows).toHaveLength(60);
+    // The day's cap is now spent.
+    expect(await w.A.admin.as.mutation(api.invites.createBatch, { rows: takenRows(0, 1) })).toEqual({ ok: false, code: "rate_limited" });
+  });
+
+  test("covers AC-6: twenty or more revoked invites for an address do not hide the pending one", async () => {
+    const w = await world();
+    for (let i = 0; i < 22; i++) {
+      const made = await w.A.admin.as.mutation(api.invites.create, { role: "student", email: "again@alpha.test", name: "Again", classId: w.a1, under18: false });
+      if (!made.ok) throw new Error(`setup ${JSON.stringify(made)}`);
+      if (i < 21) await w.A.admin.as.mutation(api.invites.revoke, { inviteId: made.inviteId });
+    }
+    // The 22nd is pending, so the address is taken and a second pending invite cannot be made.
+    expect(await w.A.admin.as.mutation(api.invites.create, { role: "student", email: "again@alpha.test", name: "Again", classId: w.a1, under18: false })).toEqual({ ok: false, code: "email_in_use" });
+    const person = await joinAs(w.t, "again@alpha.test", { name: "Again" });
+    expect(person.memberId).toBeTruthy();
+  });
+});

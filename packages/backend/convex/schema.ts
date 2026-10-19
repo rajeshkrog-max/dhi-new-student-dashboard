@@ -382,6 +382,7 @@ export default defineSchema({
     revokedAt: v.optional(v.number()),
   })
     .index("by_email_and_claimedAt", ["email", "claimedAt"])
+    .index("by_email_and_claimedAt_and_revokedAt", ["email", "claimedAt", "revokedAt"]) // the one pending invite of an address, however many were revoked before it
     .index("by_instituteId", ["instituteId"])
     .index("by_classId", ["classId"]),
 

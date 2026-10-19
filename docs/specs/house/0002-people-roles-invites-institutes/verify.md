@@ -20,14 +20,14 @@ Setup: `pnpm dev` (port 8080), the development backend with the demo institute s
 - [ ] Open `/dashboard`, `/staff` and `/join` signed out → each goes to the front door → AC-13
 
 ## Commands
-- [ ] `pnpm --filter @dhi/backend test` → all pass, including `houseAccess.test.ts` (the role by function matrix), `houseInvites.test.ts`, `houseEntry.test.ts` and `houseCore.test.ts` → AC-4 to AC-12, AC-15 to AC-19
-- [ ] `pnpm test` → the funnel suite and the house tests all pass with no funnel file changed → AC-14
-- [ ] `pnpm enter:check` → 27 of 27 steps pass, including an invite made on the staff screen and joined by a fresh test account → AC-2, AC-3, AC-5, AC-9, AC-13
-- [ ] `pnpm responsive:sweep` → every room, the Join page, "not in a house" and the four staff screens are ok at four widths → AC-18
-- [ ] `npx convex run demo:seed` on the development deployment → makes the demo institute and invites; running it again makes none; on a deployment with `TEST_SIGNIN_ENABLED` not `true` it answers `demo_disabled` → AC-13
-- [ ] Search `src/` for `gate.tsx`, `session.ts`, `dhi-session-v1` and `useGate` → no match → AC-13
-- [ ] `git diff main --stat -- apps/joining` → no funnel file changed → AC-14
-- [ ] Read a few `accessLog` rows in the Convex dashboard → ids and a code only, no name, email or note → AC-12
+- [x] `pnpm --filter @dhi/backend test` → all pass, including `houseAccess.test.ts` (the role by function matrix), `houseInvites.test.ts`, `houseEntry.test.ts` and `houseCore.test.ts` → AC-4 to AC-12, AC-15 to AC-19
+- [x] `pnpm test` → the funnel suite and the house tests all pass with no funnel file changed → AC-14
+- [x] `pnpm enter:check` → 27 of 27 steps pass, including an invite made on the staff screen and joined by a fresh test account → AC-2, AC-3, AC-5, AC-9, AC-13
+- [x] `pnpm responsive:sweep` → every room, the Join page, "not in a house" and the four staff screens are ok at four widths → AC-18
+- [x] `npx convex run demo:seed` on the development deployment → makes the demo institute and invites; running it again makes none; on a deployment with `TEST_SIGNIN_ENABLED` not `true` it answers `demo_disabled` → AC-13
+- [x] Search `src/` for `gate.tsx`, `session.ts`, `dhi-session-v1` and `useGate` → no match → AC-13
+- [x] `git diff main --stat -- apps/joining` → no funnel file changed → AC-14
+- [x] Read a few `accessLog` rows in the Convex dashboard → ids and a code only, no name, email or note → AC-12
 
 ## Value sourcing (one step per row of the spec's table)
 - [ ] Who is acting: call any staff function after signing out → refused, and no function takes a member id or email as the caller → AC-7
@@ -42,3 +42,5 @@ Setup: `pnpm dev` (port 8080), the development backend with the demo institute s
 ## Acceptance-criteria coverage
 - AC-1 bootstrap and DHI admin · AC-2 institute and first admin · AC-3 not in a house, pending invite · AC-4 class list · AC-5 Join makes a member only · AC-6 claim rules · AC-7 and AC-8 matrix and walls · AC-9 pause and bring back · AC-10 last admin · AC-11 under 18 · AC-12 access log · AC-13 demo gate gone, seed refuses outside test sign in · AC-14 funnel untouched · AC-15 purge · AC-16 paused institute and archived class · AC-17 and AC-19 limits · AC-18 screens and 25 a page
 - Not exercisable with a test sign in (a verified Google account is needed): the DHI admin screens (Institutes) and a DHI admin or counselor invite. The backend tests cover them, and the owner steps at the top cover them by hand.
+
+_2026-10-19: the Commands section was run and passes (backend 824 tests, `pnpm test`, `enter:check` 27 of 27, the sweep at four widths, the seed, the gate search, an empty funnel diff, access log rows with ids and a code only). The UI / manual steps and the value sourcing steps were not run one by one: the owner steps need a real Google account (a DHI admin, an unverified email). The test sign in cases they describe are covered by `enter:check` and the backend suites._

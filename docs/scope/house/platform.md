@@ -15,8 +15,8 @@ Real accounts for the house: institutes, the five roles (student, teacher, insti
    - [x] Removal, last admin guards and the clean up change (AC-9, AC-10, AC-11, AC-15)
    - [x] Retire the demo gate, seeded demo institute and the proof matrix (AC-7, AC-8, AC-13, AC-14)
 - [ ] Verify it: `/check verify people, roles, invites and institutes`
-- [ ] Test it: `/test people, roles, invites and institutes`
-- [ ] Review it (fresh model): `/check review people, roles, invites and institutes`
+- [x] Test it: `/test people, roles, invites and institutes`
+- [x] Review it (fresh model): `/check review people, roles, invites and institutes`
 - [ ] Document it: `/document people, roles, invites and institutes`
 Spec [0002](../../specs/house/0002-people-roles-invites-institutes/index.md) · code in `packages/backend/convex/{members,invites,classes,institutes,bootstrap,demo,houseAuth,houseCore,inviteCore}.ts`, `src/routes/{join,staff,dashboard}.tsx`, `src/components/dhi/{join-page,house-screens,house-session,staff/}`, `src/lib/dhi/{house-words,class-list}.ts`, `scripts/{test-student,enter-check,responsive-sweep}.mjs`. Runs on the development deployment with synthetic people only until row 4. Cannot start until the repo wide rows 16 (the shared backend package) and 6 (the house on the shared sign in) are built, because the house tables land in that package and the join page reads the shared session.
 
