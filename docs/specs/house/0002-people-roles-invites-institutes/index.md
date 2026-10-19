@@ -1,7 +1,7 @@
 # 0002. People, roles, invites and institutes for the house
 
 **Date**: 2026-10-18
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

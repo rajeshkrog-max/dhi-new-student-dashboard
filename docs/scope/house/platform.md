@@ -8,17 +8,17 @@ The ground every room stands on: real accounts and roles, the one event log ever
 Real accounts for the house: institutes, the five roles (student, teacher, institute admin, DHI admin, counselor), invite only entry, and one check that every server function makes so a person only ever reads their own institute's rows. It replaces the demo gate and the fixed demo student. The counselor role exists but has no screens yet. It builds on the shared sign in and the one account row in the [repo wide scope](../_root/scope.md) (rows 2 and 4).
 **Done when:** an invited student signs in with Google and lands in their own house, a person with no invite is turned away, a student cannot read another student's or another institute's rows by any route, and the demo gate and the fixed demo id are gone from the running app.
 - [x] Design it (spec): `/architect people, roles, invites and institutes`
-- [ ] Build it: `/develop people, roles, invites and institutes`
-   - [ ] The thread: tables, entry check, Join step, first DHI admin (AC-1, AC-3, AC-6, AC-12)
-   - [ ] Institutes, staff area, classes and teachers (AC-2, AC-7, AC-8, AC-16, AC-18)
-   - [ ] Invites and class list upload, with the daily cap (AC-4, AC-5, AC-6, AC-11, AC-17, AC-19)
-   - [ ] Removal, last admin guards and the clean up change (AC-9, AC-10, AC-11, AC-15)
-   - [ ] Retire the demo gate, seeded demo institute and the proof matrix (AC-7, AC-8, AC-13, AC-14)
+- [x] Build it: `/develop people, roles, invites and institutes`
+   - [x] The thread: tables, entry check, Join step, first DHI admin (AC-1, AC-3, AC-6, AC-12)
+   - [x] Institutes, staff area, classes and teachers (AC-2, AC-7, AC-8, AC-16, AC-18)
+   - [x] Invites and class list upload, with the daily cap (AC-4, AC-5, AC-6, AC-11, AC-17, AC-19)
+   - [x] Removal, last admin guards and the clean up change (AC-9, AC-10, AC-11, AC-15)
+   - [x] Retire the demo gate, seeded demo institute and the proof matrix (AC-7, AC-8, AC-13, AC-14)
 - [ ] Verify it: `/check verify people, roles, invites and institutes`
 - [ ] Test it: `/test people, roles, invites and institutes`
 - [ ] Review it (fresh model): `/check review people, roles, invites and institutes`
 - [ ] Document it: `/document people, roles, invites and institutes`
-Spec [0002](../../specs/house/0002-people-roles-invites-institutes/index.md) · code (filled by /develop). Runs on the development deployment with synthetic people only until row 4. Cannot start until the repo wide rows 16 (the shared backend package) and 6 (the house on the shared sign in) are built, because the house tables land in that package and the join page reads the shared session.
+Spec [0002](../../specs/house/0002-people-roles-invites-institutes/index.md) · code in `packages/backend/convex/{members,invites,classes,institutes,bootstrap,demo,houseAuth,houseCore,inviteCore}.ts`, `src/routes/{join,staff,dashboard}.tsx`, `src/components/dhi/{join-page,house-screens,house-session,staff/}`, `src/lib/dhi/{house-words,class-list}.ts`, `scripts/{test-student,enter-check,responsive-sweep}.mjs`. Runs on the development deployment with synthetic people only until row 4. Cannot start until the repo wide rows 16 (the shared backend package) and 6 (the house on the shared sign in) are built, because the house tables land in that package and the join page reads the shared session.
 
 ### 3. Room event log and day rules · needs a decision
 The one contract every room writes through: each finished action becomes an event with who did it, when it happened, which day it counts for and what it says. It fixes the day boundary (04:00 to 04:00 India time), how a day with no log is kept (not logged, never zero), how late entries are marked, and that a rerun never counts twice. Every number the Brain shows is rebuilt from these events. (basis: the Master Spec storage rules; an event log means a changed formula never loses data)
