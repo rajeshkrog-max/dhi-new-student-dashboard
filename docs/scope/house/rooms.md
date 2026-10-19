@@ -21,6 +21,21 @@ Every room of the house reads and works well on a phone, a tablet and a desktop.
 - [x] Verify it: `/check verify make the app responsive`
 Spec [0001](../../specs/house/0001-make-app-responsive.md) · code in `src/routes/home.tsx`, `src/components/dhi/`, `src/styles.css`, `scripts/responsive-*`
 
+## Look and feel: one professional look
+
+### 25. One professional look for every page, the menu and loading screens · in-progress · Alpha
+Every page, the shared menu and every wait on screen take on the same polished look the dashboard and the room pages already have: the front door, the sign in page, the menu and top bar, the empty and error pages, and the loading screens (a page opening, the sign in check, data arriving). Loading screens hold the shape of the page they stand in for, so nothing jumps when the content lands. It changes how things look, never what a room does, and it keeps the room rules in `BACKEND.md`. Placed before the Mood room so the rooms built after it start on the finished look. (your call, 2026-10-18)
+**Done when:** every page uses the dashboard's look (type, colour, spacing, cards and buttons), the menu looks and works the same on every page, every wait shows a matching loading screen and never a blank page or bare text, error and not found pages match, and all of it holds at phone, tablet and desktop widths with no sideways scroll and no room behaviour changed.
+- [x] Design it (spec): `/architect one professional look for every page, the menu and loading screens`
+- [x] Build it: `/develop one professional look for every page, the menu and loading screens`
+   - [x] Tokens, focus ring, readable grey text, the check baseline and the repaired sweep (AC-1, AC-8, AC-9, AC-13)
+   - [x] The shared kit and one menu style for the side menu and the drawer (AC-2, AC-4, AC-12)
+   - [x] Loading screens, slow wait, error and not found pages (AC-5, AC-6, AC-7)
+   - [x] The Enter screen on the kit and self hosted fonts (AC-3, AC-10)
+   - [x] Rooms on tokens and the full proof at four widths (AC-11, AC-12, AC-13)
+- [x] Verify it: `/check verify one professional look for every page, the menu and loading screens`
+Spec [0003](../../specs/house/0003-one-professional-look/index.md) · code in `src/components/dhi/ui/`, `src/styles.css`, `src/components/dhi/enter-screen.tsx`, `src/routes/home.tsx`, `scripts/look-check.mjs`, `scripts/responsive-sweep.mjs`
+
 ## Slice 2: the thin thread (Mood)
 
 ### 5. Mood room, real, with the Vedic lens · needs a decision

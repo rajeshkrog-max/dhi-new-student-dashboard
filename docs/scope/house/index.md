@@ -13,7 +13,7 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | Epic | File | Rows | Rollup |
 |---|---|---|---|
 | Platform and safety | [platform.md](platform.md) | 2 to 4 | 0 of 3 done, 1 in progress (row 2, designed), 2 planned |
-| The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23 | 1 of 14 done (row 1), 13 planned, plus 1 existing for context |
+| The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23, 25 | 1 of 15 done (row 1), 1 in progress (row 25, designed), 13 planned, plus 1 existing for context |
 | The Brain | [brain.md](brain.md) | 17 to 22, 24 | 0 of 7 done, 7 planned |
 
 Row numbers run across all three files, so a row keeps one number wherever it lives.
@@ -27,6 +27,7 @@ Row numbers run across all three files, so a row keeps one number wherever it li
 | 2 | People, roles, invites and institutes | Foundation | in-progress |
 | 3 | Room event log and day rules | Foundation | planned |
 | 4 | Consent, privacy and access record for minors' house data | Foundation | planned |
+| 25 | One professional look for every page, the menu and loading screens | Look and feel | in-progress |
 | 5 | Mood room, real, with the Vedic lens | Slice 2 | planned |
 | 6 | Habits room, real | Slice 3 | planned |
 | 7 | Sleep log | Slice 3 | planned |
@@ -48,7 +49,7 @@ Row numbers run across all three files, so a row keeps one number wherever it li
 | 23 | Home and DHI score, real | Slice 6 | planned |
 | 24 | First class pilot | Go live | planned |
 
-Build order is the row order within each phase. Rows 2 to 4 come first. Rows 6 to 16 can go in the order that suits you once row 5 has proven the thread, but 17 onward need the rooms they read.
+Build order is the row order within each phase. Rows 2 to 4 come first, then row 25 (the look) so later rooms start on the finished look. Rows 6 to 16 can go in the order that suits you once row 5 has proven the thread, but 17 onward need the rooms they read.
 
 ## Deferred
 
