@@ -27,6 +27,7 @@ import {
   type Unit,
 } from "@/lib/dhi/meals-demo";
 import { Sheet } from "@/components/dhi/sheet";
+import { Card } from "@/components/dhi/ui/card";
 import { cn } from "@/lib/utils";
 
 const SLOT_UI: { id: Slot; label: string; icon: typeof Sun }[] = [
@@ -56,9 +57,9 @@ export function MealTracker() {
   );
 
   const pie = [
-    { key: "Anna", value: Math.round(sum.carbs), fill: "#e8c36a" },
-    { key: "Dal", value: Math.round(sum.protein), fill: "#c9b6f2" },
-    { key: "Sneha", value: Math.round(sum.fat), fill: "#f7c9c0" },
+    { key: "Anna", value: Math.round(sum.carbs), fill: "var(--color-gold)" },
+    { key: "Dal", value: Math.round(sum.protein), fill: "var(--color-lilac)" },
+    { key: "Sneha", value: Math.round(sum.fat), fill: "var(--color-peach)" },
   ];
   const news = TIPS[tip % TIPS.length];
 
@@ -71,7 +72,7 @@ export function MealTracker() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex h-11 items-center gap-2 rounded-2xl bg-grove px-4 text-sm font-medium text-paper"
+          className="flex h-11 items-center gap-2 rounded-control bg-grove px-4 text-sm font-medium text-paper"
         >
           <Plus className="size-4" /> Log a plate
         </button>
@@ -85,7 +86,7 @@ export function MealTracker() {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[0.9fr_1.4fr]">
-        <article className="rounded-[24px] border border-white/80 bg-white/70 p-5 backdrop-blur-xl">
+        <Card>
           <h3 className="text-sm font-semibold">Today’s plate</h3>
           <div className="mt-2 flex items-center gap-3">
             <div className="h-36 w-36 shrink-0">
@@ -104,12 +105,12 @@ export function MealTracker() {
               <p className="text-xs text-mute">known kcal · {todayKey()}</p>
             </div>
           </div>
-          <p className="mt-3 rounded-2xl bg-lilac/25 px-3 py-2 text-sm">
+          <p className="mt-3 rounded-control bg-lilac/25 px-3 py-2 text-sm">
             {itemsOf(today).length === 0 ? "No plate yet today. Log when you have eaten." : mindLine(sum.guna)}
           </p>
-        </article>
+        </Card>
 
-        <article className="rounded-[24px] border border-white/80 bg-white/70 p-5 backdrop-blur-xl">
+        <Card>
           <h3 className="mb-3 text-sm font-semibold">Today’s meals</h3>
           <div className="grid gap-2 sm:grid-cols-2">
             {SLOT_UI.map((s) => {
@@ -118,7 +119,7 @@ export function MealTracker() {
               const kcal = Math.round(sumItems(plate.items).kcal);
               const clock = formatClock(plate.eatenAt);
               return (
-                <div key={s.id} className="rounded-2xl bg-white/80 p-3">
+                <div key={s.id} className="rounded-control bg-white/80 p-3">
                   <p className="flex items-center gap-2 text-sm font-medium">
                     <Icon className="size-4 text-mute" /> {s.label}
                     <span className="ml-auto text-xs text-mute">{plate.items.length ? (kcal ? `${kcal} kcal` : "DHI pending") : "Empty"}</span>
@@ -154,11 +155,11 @@ export function MealTracker() {
               );
             })}
           </div>
-        </article>
+        </Card>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-        <article className="rounded-[24px] border border-white/80 bg-white/70 p-5 backdrop-blur-xl">
+        <Card>
           <div className="mb-1 flex items-baseline justify-between gap-2">
             <h3 className="text-sm font-semibold">Plate this week</h3>
             <p className="text-xs text-mute">
@@ -168,14 +169,14 @@ export function MealTracker() {
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={week} barGap={2}>
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#7a7389" }} axisLine={false} tickLine={false} />
-                <Bar dataKey="carbs" stackId="m" fill="#e8c36a" />
-                <Bar dataKey="protein" stackId="m" fill="#c9b6f2" />
-                <Bar dataKey="fat" stackId="m" fill="#f7c9c0" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--color-mute)" }} axisLine={false} tickLine={false} />
+                <Bar dataKey="carbs" stackId="m" fill="var(--color-gold)" />
+                <Bar dataKey="protein" stackId="m" fill="var(--color-lilac)" />
+                <Bar dataKey="fat" stackId="m" fill="var(--color-peach)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 rounded-2xl bg-white/80 p-3">
+          <div className="mt-3 rounded-control bg-white/80 p-3">
             <p className="text-[11px] uppercase tracking-wide text-mute touch:text-xs">Usual sitting time this week</p>
             <p className="mt-1 text-sm">
               Breakfast {rhythm.breakfast ?? "—"} · Lunch {rhythm.lunch ?? "—"} · Dinner {rhythm.dinner ?? "—"} · Snacks {rhythm.snack ?? "—"}
@@ -184,15 +185,15 @@ export function MealTracker() {
           </div>
           <ul className="mt-3 grid gap-1 sm:grid-cols-2">
             {top.map((t) => (
-              <li key={t.name} className="flex justify-between rounded-xl bg-white/80 px-3 py-1.5 text-xs">
+              <li key={t.name} className="flex justify-between rounded-chip bg-white/80 px-3 py-1.5 text-xs">
                 <span>{t.name}</span>
                 <span className="text-mute">{t.pending ? "pending" : `${Math.round(t.kcal)} kcal`}</span>
               </li>
             ))}
           </ul>
-        </article>
+        </Card>
 
-        <article className="overflow-hidden rounded-[24px] border border-white/80 bg-white/70 backdrop-blur-xl">
+        <article className="overflow-hidden rounded-card border border-white/80 bg-white/70 backdrop-blur-xl">
           <img src={news.image} alt="" className="h-36 w-full object-cover" />
           <div className="p-4">
             <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">
@@ -309,7 +310,7 @@ function PlateDialog({
             <div
               key={k.id}
               className={cn(
-                "flex items-center justify-between gap-2 rounded-2xl border p-3 min-[420px]:block",
+                "flex items-center justify-between gap-2 rounded-control border p-3 min-[420px]:block",
                 n ? "border-grove bg-mint/40" : "border-transparent bg-white",
               )}
             >
@@ -323,7 +324,7 @@ function PlateDialog({
                 <button
                   type="button"
                   aria-label={`Less ${k.name}`}
-                  className="grid size-8 place-items-center rounded-xl bg-white text-sm touch:size-11"
+                  className="grid size-8 place-items-center rounded-chip bg-white text-sm touch:size-11"
                   onClick={() => setQty((q) => ({ ...q, [k.id]: Math.max(0, (q[k.id] ?? 0) - 1) }))}
                 >
                   −
@@ -334,7 +335,7 @@ function PlateDialog({
                 <button
                   type="button"
                   aria-label={`More ${k.name}`}
-                  className="grid size-8 place-items-center rounded-xl bg-white text-sm touch:size-11"
+                  className="grid size-8 place-items-center rounded-chip bg-white text-sm touch:size-11"
                   onClick={() => setQty((q) => ({ ...q, [k.id]: (q[k.id] ?? 0) + 1 }))}
                 >
                   +
@@ -345,7 +346,7 @@ function PlateDialog({
         })}
       </div>
 
-      <div className="mt-4 rounded-2xl bg-white p-3">
+      <div className="mt-4 rounded-control bg-white p-3">
         <p className="text-xs font-medium">Not in the list? Write the dish (uttapam, aite, home sabzi…)</p>
         <p className="mt-1 text-[11px] text-mute touch:text-xs">Calories wait. DHI searches later and updates the tracker. The name is remembered.</p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -353,16 +354,16 @@ function PlateDialog({
             value={customName}
             onChange={(e) => setCustomName(e.target.value)}
             placeholder="Name of the dish"
-            className="h-11 min-w-40 flex-1 rounded-2xl bg-[#f7f1e8] px-3 text-sm outline-none"
+            className="h-11 min-w-40 flex-1 rounded-control bg-paper px-3 text-sm outline-none"
           />
-          <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value as Unit)} className="h-11 rounded-2xl bg-[#f7f1e8] px-3 text-sm">
+          <select value={customUnit} onChange={(e) => setCustomUnit(e.target.value as Unit)} className="h-11 rounded-control bg-paper px-3 text-sm">
             {UNITS.map((u) => (
               <option key={u} value={u}>
                 {u}
               </option>
             ))}
           </select>
-          <div className="flex h-11 items-center gap-1 rounded-2xl bg-[#f7f1e8] px-2">
+          <div className="flex h-11 items-center gap-1 rounded-control bg-paper px-2">
             <button type="button" aria-label="Fewer" className="grid size-8 place-items-center touch:size-11" onClick={() => setCustomQty((n) => Math.max(1, n - 1))}>
               −
             </button>
@@ -379,7 +380,7 @@ function PlateDialog({
               setCustomName("");
               setCustomQty(1);
             }}
-            className="h-11 rounded-2xl bg-home px-4 text-sm text-paper disabled:opacity-40"
+            className="h-11 rounded-control bg-home px-4 text-sm text-paper disabled:opacity-40"
           >
             Add dish
           </button>
@@ -400,7 +401,7 @@ function PlateDialog({
         )}
       </div>
 
-      <div className="sticky -bottom-5 -mx-5 -mb-5 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-home/5 bg-home-bg px-5 py-4">
+      <div className="sticky -bottom-5 -mx-5 -mb-5 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-home/5 bg-page px-5 py-4">
         <p className="text-xs text-mute">
           {Math.round(live.kcal)} kcal known · {customs.length} waiting on DHI · {time}
         </p>
@@ -408,7 +409,7 @@ function PlateDialog({
           type="button"
           disabled={draft.length === 0}
           onClick={() => onConfirm(slot, draft, time)}
-          className="h-11 rounded-2xl bg-grove px-5 text-sm font-medium text-paper disabled:opacity-40"
+          className="h-11 rounded-control bg-grove px-5 text-sm font-medium text-paper disabled:opacity-40"
         >
           Confirm {SLOT_UI.find((s) => s.id === slot)?.label}
         </button>
@@ -431,9 +432,9 @@ function Stat({
   tone: "peach" | "gold" | "lilac" | "mint";
 }) {
   const bg = { peach: "bg-peach/40", gold: "bg-gold/40", lilac: "bg-lilac/35", mint: "bg-mint/40" }[tone];
-  const bar = { peach: "bg-[#c45c4a]", gold: "bg-gold", lilac: "bg-lilac", mint: "bg-grove" }[tone];
+  const bar = { peach: "bg-danger", gold: "bg-gold", lilac: "bg-lilac", mint: "bg-grove" }[tone];
   return (
-    <article className={cn("rounded-[24px] border border-white/80 p-4 backdrop-blur-xl", bg)}>
+    <article className={cn("rounded-card border border-white/80 p-4 backdrop-blur-xl", bg)}>
       <p className="text-xs text-mute">{label}</p>
       <p className="font-display mt-1 text-2xl font-medium">{value}</p>
       <p className="text-xs text-grove">{note}</p>

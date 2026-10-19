@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
-import { Waiting } from "@/components/dhi/convex-session";
 import { EnterScreen } from "@/components/dhi/enter-screen";
+import { DoorSkeleton } from "@/components/dhi/ui/loading-screens";
 import { refreshSession } from "@/lib/auth/client";
 import { DASHBOARD_PATH, entryTarget, interviewUrl } from "@/lib/entry";
 
@@ -37,7 +37,7 @@ export function FrontDoor({ signInFailed, referral }: { signInFailed: boolean; r
     if (target === "dashboard") void navigate({ to: DASHBOARD_PATH, replace: true });
   }, [target, friendWithCode, referral, navigate]);
 
-  if (target !== "sign-in" || friendWithCode) return <Waiting />;
+  if (target !== "sign-in" || friendWithCode) return <DoorSkeleton />;
   const notice = sessionLost ? "Your sign in has ended. Please sign in again." : signInFailed ? "Sign in did not finish. Please try again." : undefined;
   return <EnterScreen notice={notice} onSignedIn={() => setSessionLost(false)} />;
 }

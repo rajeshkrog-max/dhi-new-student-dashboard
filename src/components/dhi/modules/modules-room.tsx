@@ -56,7 +56,7 @@ export function ModulesRoom() {
             {f === "Kept" && <span className="ml-1 text-xs opacity-70">{kept.length}</span>}
           </button>
         ))}
-        <article className="ml-auto flex items-center gap-4 rounded-2xl bg-white/80 px-4 py-2">
+        <article className="ml-auto flex items-center gap-4 rounded-control bg-white/80 px-4 py-2">
           <div>
             <p className="text-[10px] uppercase tracking-[0.14em] text-mute touch:text-xs">Kept</p>
             <p className="font-display text-xl leading-none">{kept.length}/{MODULES.length}</p>
@@ -74,7 +74,7 @@ export function ModulesRoom() {
           const row = progress[m.id];
           const ratio = row?.kept ? 1 : row?.ratio ?? 0;
           return (
-            <button key={m.id} type="button" onClick={() => setOpen(m)} className="overflow-hidden rounded-[24px] bg-white/80 text-left shadow-sm">
+            <button key={m.id} type="button" onClick={() => setOpen(m)} className="overflow-hidden rounded-card bg-white/80 text-left shadow-sm">
               <span className="relative block aspect-[16/10]">
                 <img src={m.cover} alt="" className="size-full object-cover" />
                 <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-[11px] touch:text-xs">{m.category}</span>
@@ -146,7 +146,7 @@ function Player({
       <button type="button" onClick={onBack} className="flex h-9 w-fit items-center gap-2 rounded-full bg-white/80 px-3 text-sm touch:h-11">
         <ArrowLeft className="size-4" /> Modules
       </button>
-      <article className="overflow-hidden rounded-[28px] bg-[#07141c] text-paper">
+      <article className="overflow-hidden rounded-panel bg-night-panel text-paper">
         <video
           ref={ref}
           key={module.id}

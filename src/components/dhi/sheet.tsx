@@ -9,11 +9,11 @@ type Side = "left" | "right" | "bottom";
 // screen reader support. Left is the menu drawer, right is a room side panel (full width below
 // 640), bottom is a form (a bottom sheet below 640, a centred dialog from 640).
 const PLACE: Record<Side, string> = {
-  left: "inset-y-0 left-0 w-[min(86vw,320px)] rounded-r-[28px] motion-safe:animate-[sheet-from-left_220ms_ease-out]",
+  left: "inset-y-0 left-0 w-[min(86vw,320px)] rounded-r-panel motion-safe:animate-[sheet-from-left_220ms_ease-out]",
   right:
-    "inset-y-0 right-0 w-full sm:w-[min(92vw,440px)] sm:rounded-l-[28px] motion-safe:animate-[sheet-from-right_220ms_ease-out]",
+    "inset-y-0 right-0 w-full sm:w-[min(92vw,440px)] sm:rounded-l-panel motion-safe:animate-[sheet-from-right_220ms_ease-out]",
   bottom:
-    "inset-x-0 bottom-0 max-h-[90dvh] rounded-t-[28px] motion-safe:animate-[sheet-from-bottom_220ms_ease-out] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-[min(92vw,34rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[28px] sm:animate-none",
+    "inset-x-0 bottom-0 max-h-[90dvh] rounded-t-panel motion-safe:animate-[sheet-from-bottom_220ms_ease-out] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-[min(92vw,34rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-panel sm:animate-none",
 };
 
 export function Sheet({
@@ -22,6 +22,7 @@ export function Sheet({
   side = "bottom",
   title,
   hideTitle,
+  heading,
   children,
   className,
   tone = "light",
@@ -33,6 +34,8 @@ export function Sheet({
   side?: Side;
   title: string;
   hideTitle?: boolean;
+  // Shown in the header in place of the title text (the menu drawer shows the brand mark). The title stays for screen readers.
+  heading?: ReactNode;
   children: ReactNode;
   className?: string;
   // photo: a full bleed picture behind light text (the mood day panel). Pass the picture as backdrop.
@@ -52,9 +55,9 @@ export function Sheet({
           onCloseAutoFocus={onCloseAutoFocus}
           className={cn(
             "fixed z-50 flex max-h-dvh flex-col overflow-hidden border shadow-2xl outline-none",
-            photo && "border-white/20 bg-[#1a1208] text-paper",
-            tone === "dark" && "border-white/10 bg-[#0b1c26] text-paper",
-            tone === "light" && "border-white/80 bg-home-bg text-home",
+            photo && "border-white/20 bg-gold-ink text-paper",
+            tone === "dark" && "border-white/10 bg-night-panel text-paper",
+            tone === "light" && "border-white/80 bg-page text-home",
             PLACE[side],
             className,
           )}
@@ -62,14 +65,15 @@ export function Sheet({
           {backdrop}
           <div className="relative flex shrink-0 items-center justify-between gap-2 py-2 pl-5 pr-2">
             <Dialog.Title
-              className={cn("font-display text-lg font-medium", (hideTitle || photo) && "sr-only")}
+              className={cn("font-display text-lg font-medium", (hideTitle || photo || heading) && "sr-only")}
             >
               {title}
             </Dialog.Title>
+            {heading}
             <Dialog.Close
               aria-label={`Close ${title.toLowerCase()}`}
               className={cn(
-                "ml-auto grid size-11 shrink-0 place-items-center rounded-2xl",
+                "ml-auto grid size-11 shrink-0 place-items-center rounded-control",
                 onDark
                   ? "border border-white/30 bg-white/15 backdrop-blur-md hover:bg-white/25"
                   : "hover:bg-white/60",

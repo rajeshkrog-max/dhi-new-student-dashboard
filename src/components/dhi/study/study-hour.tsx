@@ -98,7 +98,7 @@ export function StudyHourRoom() {
   }
 
   return (
-    <div className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-[28px] bg-[#07141c] text-paper lg:min-h-0">
+    <div className="relative flex min-h-[28rem] flex-1 flex-col overflow-hidden rounded-panel bg-night-panel text-paper lg:min-h-0">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <div className="min-w-0">
           <p className="font-display text-lg leading-tight">{self === "dnd" ? "Alone" : LIVE.title}</p>
@@ -156,13 +156,13 @@ export function StudyHourRoom() {
                 <Face key={s.id} name={s.name} role={s.role} image={s.image} speaking={s.id === speaking} className="h-28 w-36 shrink-0 lg:h-auto lg:w-auto" />
               ))}
             </div>
-            <button type="button" onClick={() => setView("all")} className="grid h-11 place-items-center rounded-3xl bg-white/8 text-sm text-paper/80 ring-1 ring-white/10 lg:col-span-2 lg:h-auto">
+            <button type="button" onClick={() => setView("all")} className="grid h-11 place-items-center rounded-card bg-white/8 text-sm text-paper/80 ring-1 ring-white/10 lg:col-span-2 lg:h-auto">
               View all · {liveOthers.length} studying
             </button>
           </div>
 
           <div className="order-1 flex min-h-[280px] min-w-0 flex-col gap-3 lg:order-2">
-            <article className="relative min-h-0 flex-1 overflow-hidden rounded-3xl bg-[#102833]">
+            <article className="relative min-h-0 flex-1 overflow-hidden rounded-card bg-[#102833]">
               {cam && you.image ? (
                 <img src={you.image} alt="" className="absolute inset-0 size-full object-cover object-[center_18%]" />
               ) : (
@@ -176,16 +176,16 @@ export function StudyHourRoom() {
                 <Ctrl on={mic} onClick={() => setMic((v) => !v)} label={mic ? "Mic on" : "Mic off"}>
                   {mic ? <Mic className="size-4" /> : <MicOff className="size-4" />}
                 </Ctrl>
-                <button type="button" onClick={() => setInside(false)} className="grid size-11 place-items-center rounded-full bg-[#c45c4a]" aria-label="Leave the hour">
+                <button type="button" onClick={() => setInside(false)} className="grid size-11 place-items-center rounded-full bg-danger" aria-label="Leave the hour">
                   <PhoneOff className="size-4" />
                 </button>
               </div>
-              <button type="button" onClick={openChat} className="absolute right-3 top-3 grid size-10 place-items-center rounded-2xl bg-black/40 touch:size-11" aria-label="Chat">
+              <button type="button" onClick={openChat} className="absolute right-3 top-3 grid size-10 place-items-center rounded-control bg-black/40 touch:size-11" aria-label="Chat">
                 <MessageCircle className="size-4" aria-hidden />
-                {unread > 0 && <span data-decorative className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-[#c45c4a] px-1 text-[10px]">{unread}</span>}
+                {unread > 0 && <span data-decorative className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px]">{unread}</span>}
               </button>
             </article>
-            <button type="button" onClick={openChat} className="flex items-center gap-3 rounded-3xl bg-white/8 px-4 py-3 text-left ring-1 ring-white/10">
+            <button type="button" onClick={openChat} className="flex items-center gap-3 rounded-card bg-white/8 px-4 py-3 text-left ring-1 ring-white/10">
               <span className="flex h-6 items-end gap-0.5" aria-hidden>
                 {[4, 8, 5, 10, 6].map((h, i) => (
                   <span key={i} className="w-0.5 rounded-full bg-mint" style={{ height: h }} />
@@ -253,7 +253,7 @@ function Alone({
         </div>
         <div className="mt-8 space-y-2 text-left">
           {TRACKS.map((t, i) => (
-            <button key={t.name} type="button" onClick={() => onTrack(i)} className={cn("flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm", i === track ? "bg-white/12" : "bg-white/5")}>
+            <button key={t.name} type="button" onClick={() => onTrack(i)} className={cn("flex w-full items-center justify-between rounded-control px-4 py-3 text-sm", i === track ? "bg-white/12" : "bg-white/5")}>
               <span>{t.name}</span>
               {i === track && music ? <Pause className="size-4 text-gold" /> : <Play className="size-4 text-paper/50" />}
             </button>
@@ -282,7 +282,7 @@ function StatusSwitch({ value, onChange }: { value: Self; onChange: (v: Self) =>
 
 function Face({ name, role, image, speaking, className }: { name: string; role: string; image: string | null; speaking: boolean; className?: string }) {
   return (
-    <article className={cn("relative overflow-hidden rounded-3xl bg-[#102833]", speaking && "ring-2 ring-gold", className)}>
+    <article className={cn("relative overflow-hidden rounded-card bg-[#102833]", speaking && "ring-2 ring-gold", className)}>
       {image ? <img src={image} alt="" className="absolute inset-0 size-full object-cover" /> : <div className="absolute inset-0 grid place-items-center text-lg">{name.slice(0, 1)}</div>}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
         <p className="truncate text-xs font-medium">{name}</p>
@@ -302,7 +302,7 @@ function Board({
 }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      <article className="rounded-[28px] border border-white/80 bg-[#07141c] p-6 text-paper">
+      <article className="rounded-panel border border-white/80 bg-night-panel p-6 text-paper">
         <p className="text-[11px] uppercase tracking-[0.14em] text-gold touch:text-xs">{livePhase === "live" ? "Open now" : livePhase === "closed" ? "Closed" : "Locked"}</p>
         <h2 className="font-display mt-2 text-3xl">{LIVE.title}</h2>
         <p className="mt-2 text-sm text-paper/70">{LIVE.teacher} dedicated {LIVE.subject}. Voice and camera. The room drops when the clock ends.</p>
@@ -311,7 +311,7 @@ function Board({
           Enter the hour
         </button>
       </article>
-      <article className="rounded-[28px] border border-white/80 bg-white/70 p-6">
+      <article className="rounded-panel border border-white/80 bg-white/70 p-6">
         <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">
           <Lock className="size-3.5" /> {lockedPhase === "locked" ? "Locked" : lockedPhase}
         </p>

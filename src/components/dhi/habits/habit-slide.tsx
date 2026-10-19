@@ -32,7 +32,7 @@ export function HabitSlide({
       backdrop={
         <>
           <div className="pointer-events-none absolute inset-0 bg-cover bg-[center_45%]" style={{ backgroundImage: "url(/habits/grove.jpg)" }} />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1a1208]/88 via-[#1a1208]/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gold-ink/88 via-gold-ink/20 to-transparent" />
         </>
       }
     >
@@ -46,7 +46,7 @@ export function HabitSlide({
       </div>
 
       <div className="mt-auto space-y-3 pb-2 pt-16">
-        <div className="rounded-[24px] border border-white/20 bg-white/10 p-5 text-center backdrop-blur-xl">
+        <div className="rounded-card border border-white/20 bg-white/10 p-5 text-center backdrop-blur-xl">
           <span className="streak-fire text-4xl">🔥</span>
           <p className="font-display mt-1 text-5xl">{t.streak}</p>
           <p className="text-sm text-paper/75">day streak · personal best {t.best}</p>
@@ -58,15 +58,15 @@ export function HabitSlide({
           </div>
           <p className="mt-2 text-xs text-paper/80">Next flag: {flag.target} days · {flag.left} to go</p>
         </div>
-        <div className="rounded-[24px] border border-white/20 bg-white/10 p-4 backdrop-blur-xl">
+        <div className="rounded-card border border-white/20 bg-white/10 p-4 backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">This month</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {days.map((d) => (
-              <span key={d.date} className="size-4 rounded-md" style={{ backgroundColor: d.lit ? "#e8c36a" : "rgba(255,255,255,0.18)" }} />
+              <span key={d.date} className="size-4 rounded-md" style={{ backgroundColor: d.lit ? "var(--color-gold)" : "color-mix(in srgb, white 18%, transparent)" }} />
             ))}
           </div>
         </div>
-        <div className="rounded-[24px] border border-white/20 bg-white/10 p-5 backdrop-blur-xl">
+        <div className="rounded-card border border-white/20 bg-white/10 p-5 backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">DHI</p>
           <p className="font-display mt-2 text-xl leading-snug">{insight(store, plan)}</p>
         </div>

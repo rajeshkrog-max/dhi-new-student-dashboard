@@ -42,3 +42,9 @@ export function referralParam(raw: unknown): string | undefined {
 export function interviewUrl(referral?: string): string {
   return referral ? `${INTERVIEW_PATH}?ref=${encodeURIComponent(referral)}` : INTERVIEW_PATH;
 }
+
+// Where "Back to the house" goes from an error or not found page: the front door when the address starts with `/enter`, the dashboard
+// everywhere else (spec house/0003).
+export function backToHouse(pathname: string): string {
+  return pathname.startsWith(ENTER_PATH) ? "/" : DASHBOARD_PATH;
+}

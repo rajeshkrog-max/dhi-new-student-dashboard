@@ -8,7 +8,7 @@ export function NotificationBell({ className }: { className?: string }) {
       role="img"
       aria-label="Notifications"
       className={cn(
-        "relative grid size-11 place-items-center rounded-2xl border border-white/80 bg-white/70 backdrop-blur-md",
+        "relative grid size-11 place-items-center rounded-control border border-white/80 bg-white/70 backdrop-blur-md",
         className,
       )}
     >

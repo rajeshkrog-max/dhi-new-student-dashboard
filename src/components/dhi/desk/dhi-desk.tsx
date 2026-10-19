@@ -135,7 +135,7 @@ export function DhiDesk() {
         </button>
         <span className="rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium tabular-nums">{left} coins</span>
       </RoomActions>
-      <section className={cn("grid min-h-0 flex-1 overflow-hidden rounded-[28px] border border-white/80 bg-white/65 shadow-sm backdrop-blur-xl", showCanvas && "lg:grid-cols-2")}>
+      <section className={cn("grid min-h-0 flex-1 overflow-hidden rounded-panel border border-white/80 bg-white/65 shadow-sm backdrop-blur-xl", showCanvas && "lg:grid-cols-2")}>
         <div className="flex min-h-0 flex-col">
           <DeskChat
             thread={thread}
@@ -192,13 +192,13 @@ export function DhiDesk() {
       >
         {thread?.canvas && (
           <>
-            <img src={thread.canvas.src} alt="" className="max-h-[70dvh] w-full rounded-2xl object-contain" />
+            <img src={thread.canvas.src} alt="" className="max-h-[70dvh] w-full rounded-control object-contain" />
             <p className="pt-4 text-sm text-home/80">{thread.canvas.caption}</p>
           </>
         )}
       </Sheet>
 
-      <aside className="hidden min-h-0 flex-col rounded-[28px] border border-white/80 bg-white/70 p-4 backdrop-blur-xl lg:flex">
+      <aside className="hidden min-h-0 flex-col rounded-panel border border-white/80 bg-white/70 p-4 backdrop-blur-xl lg:flex">
         {panel(false)}
       </aside>
     </div>
@@ -239,7 +239,7 @@ function SittingsPanel({
         </div>
         <p className="font-display text-3xl leading-none">{left}</p>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#efeae3]">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-sand">
         <div className="h-full rounded-full bg-gradient-to-r from-lilac to-gold" style={{ width: `${Math.max(6, 100 - used)}%` }} />
       </div>
       <p className="mt-1.5 text-[11px] text-mute touch:text-xs">
@@ -255,7 +255,7 @@ function SittingsPanel({
             <button
               type="button"
               onClick={() => onOpen(t)}
-              className={cn("w-full rounded-2xl px-3 py-2.5 text-left", t.id === activeId ? "bg-white shadow-sm" : "hover:bg-white/60")}
+              className={cn("w-full rounded-control px-3 py-2.5 text-left", t.id === activeId ? "bg-white shadow-sm" : "hover:bg-white/60")}
             >
               <p className="truncate text-sm font-medium">{t.title}</p>
               <p className="mt-0.5 truncate text-[11px] text-mute touch:text-xs">{t.preview}</p>
@@ -308,7 +308,7 @@ function DeskChat({
           <p className="mt-2 text-sm text-mute">How shall we sit today?</p>
           <div className="mt-8 grid w-full max-w-xl gap-3 sm:grid-cols-2">
             {STARTERS.map((s) => (
-              <button key={s.id} type="button" onClick={() => onStarter(s)} className="rounded-[22px] bg-white p-4 text-left shadow-sm hover:shadow">
+              <button key={s.id} type="button" onClick={() => onStarter(s)} className="rounded-card bg-white p-4 text-left shadow-sm hover:shadow">
                 <p className="text-sm font-medium">{s.title}</p>
                 <p className="mt-1 text-xs text-mute">{s.body}</p>
               </button>
@@ -323,7 +323,7 @@ function DeskChat({
             </button>
           )}
           {thread?.messages.map((m) => (
-            <article key={m.id} className={cn("max-w-[92%] rounded-[22px] px-4 py-3 text-sm", m.role === "student" ? "ml-auto bg-home text-paper" : "bg-white text-home shadow-sm")}>
+            <article key={m.id} className={cn("max-w-[92%] rounded-card px-4 py-3 text-sm", m.role === "student" ? "ml-auto bg-home text-paper" : "bg-white text-home shadow-sm")}>
               {m.role === "dhi" && (
                 <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-mute touch:text-xs">
                   <Sparkles className="size-3" /> DHI
@@ -335,7 +335,7 @@ function DeskChat({
               {m.mock && (
                 <ul className="mt-3 space-y-3">
                   {m.mock.map((q, i) => (
-                    <li key={i} className="rounded-2xl bg-paper/80 p-3">
+                    <li key={i} className="rounded-control bg-paper/80 p-3">
                       <p className="font-medium">{q.q}</p>
                       <div className="mt-2 grid gap-1.5">
                         {q.options.map((o, j) => {
@@ -348,7 +348,7 @@ function DeskChat({
                               type="button"
                               onClick={() => onPick(m.id, i, j)}
                               className={cn(
-                                "rounded-xl px-3 py-2 text-left text-xs touch:min-h-11",
+                                "rounded-chip px-3 py-2 text-left text-xs touch:min-h-11",
                                 picked && right && "bg-mint",
                                 picked && !right && "bg-peach/70",
                                 !picked && reveal && right && "bg-mint/50",
@@ -370,14 +370,14 @@ function DeskChat({
                   onChange={(e) => onDraft(m.id, e.target.value)}
                   placeholder="Write here…"
                   rows={6}
-                  className="mt-3 w-full resize-none rounded-2xl bg-paper/90 p-3 text-sm leading-7 text-home outline-none"
+                  className="mt-3 w-full resize-none rounded-control bg-paper/90 p-3 text-sm leading-7 text-home outline-none"
                 />
               )}
             </article>
           ))}
-          {pending && <article className="ml-auto max-w-[92%] rounded-[22px] bg-home px-4 py-3 text-sm text-paper">{pending}</article>}
+          {pending && <article className="ml-auto max-w-[92%] rounded-card bg-home px-4 py-3 text-sm text-paper">{pending}</article>}
           {busy && (
-            <article className="flex items-center gap-3 rounded-[22px] bg-white px-4 py-3 text-sm shadow-sm">
+            <article className="flex items-center gap-3 rounded-card bg-white px-4 py-3 text-sm shadow-sm">
               <span className="dhi-sit text-gold-ink">
                 <span>●</span>
                 <span className="mx-0.5">●</span>
@@ -408,7 +408,7 @@ function Composer({
 }) {
   return (
     <div data-first-screen className="border-t border-home/5 p-3 sm:p-4">
-      <div className="rounded-[24px] bg-white p-3 shadow-sm">
+      <div className="rounded-card bg-white p-3 shadow-sm">
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -456,7 +456,7 @@ function CanvasPane({ src, caption, onClose }: { src: string; caption: string; o
           <X className="size-4" />
         </button>
       </div>
-      <img src={src} alt="" className="mx-4 max-h-[min(52vh,420px)] rounded-2xl object-contain" />
+      <img src={src} alt="" className="mx-4 max-h-[min(52vh,420px)] rounded-control object-contain" />
       <p className="p-4 text-sm text-home/80">{caption}</p>
     </div>
   );

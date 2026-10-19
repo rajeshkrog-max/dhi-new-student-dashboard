@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ConvexSession } from "@/components/dhi/convex-session";
 import { FrontDoor } from "@/components/dhi/front-door";
+import { DoorSkeleton } from "@/components/dhi/ui/loading-screens";
 import { referralParam } from "@/lib/entry";
 
 // The front door under its own address (spec 0008): Google comes back here, and so does a failed Google sign in (`signin=error`). The root
 // address `/` shows the same door.
 export const Route = createFileRoute("/enter")({
   ssr: false,
+  pendingComponent: DoorSkeleton,
   validateSearch: (search: Record<string, unknown>): { signin?: "error"; ref?: string } => ({
     ...(search.signin === "error" ? { signin: "error" as const } : {}),
     ...(referralParam(search.ref) ? { ref: referralParam(search.ref) } : {}),

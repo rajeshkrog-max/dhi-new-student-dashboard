@@ -1,7 +1,7 @@
 import { createRouter } from "@tanstack/react-router";
-import { AppErrorComponent } from "@/lib/error-component";
+import { ErrorPage, NotFoundPage } from "@/components/dhi/ui/status-page";
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
-  return createRouter({ routeTree, defaultErrorComponent: AppErrorComponent });
+  return createRouter({ routeTree, defaultErrorComponent: ErrorPage, defaultNotFoundComponent: NotFoundPage });
 }

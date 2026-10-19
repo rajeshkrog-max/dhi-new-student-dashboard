@@ -47,7 +47,7 @@ export function HabitCompose({
             setCatalogId(null);
           }}
           placeholder="Write it — drink water, stretch, no scroll after 10…"
-          className="mt-1 h-12 w-full rounded-2xl bg-white px-4 text-sm text-home outline-none"
+          className="mt-1 h-12 w-full rounded-control bg-white px-4 text-sm text-home outline-none"
         />
       </label>
 
@@ -90,11 +90,11 @@ export function HabitCompose({
       <div className="mt-4 grid grid-cols-2 gap-3">
         <label className="text-xs text-mute">
           Starts
-          <input type="date" value={startOn} onChange={(e) => setStartOn(e.target.value)} className="mt-1 h-11 w-full rounded-2xl bg-white px-3 text-sm text-home" />
+          <input type="date" value={startOn} onChange={(e) => setStartOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
         </label>
         <label className="text-xs text-mute">
           Ends
-          <input type="date" value={endOn} min={startOn} onChange={(e) => setEndOn(e.target.value)} className="mt-1 h-11 w-full rounded-2xl bg-white px-3 text-sm text-home" />
+          <input type="date" value={endOn} min={startOn} onChange={(e) => setEndOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
         </label>
       </div>
 

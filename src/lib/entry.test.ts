@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { entryTarget, interviewUrl, referralParam, type EntryMe } from "./entry.ts";
+import { backToHouse, entryTarget, interviewUrl, referralParam, type EntryMe } from "./entry.ts";
 
 const signedIn = { isLoading: false, isAuthenticated: true };
 const finished: EntryMe = { state: "ready", check: { completedAt: 1_700_000_000_000 } };
@@ -44,4 +44,11 @@ test("spec 0008: a referral code in the address is kept only when it looks like 
 test("spec 0008: the interview address carries the referral code, or none", () => {
   assert.equal(interviewUrl(), "/dhiinterviews/landing.html");
   assert.equal(interviewUrl("ABC1234"), "/dhiinterviews/landing.html?ref=ABC1234");
+});
+
+test("spec house/0003: Back to the house leads to the front door from /enter and to the dashboard from anywhere else", () => {
+  assert.equal(backToHouse("/enter"), "/");
+  assert.equal(backToHouse("/enter/nothing-here"), "/");
+  assert.equal(backToHouse("/dashboard/nothing-here"), "/dashboard");
+  assert.equal(backToHouse("/anything"), "/dashboard");
 });

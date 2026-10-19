@@ -23,7 +23,7 @@ import { Sheet } from "@/components/dhi/sheet";
 import { useTouch } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 
-const glass = "rounded-[24px] border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
+const glass = "rounded-card border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
 
 export function MoodTracker() {
   const [store, setStore] = useState<MoodStore>({ studentId: "", year: 2026, days: {}, help: [] });
@@ -95,7 +95,7 @@ export function MoodTracker() {
                   type="button"
                   onClick={() => setMood(m.key)}
                   className={cn(
-                    "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:text-paper hover:shadow-md",
+                    "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-control border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:text-paper hover:shadow-md",
                     on ? "border-transparent text-paper shadow-md" : "border-white/80 bg-white text-home",
                   )}
                   style={{ backgroundColor: on ? m.color : undefined }}
@@ -120,7 +120,7 @@ export function MoodTracker() {
               onChange={(e) => setNote(e.target.value)}
               rows={5}
               placeholder="What sat in the chest today…"
-              className="mt-3 min-h-32 w-full resize-none rounded-[22px] border border-white bg-white/90 p-4 text-base leading-relaxed text-home outline-none placeholder:text-mute/70"
+              className="mt-3 min-h-32 w-full resize-none rounded-card border border-white bg-white/90 p-4 text-base leading-relaxed text-home outline-none placeholder:text-mute/70"
             />
           </label>
           <button type="button" onClick={saveToday} className="mt-4 h-12 self-start rounded-full bg-grove px-7 text-sm font-medium text-paper">
@@ -149,7 +149,7 @@ export function MoodTracker() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pie.slices.length ? pie.slices : [{ key: "empty", value: 1, color: "#e8e4dc" }]}
+                    data={pie.slices.length ? pie.slices : [{ key: "empty", value: 1, color: "var(--color-sand-deep)" }]}
                     dataKey="value"
                     innerRadius={58}
                     outerRadius={78}
@@ -157,7 +157,7 @@ export function MoodTracker() {
                     stroke="none"
                     isAnimationActive={false}
                   >
-                    {(pie.slices.length ? pie.slices : [{ color: "#e8e4dc" }]).map((s, i) => (
+                    {(pie.slices.length ? pie.slices : [{ color: "var(--color-sand-deep)" }]).map((s, i) => (
                       <Cell key={i} fill={s.color} />
                     ))}
                   </Pie>
@@ -212,7 +212,7 @@ export function MoodTracker() {
                       setMonth(mi);
                       board.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
-                    className={cn("flex min-h-11 w-full items-center gap-3 rounded-2xl px-2 py-2 text-left", mi === month && "bg-white/80")}
+                    className={cn("flex min-h-11 w-full items-center gap-3 rounded-control px-2 py-2 text-left", mi === month && "bg-white/80")}
                   >
                     {label}
                     <span aria-hidden className="flex flex-wrap gap-1">
@@ -223,7 +223,7 @@ export function MoodTracker() {
                           <span
                             key={di}
                             className="size-[18px] rounded-md"
-                            style={{ backgroundColor: cell ? moodOf(cell.mood).color : "#efeae3" }}
+                            style={{ backgroundColor: cell ? moodOf(cell.mood).color : "var(--color-sand)" }}
                           />
                         );
                       })}
@@ -248,7 +248,7 @@ export function MoodTracker() {
                           onClick={() => cell && setPick(key)}
                           title={cell ? `${key} · ${moodOf(cell.mood).label}` : key}
                           className="size-[18px] rounded-md disabled:cursor-default"
-                          style={{ backgroundColor: cell ? moodOf(cell.mood).color : "#efeae3" }}
+                          style={{ backgroundColor: cell ? moodOf(cell.mood).color : "var(--color-sand)" }}
                         />
                       );
                     })}
@@ -278,10 +278,10 @@ export function MoodTracker() {
         <Modal title="Sit with a counselor?" onClose={() => setConfirmHelp(false)}>
           <p className="text-sm text-mute">In-house, human. DHI does not enter the recording. Asha Rao will see your note, not a diagnosis.</p>
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={() => setConfirmHelp(false)} className="h-11 rounded-2xl bg-white px-4 text-sm">
+            <button type="button" onClick={() => setConfirmHelp(false)} className="h-11 rounded-control bg-white px-4 text-sm">
               Not now
             </button>
-            <button type="button" onClick={() => setHelp(true)} className="h-11 rounded-2xl bg-home px-4 text-sm text-paper">
+            <button type="button" onClick={() => setHelp(true)} className="h-11 rounded-control bg-home px-4 text-sm text-paper">
               Yes, write to them
             </button>
           </div>
@@ -313,7 +313,7 @@ export function MoodTracker() {
       {sent && (
         <Modal title="The door is open" onClose={() => setSent(false)}>
           <p className="text-sm text-mute">Your words went to the counselor desk. If you booked a slot, it is held.</p>
-          <button type="button" onClick={() => setSent(false)} className="mt-5 h-11 rounded-2xl bg-home px-5 text-sm text-paper">
+          <button type="button" onClick={() => setSent(false)} className="mt-5 h-11 rounded-control bg-home px-5 text-sm text-paper">
             Stay in the house
           </button>
         </Modal>
@@ -364,9 +364,9 @@ function MonthBoard({
               disabled={future || !cell}
               onClick={() => cell && onPick(key)}
               className={cn(
-                "grid h-11 place-items-center rounded-2xl text-xs sm:aspect-square sm:h-auto",
+                "grid h-11 place-items-center rounded-control text-xs sm:aspect-square sm:h-auto",
                 isToday && "ring-2 ring-gold",
-                !cell && "bg-[#efeae3] text-mute",
+                !cell && "bg-sand text-mute",
                 cell && "text-paper",
               )}
               style={{ backgroundColor: cell ? moodOf(cell.mood).color : undefined }}
@@ -406,12 +406,12 @@ function DaySlide({
       backdrop={
         <>
           <div className="pointer-events-none absolute inset-0 bg-cover bg-[center_40%]" style={{ backgroundImage: "url(/mood/thought.jpg)" }} />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1a1208]/80 via-[#1a1208]/25 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gold-ink/80 via-gold-ink/25 to-transparent" />
         </>
       }
     >
       <div className="inline-flex flex-col gap-2">
-        <p className="w-fit rounded-full border border-white/35 bg-[#1a1208]/55 px-3 py-1 text-[11px] tracking-[0.14em] text-paper backdrop-blur-md touch:text-xs">
+        <p className="w-fit rounded-full border border-white/35 bg-gold-ink/55 px-3 py-1 text-[11px] tracking-[0.14em] text-paper backdrop-blur-md touch:text-xs">
           {prettyDate(date)}
         </p>
         <p className="font-display text-4xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">
@@ -419,11 +419,11 @@ function DaySlide({
         </p>
       </div>
       <div className="mt-auto space-y-3 pb-2 pt-16">
-        <div className="rounded-[24px] border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
+        <div className="rounded-card border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">What you wrote</p>
           <p className="font-display mt-2 text-2xl leading-snug">{note || "This day was coloured, but no line was left."}</p>
         </div>
-        <div className="rounded-[24px] border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
+        <div className="rounded-card border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
           <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">
             <Sparkles className="size-3" aria-hidden /> DHI thought
           </p>
@@ -466,7 +466,7 @@ function HelpDesk({
         onChange={(e) => onMessage(e.target.value)}
         rows={4}
         placeholder="What do you need them to know before the sitting?"
-        className="mt-4 w-full resize-none rounded-2xl bg-white p-3 text-sm outline-none"
+        className="mt-4 w-full resize-none rounded-control bg-white p-3 text-sm outline-none"
       />
       <p className="mt-4 text-[11px] uppercase tracking-wide text-mute touch:text-xs">Open hours</p>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -484,7 +484,7 @@ function HelpDesk({
             disabled={s.status === "booked"}
             onClick={() => onSlot(s.id === slotId ? null : s.id)}
             className={cn(
-              "flex h-12 flex-col items-center justify-center rounded-2xl text-xs",
+              "flex h-12 flex-col items-center justify-center rounded-control text-xs",
               s.status === "booked" && "bg-white/50 text-mute line-through",
               s.status === "open" && slotId === s.id && "bg-grove text-paper",
               s.status === "open" && slotId !== s.id && "bg-white",
@@ -496,7 +496,7 @@ function HelpDesk({
           </button>
         ))}
       </div>
-      <button type="button" disabled={!message.trim()} onClick={onSend} className="mt-5 h-11 w-full rounded-2xl bg-home text-sm font-medium text-paper disabled:opacity-40">
+      <button type="button" disabled={!message.trim()} onClick={onSend} className="mt-5 h-11 w-full rounded-control bg-home text-sm font-medium text-paper disabled:opacity-40">
         Send to counselor desk
       </button>
     </Modal>

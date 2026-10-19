@@ -37,7 +37,7 @@ import { cn } from "@/lib/utils";
 import { HabitCompose } from "./habit-compose";
 import { HabitSlide } from "./habit-slide";
 
-const glass = "rounded-[24px] border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
+const glass = "rounded-card border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
 
 export function HabitTracker() {
   const [store, setStore] = useState<HabitStore>({ studentId: "", plans: [], checks: [] });
@@ -157,14 +157,14 @@ export function HabitTracker() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={weekScores.every((s) => !s.done) ? [{ name: "empty", pct: 1, color: "#e8e4dc" }] : weekScores.map((s) => ({ ...s, value: Math.max(s.pct, 1) }))}
+                      data={weekScores.every((s) => !s.done) ? [{ name: "empty", pct: 1, color: "var(--color-sand-deep)" }] : weekScores.map((s) => ({ ...s, value: Math.max(s.pct, 1) }))}
                       dataKey={weekScores.every((s) => !s.done) ? "pct" : "value"}
                       innerRadius={62}
                       outerRadius={86}
                       paddingAngle={3}
                       stroke="none"
                     >
-                      {(weekScores.every((s) => !s.done) ? [{ color: "#e8e4dc" }] : weekScores).map((s, i) => (
+                      {(weekScores.every((s) => !s.done) ? [{ color: "var(--color-sand-deep)" }] : weekScores).map((s, i) => (
                         <Cell key={i} fill={s.color} />
                       ))}
                     </Pie>
@@ -198,7 +198,7 @@ export function HabitTracker() {
                     type="category"
                     dataKey="name"
                     width={narrow ? 84 : 118}
-                    tick={narrow ? <ClippedTick /> : { fontSize: 11, fill: "#2a2438" }}
+                    tick={narrow ? <ClippedTick /> : { fontSize: 11, fill: "var(--color-home)" }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -225,10 +225,10 @@ export function HabitTracker() {
                 <p className="pb-1 text-sm text-mute">days · best {leadBest}</p>
               </div>
               <div className="relative mt-5">
-                <div className="h-2.5 overflow-hidden rounded-full bg-[#efeae3]">
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#e08a3d] to-[#e8c36a]" style={{ width: `${flag.fill * 100}%` }} />
+                <div className="h-2.5 overflow-hidden rounded-full bg-sand">
+                  <div className="h-full rounded-full bg-gradient-to-r from-amber to-gold" style={{ width: `${flag.fill * 100}%` }} />
                 </div>
-                <Flag className="absolute -top-1 size-4 text-[#c45c4a]" style={{ left: `calc(${Math.min(96, flag.fill * 100)}% - 8px)` }} />
+                <Flag className="absolute -top-1 size-4 text-danger" style={{ left: `calc(${Math.min(96, flag.fill * 100)}% - 8px)` }} />
               </div>
               <p className="mt-2 text-xs text-mute">
                 Next flag for {leader.title}: {flag.target} days ({flag.left} to go)
@@ -313,7 +313,7 @@ function HabitCard({
   const color = colorOf(plan);
 
   return (
-    <li className="overflow-hidden rounded-[22px] bg-white shadow-sm">
+    <li className="overflow-hidden rounded-card bg-white shadow-sm">
       <div className="h-1.5" style={{ backgroundColor: color }} />
       <div className="p-4">
         <div className="flex items-center gap-3">
@@ -322,7 +322,7 @@ function HabitCard({
             onClick={onToggle}
             aria-label={done ? `Undo ${plan.title}` : `Done ${plan.title}`}
             className="grid size-12 shrink-0 place-items-center rounded-full text-lg text-paper transition"
-            style={{ backgroundColor: done ? color : "#efeae3", color: done ? "#f6f1e8" : "#2a2438" }}
+            style={{ backgroundColor: done ? color : "var(--color-sand)", color: done ? "var(--color-paper)" : "var(--color-home)" }}
           >
             {glyphOf(plan)}
           </button>
@@ -344,7 +344,7 @@ function HabitCard({
         </div>
         <div className="mt-3 flex gap-1">
           {days.map((d) => (
-            <span key={d.date} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: d.lit ? color : "#efeae3" }} />
+            <span key={d.date} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: d.lit ? color : "var(--color-sand)" }} />
           ))}
         </div>
         <p className="mt-2 text-xs" style={{ color }}>
@@ -359,7 +359,7 @@ function HabitCard({
 function ClippedTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
   const name = payload?.value ?? "";
   return (
-    <text x={x} y={y} dy={4} textAnchor="end" fontSize={12} fill="#2a2438">
+    <text x={x} y={y} dy={4} textAnchor="end" fontSize={12} fill="var(--color-home)">
       {name.length > 12 ? `${name.slice(0, 11)}…` : name}
     </text>
   );
@@ -370,7 +370,7 @@ function ScoreTip({ active, payload }: { active?: boolean; payload?: { payload: 
   const s = payload[0].payload;
   if (!s.name || s.name === "empty") return null;
   return (
-    <div className="rounded-xl bg-home px-3 py-2 text-xs text-paper shadow-lg">
+    <div className="rounded-chip bg-home px-3 py-2 text-xs text-paper shadow-lg">
       <p className="font-medium">{s.name}</p>
       <p className="mt-0.5 text-paper/80">
         {s.done} of {s.possible} days · {s.pct}%
@@ -394,7 +394,7 @@ function Tile({
 }) {
   const bg = { mint: "bg-mint/40", gold: "bg-gold/40", lilac: "bg-lilac/35", peach: "bg-peach/40" }[tone];
   return (
-    <article className={cn("rounded-[24px] border border-white/80 p-4 backdrop-blur-xl", bg)}>
+    <article className={cn("rounded-card border border-white/80 p-4 backdrop-blur-xl", bg)}>
       <p className="text-xs text-mute">{label}</p>
       <p className="font-display mt-1 text-2xl">
         {fire && <span className="streak-fire mr-1 text-xl">🔥</span>}

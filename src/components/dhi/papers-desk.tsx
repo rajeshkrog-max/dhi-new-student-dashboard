@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { EXAM_TILES, type ExamTile, type PaperDef } from "@/lib/dhi/papers-demo";
 import { Sheet } from "@/components/dhi/sheet";
+import { Card } from "@/components/dhi/ui/card";
 import { cn } from "@/lib/utils";
 
 type Phase = "idle" | "running" | "review" | "submitted";
@@ -81,7 +82,7 @@ export function PapersDesk({
           An exam here is a sitting with a window. When the window closes, the tile leaves your house and the teacher is told.
         </p>
         {notice && (
-          <p className="rounded-2xl bg-[#c45c4a]/15 px-4 py-3 text-sm text-[#7a2e24]">{notice}</p>
+          <p className="rounded-control bg-danger/15 px-4 py-3 text-sm text-danger-ink">{notice}</p>
         )}
         <div className="grid gap-4 xl:grid-cols-2">
           {live.map((tile) => (
@@ -197,7 +198,7 @@ function PaperSitting({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <header className="rounded-[24px] border border-white/80 bg-white/75 p-4 backdrop-blur-xl">
+      <header className="rounded-card border border-white/80 bg-white/75 p-4 backdrop-blur-xl">
         <div className="flex flex-wrap items-start gap-3">
           <button
             type="button"
@@ -205,7 +206,7 @@ function PaperSitting({
             disabled={attempt.phase === "running"}
             title={attempt.phase === "running" ? "Exam is going on — stop first" : "Back to exams"}
             aria-label="Back to exams"
-            className="grid size-10 place-items-center rounded-2xl bg-white/80 disabled:opacity-40 touch:size-11"
+            className="grid size-10 place-items-center rounded-control bg-white/80 disabled:opacity-40 touch:size-11"
           >
             <ArrowLeft className="size-4" aria-hidden />
           </button>
@@ -221,7 +222,7 @@ function PaperSitting({
             <button
               type="button"
               onClick={start}
-              className="h-11 rounded-2xl bg-grove px-5 text-sm font-medium text-paper"
+              className="h-11 rounded-control bg-grove px-5 text-sm font-medium text-paper"
             >
               Start sitting
             </button>
@@ -230,7 +231,7 @@ function PaperSitting({
             <button
               type="button"
               onClick={stop}
-              className="flex h-11 items-center gap-2 rounded-2xl bg-[#c45c4a] px-4 text-sm font-medium text-paper"
+              className="flex h-11 items-center gap-2 rounded-control bg-danger px-4 text-sm font-medium text-paper"
             >
               <Square className="size-3.5 fill-current" />
               Stop
@@ -240,7 +241,7 @@ function PaperSitting({
             <button
               type="button"
               onClick={() => setShowSubmit(true)}
-              className="h-11 rounded-2xl bg-gold px-5 text-sm font-medium text-gold-ink"
+              className="h-11 rounded-control bg-gold px-5 text-sm font-medium text-gold-ink"
             >
               Offer to teacher
             </button>
@@ -253,7 +254,7 @@ function PaperSitting({
                 localStorage.removeItem(attemptKey(paper.id));
                 setAttempt(fresh);
               }}
-              className="h-11 rounded-2xl bg-home px-5 text-sm font-medium text-paper"
+              className="h-11 rounded-control bg-home px-5 text-sm font-medium text-paper"
             >
               Sit again
             </button>
@@ -297,7 +298,7 @@ function PaperSitting({
               onPick={setQi}
             />
 
-            <article className="min-w-0 flex-1 overflow-y-auto rounded-[24px] border border-white/80 bg-white/75 p-5 backdrop-blur-xl">
+            <article className="min-w-0 flex-1 overflow-y-auto rounded-card border border-white/80 bg-white/75 p-5 backdrop-blur-xl">
               {lane === "mcq" ? (
                 <McqCard
                   q={mcq}
@@ -321,7 +322,7 @@ function PaperSitting({
                   type="button"
                   disabled={qi === 0}
                   onClick={() => setQi((n) => Math.max(0, n - 1))}
-                  className="flex h-11 items-center gap-2 rounded-2xl bg-white/80 px-4 text-sm disabled:opacity-40"
+                  className="flex h-11 items-center gap-2 rounded-control bg-white/80 px-4 text-sm disabled:opacity-40"
                 >
                   <ArrowLeft className="size-4" /> Previous
                 </button>
@@ -329,7 +330,7 @@ function PaperSitting({
                   type="button"
                   disabled={qi >= list.length - 1}
                   onClick={() => setQi((n) => Math.min(list.length - 1, n + 1))}
-                  className="flex h-11 items-center gap-2 rounded-2xl bg-home px-4 text-sm text-paper disabled:opacity-40"
+                  className="flex h-11 items-center gap-2 rounded-control bg-home px-4 text-sm text-paper disabled:opacity-40"
                 >
                   Next <ArrowRight className="size-4" />
                 </button>
@@ -352,7 +353,7 @@ function PaperSitting({
       )}
 
       {attempt.phase === "submitted" && (
-        <p className="rounded-2xl bg-mint/40 px-4 py-3 text-sm text-grove">
+        <p className="rounded-control bg-mint/40 px-4 py-3 text-sm text-grove">
           Well sat. Shubham Raj will read with remarks — not a stamp of worth. The lamp moves after you accept his note.
         </p>
       )}
@@ -374,11 +375,11 @@ function ExamCard({
   const left = Math.max(0, tile.dueAt - now);
   const tone = fill < 0.5 ? "green" : fill < 0.8 ? "yellow" : "red";
   const wash =
-    tone === "green" ? "bg-grove" : tone === "yellow" ? "bg-gold" : "bg-[#c45c4a]";
+    tone === "green" ? "bg-grove" : tone === "yellow" ? "bg-gold" : "bg-danger";
   const submitted = loadAttempt(tile.id).phase === "submitted";
 
   return (
-    <article className="relative overflow-hidden rounded-[28px] border border-white/80 bg-white/75 shadow-sm backdrop-blur-xl">
+    <article className="relative overflow-hidden rounded-panel border border-white/80 bg-white/75 shadow-sm backdrop-blur-xl">
       <div
         className={cn("pointer-events-none absolute inset-x-0 bottom-0 opacity-30 transition-all duration-1000", wash)}
         style={{ height: `${Math.round(fill * 100)}%` }}
@@ -396,7 +397,7 @@ function ExamCard({
         <p className="text-sm leading-relaxed text-home/75">{tile.blurb}</p>
 
         <p className="flex items-center gap-2 text-sm">
-          <span className="grid size-8 place-items-center rounded-xl bg-white/80">
+          <span className="grid size-8 place-items-center rounded-chip bg-white/80">
             <User className="size-4 text-mute" />
           </span>
           <span>
@@ -424,7 +425,7 @@ function ExamCard({
           <button
             type="button"
             onClick={onOpen}
-            className="h-11 shrink-0 rounded-2xl bg-home px-5 text-sm font-medium text-paper"
+            className="h-11 shrink-0 rounded-control bg-home px-5 text-sm font-medium text-paper"
           >
             Open sitting
           </button>
@@ -462,7 +463,7 @@ function FlipClock({ dueAt, now }: { dueAt: number; now: number }) {
 
 function Meta({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-white/70 px-2 py-2">
+    <div className="flex items-center gap-2 rounded-control bg-white/70 px-2 py-2">
       <Icon className="size-3.5 shrink-0 text-mute" />
       <span>
         <span className="block text-[9px] uppercase tracking-wide text-mute touch:text-xs">{label}</span>
@@ -474,7 +475,7 @@ function Meta({ icon: Icon, label, value }: { icon: typeof Clock; label: string;
 
 function IdleCard({ paper, onStart }: { paper: PaperDef; onStart: () => void }) {
   return (
-    <article className="rounded-[24px] border border-white/80 bg-white/70 p-8 text-center backdrop-blur-xl">
+    <Card className="p-8 text-center">
       <p className="font-display text-3xl">A quiet pariksha</p>
       <p className="mx-auto mt-3 max-w-md text-sm text-mute">
         {paper.mcq.length} short questions and {paper.writing.length} writings. When you start, the rest of the house
@@ -483,11 +484,11 @@ function IdleCard({ paper, onStart }: { paper: PaperDef; onStart: () => void }) 
       <button
         type="button"
         onClick={onStart}
-        className="mt-6 h-12 rounded-2xl bg-grove px-8 text-sm font-medium text-paper"
+        className="mt-6 h-12 rounded-control bg-grove px-8 text-sm font-medium text-paper"
       >
         I am ready to sit
       </button>
-    </article>
+    </Card>
   );
 }
 
@@ -526,14 +527,14 @@ function McqCard({
               disabled={disabled}
               onClick={() => onChoose(i)}
               className={cn(
-                "flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition",
+                "flex min-h-14 items-center gap-3 rounded-control border px-4 py-3 text-left text-sm transition",
                 on ? "border-grove bg-mint/50" : "border-white bg-white/80 hover:bg-lilac/20",
                 disabled && "opacity-80",
               )}
             >
               <span
                 className={cn(
-                  "grid size-9 shrink-0 place-items-center rounded-xl text-xs font-semibold",
+                  "grid size-9 shrink-0 place-items-center rounded-chip text-xs font-semibold",
                   on ? "bg-grove text-paper" : "bg-home/5",
                 )}
               >
@@ -579,7 +580,7 @@ function WriteCard({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Write as you would to a younger student in the courtyard. Slow is allowed."
-        className="mt-5 min-h-56 flex-1 resize-y rounded-2xl border border-white bg-white/90 p-4 text-sm leading-relaxed outline-none placeholder:text-mute"
+        className="mt-5 min-h-56 flex-1 resize-y rounded-control border border-white bg-white/90 p-4 text-sm leading-relaxed outline-none placeholder:text-mute"
       />
       <p className="mt-2 text-xs text-mute">{value.trim() ? `${value.trim().split(/\s+/).length} words` : "The page is empty. That is fine until you begin."}</p>
     </div>
@@ -620,10 +621,10 @@ function SubmitModal({
           you.
         </p>
         <div className="mt-6 flex gap-2">
-          <button type="button" onClick={onStay} className="h-11 flex-1 rounded-2xl bg-white text-sm">
+          <button type="button" onClick={onStay} className="h-11 flex-1 rounded-control bg-white text-sm">
             Return to review
           </button>
-          <button type="button" onClick={onOffer} className="h-11 flex-1 rounded-2xl bg-grove text-sm text-paper">
+          <button type="button" onClick={onOffer} className="h-11 flex-1 rounded-control bg-grove text-sm text-paper">
             Offer the paper
           </button>
         </div>
@@ -636,7 +637,7 @@ function TimerRing({ frac, ring, leftMs }: { frac: number; ring: string; leftMs:
   const r = 22;
   const c = 2 * Math.PI * r;
   const dash = c * Math.min(1, Math.max(0, frac));
-  const color = ring === "green" ? "#2f6b3a" : ring === "yellow" ? "#e8c36a" : "#c45c4a";
+  const color = ring === "green" ? "var(--color-grove)" : ring === "yellow" ? "var(--color-gold)" : "var(--color-danger)";
   const m = Math.floor(leftMs / 60000);
   const s = Math.floor((leftMs % 60000) / 1000);
   return (
@@ -701,7 +702,7 @@ function Milestone({
             onClick={() => onPick(i)}
             aria-label={`Question ${i + 1}`}
             aria-current={i === current ? "true" : undefined}
-            className={cn("grid size-11 shrink-0 place-items-center rounded-xl text-sm", tone(i))}
+            className={cn("grid size-11 shrink-0 place-items-center rounded-chip text-sm", tone(i))}
           >
             {i + 1}
           </button>
@@ -713,7 +714,7 @@ function Milestone({
             key={i}
             type="button"
             onClick={() => onPick(i)}
-            className={cn("grid h-8 w-full place-items-center rounded-xl text-[11px] touch:h-11 touch:text-xs", tone(i))}
+            className={cn("grid h-8 w-full place-items-center rounded-chip text-[11px] touch:h-11 touch:text-xs", tone(i))}
           >
             {i + 1}
           </button>

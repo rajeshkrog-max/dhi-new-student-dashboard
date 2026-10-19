@@ -1,8 +1,12 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent } from "react";
 import { Moon, Sun, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { signInWithGoogle, testSignIn, testSignInOffered } from "@/lib/auth/client";
 import { ENTER_PATH } from "@/lib/entry";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/dhi/ui/button";
+import { DoorScene, doorCardClass } from "@/components/dhi/ui/door";
+import { Field, FieldInput } from "@/components/dhi/ui/field";
+import { Notice } from "@/components/dhi/ui/notice";
 
 type Pane = "signin" | "invite";
 
@@ -11,6 +15,8 @@ type Pane = "signin" | "invite";
 const AFTER_SIGN_IN = ENTER_PATH;
 const AFTER_SIGN_IN_ERROR = `${ENTER_PATH}?signin=error`;
 
+// The card, buttons and fields come from the shared kit (spec house/0003), so the door reads as the dashboard's look on a scene. Day is the paper
+// glass; night is the dark glass at 70%, so every line on it stays readable even over the brightest frame of the video.
 export function EnterScreen({
   onSignedIn,
   onDemo,
@@ -27,10 +33,6 @@ export function EnterScreen({
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("day", day);
-  }, [day]);
 
   async function google() {
     setError("");
@@ -49,22 +51,14 @@ export function EnterScreen({
   }
 
   const message = error || notice || "";
-  const muted = day ? "text-ink/70" : "text-paper/70";
+  const muted = day ? "text-home/80" : "text-paper/85";
+  // The chosen tab is a solid pill in the opposite tone, so it reads over any frame of the video.
   const tab = (active: boolean) =>
-    cn(
-      "h-11 rounded-full border text-sm",
-      active
-        ? day
-          ? "border-white/70 bg-white/70"
-          : "border-white/30 bg-white/20"
-        : day
-          ? "border-ink/15 bg-white/25"
-          : "border-white/20 bg-white/5",
-    );
+    active ? (day ? "border-home bg-home text-paper hover:bg-home" : "border-paper bg-paper text-home hover:bg-paper") : "";
 
   return (
-    <main className="relative min-h-dvh overflow-x-hidden overflow-y-auto text-paper">
-      <div className="pointer-events-none absolute inset-0">
+    <DoorScene
+      media={
         <video
           key={day ? "day" : "night"}
           className="absolute inset-0 size-full object-cover object-[20%_40%]"
@@ -76,45 +70,36 @@ export function EnterScreen({
         >
           <source src={day ? "/landing/day.mp4" : "/landing/night.mp4"} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-black/35" />
-      </div>
-
-      <p className="absolute left-6 top-6 z-10 font-display text-xs tracking-[0.22em] drop-shadow-lg">DHI</p>
-
+      }
+    >
       <button
         type="button"
         aria-label={day ? "Switch to night" : "Switch to day"}
         onClick={() => setDay((v) => !v)}
-        className="absolute right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/15 text-paper backdrop-blur-md"
+        className="absolute right-5 top-5 z-10 flex size-11 items-center justify-center rounded-full border border-white/30 bg-white/15 text-paper backdrop-blur-md"
       >
-        {day ? <Sun className="size-5" /> : <Moon className="size-5" />}
+        {day ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
       </button>
 
-      <section
-        data-testid="landing-signin"
-        className={cn(
-          "relative z-50 mx-auto my-16 w-[min(400px,calc(100vw-2rem))] rounded-[28px] border p-6 shadow-2xl backdrop-blur-2xl sm:absolute sm:right-[7vw] sm:top-1/2 sm:mx-0 sm:my-0 sm:max-h-[calc(100dvh-2rem)] sm:-translate-y-1/2 sm:overflow-y-auto",
-          day ? "border-white/50 bg-white/30 text-ink" : "border-white/25 bg-[#101218]/35 text-paper",
-        )}
-      >
+      <section data-testid="landing-signin" className={doorCardClass(day)}>
         <h1 className="font-display text-4xl font-medium">Enter</h1>
         <p className={cn("mt-1.5 text-sm", muted)}>
           {pane === "signin" ? "Welcome back. Your house is waiting." : "Invite letters are not open yet."}
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => setPane("signin")} className={tab(pane === "signin")}>
+          <Button variant="quiet" onDark={!day} aria-pressed={pane === "signin"} className={cn("px-2", tab(pane === "signin"))} onClick={() => setPane("signin")}>
             I have a seat
-          </button>
-          <button type="button" onClick={() => setPane("invite")} className={tab(pane === "invite")}>
+          </Button>
+          <Button variant="quiet" onDark={!day} aria-pressed={pane === "invite"} className={cn("px-2", tab(pane === "invite"))} onClick={() => setPane("invite")}>
             Invite letter
-          </button>
+          </Button>
         </div>
 
         {message ? (
-          <p role="alert" data-testid="landing-error" className="mt-4 text-xs text-[#f7c9c0]">
+          <Notice tone="danger" role="alert" data-testid="landing-error" className="mt-4">
             {message}
-          </p>
+          </Notice>
         ) : null}
 
         {pane === "invite" ? (
@@ -123,21 +108,16 @@ export function EnterScreen({
           </p>
         ) : (
           <>
-            <button
-              type="button"
-              data-testid="landing-google"
-              onClick={google}
-              className={cn("mt-5 h-12 w-full rounded-2xl text-sm font-medium", day ? "bg-grove text-paper" : "bg-gold text-gold-ink")}
-            >
+            <Button variant={day ? "solid" : "gold"} data-testid="landing-google" onClick={google} className="mt-5 w-full">
               Continue with Google
-            </button>
+            </Button>
 
             {testSignInOffered && (
               <form className="mt-2" onSubmit={testForm} data-testid="landing-test-form">
-                <p className={cn("mt-5 text-center text-[10px] tracking-[0.12em] uppercase", muted)}>Test sign in (this build only)</p>
-                <Field label="Email">
-                  <Mail className="size-4 opacity-60" />
-                  <input
+                <p className={cn("mt-5 text-center text-xs tracking-[0.12em] uppercase", muted)}>Test sign in (this build only)</p>
+                <Field label="Email" onDark={!day}>
+                  <Mail className="size-4 opacity-70" aria-hidden />
+                  <FieldInput
                     data-testid="landing-email"
                     type="email"
                     required
@@ -145,13 +125,12 @@ export function EnterScreen({
                     placeholder="you@institute.edu"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="min-w-0 flex-1 bg-transparent outline-none placeholder:opacity-40"
                   />
                 </Field>
 
-                <Field label="Password">
-                  <Lock className="size-4 opacity-60" />
-                  <input
+                <Field label="Password" onDark={!day}>
+                  <Lock className="size-4 opacity-70" aria-hidden />
+                  <FieldInput
                     data-testid="landing-password"
                     type={showPw ? "text" : "password"}
                     required
@@ -160,51 +139,33 @@ export function EnterScreen({
                     placeholder="8 letters or more"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="min-w-0 flex-1 bg-transparent outline-none placeholder:opacity-40"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPw((v) => !v)}
-                    className="opacity-70 touch:-mr-2 touch:grid touch:size-11 touch:place-items-center"
+                    className="rounded-full opacity-80 touch:-mr-2 touch:grid touch:size-11 touch:place-items-center"
                     aria-label={showPw ? "Hide password" : "Show password"}
                   >
                     {showPw ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
                   </button>
                 </Field>
 
-                <button
-                  type="submit"
-                  data-testid="landing-submit"
-                  disabled={busy}
-                  className={cn(
-                    "mt-4 h-12 w-full rounded-2xl border text-sm font-medium disabled:opacity-50",
-                    day ? "border-ink/25 bg-white/40" : "border-white/30 bg-white/10",
-                  )}
-                >
+                <Button type="submit" variant="quiet" onDark={!day} data-testid="landing-submit" disabled={busy} className="mt-4 w-full">
                   {busy ? "Signing in…" : "Sign in"}
-                </button>
+                </Button>
               </form>
             )}
           </>
         )}
 
         {onDemo && (
-          <p className={cn("mt-5 text-center text-xs leading-relaxed", day ? "text-ink/60" : "text-paper/60")}>
-            <button type="button" data-testid="landing-demo" onClick={onDemo} className="underline underline-offset-4">
+          <p className={cn("mt-5 text-center text-xs leading-relaxed", muted)}>
+            <button type="button" data-testid="landing-demo" onClick={onDemo} className="tap underline underline-offset-4">
               Look around the demo house
             </button>
           </p>
         )}
       </section>
-    </main>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="mt-4 block">
-      <span className="mb-2 block text-[10px] tracking-[0.12em] uppercase opacity-60 touch:text-xs">{label}</span>
-      <span className="flex h-12 items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3">{children}</span>
-    </label>
+    </DoorScene>
   );
 }

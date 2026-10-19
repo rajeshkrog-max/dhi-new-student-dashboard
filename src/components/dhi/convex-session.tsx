@@ -23,14 +23,3 @@ export function ConvexSession({ children }: { children: ReactNode }) {
     </ConvexBetterAuthProvider>
   );
 }
-
-// Neutral: it says nothing about being signed in or out, and shows nothing about any student.
-export function Waiting() {
-  return (
-    <main className="grid min-h-dvh place-items-center bg-home-bg px-4 text-home" data-testid="entry-waiting">
-      <p role="status" className="text-sm">
-        One moment…
-      </p>
-    </main>
-  );
-}
