@@ -68,7 +68,7 @@ Up to 5 habits per student, each with its own label, start, end, daily tick and 
    - [x] The proof (AC-1 to AC-13)
 - [x] Verify it: `/check verify habits room, real`
 - [x] Test it: `/test habits room, real`
-- [ ] Review it (fresh model): `/check review habits room, real`
+- [x] Review it (fresh model): `/check review habits room, real`
 - [ ] Document it: `/document habits room, real`
 Spec [0007](../../specs/house/0007-habits-room-real/index.md) · code in `packages/backend/convex/{habits,habitCodes,habitRules,habitRoom,habitProof}.ts`, `packages/backend/convex/eventTypes/habits.ts`, `src/components/dhi/habits/`, `src/lib/dhi/habits/`, `scripts/{habit-check,fresh-student}.mjs`. Built 2026-10-19; the live race check passed on the development deployment. Builds on rows 3 and 4 and follows the Mood room (row 5).
 

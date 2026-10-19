@@ -19,8 +19,8 @@ export function HabitSlide({
   onClose: () => void;
   onToggle: () => void;
 }) {
-  const t = tally(store, plan);
-  const days = river(store, plan, 28);
+  const t = tally(store, plan, today);
+  const days = river(store, plan, 28, today);
   const flag = nextFlag(t.streak);
   const done = isLit(store, plan.id, today);
   // A habit can be ticked only inside its window: not before it starts, not after it ends.
@@ -72,7 +72,7 @@ export function HabitSlide({
         </div>
         <div className="rounded-card border border-white/20 bg-white/10 p-5 backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">DHI</p>
-          <p className="font-display mt-2 text-xl leading-snug">{insight(store, plan)}</p>
+          <p className="font-display mt-2 text-xl leading-snug">{insight(store, plan, today)}</p>
         </div>
         <button type="button" onClick={onToggle} disabled={!open} className="lamp-glow h-12 w-full rounded-full bg-paper text-sm font-medium text-home disabled:opacity-50">
           {done ? "Undo today" : "Done for today"}

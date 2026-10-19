@@ -65,7 +65,19 @@ export function HabitTracker() {
   const shownDay = useRef(today);
   useEffect(() => {
     const t = window.setTimeout(() => setTodayKey(todayKey()), Math.max(1000, dayEndsAt(today) - Date.now()) + 50);
-    return () => window.clearTimeout(t);
+    // A timer stops while a phone sleeps, so the day is also looked at again when the screen wakes or the tab comes back, and once a minute.
+    const look = () => setTodayKey((shown) => (todayKey() === shown ? shown : todayKey()));
+    const every = window.setInterval(look, 60_000);
+    document.addEventListener("visibilitychange", look);
+    window.addEventListener("focus", look);
+    window.addEventListener("pageshow", look);
+    return () => {
+      window.clearTimeout(t);
+      window.clearInterval(every);
+      document.removeEventListener("visibilitychange", look);
+      window.removeEventListener("focus", look);
+      window.removeEventListener("pageshow", look);
+    };
   }, [today]);
   useEffect(() => {
     if (shownDay.current === today) return;
@@ -82,15 +94,15 @@ export function HabitTracker() {
   const doneToday = running.filter((p) => isLit(store, p.id, today)).length;
   const weekFrom = addDays(today, -6);
   const monthFrom = addDays(today, -29);
-  const weekScores = habitScores(store, running, weekFrom, today);
-  const monthScores = habitScores(store, running, monthFrom, today);
+  const weekScores = habitScores(store, running, weekFrom, today, today);
+  const monthScores = habitScores(store, running, monthFrom, today, today);
   const scores = scope === "week" ? weekScores : monthScores;
   const rating = dhiRating(scores);
-  const leader = leadingHabit(store, running);
-  const leadStreak = leader ? currentStreak(store, leader) : 0;
-  const leadBest = leader ? longestStreak(store, leader) : 0;
+  const leader = leadingHabit(store, running, today);
+  const leadStreak = leader ? currentStreak(store, leader, today) : 0;
+  const leadBest = leader ? longestStreak(store, leader, today) : 0;
   const flag = nextFlag(leadStreak);
-  const houseBest = bestStreak(store, running);
+  const houseBest = bestStreak(store, running, today);
   const selected = store.plans.find((p) => p.id === pick);
   const news = HABIT_TIPS[tip % HABIT_TIPS.length];
 
@@ -102,6 +114,8 @@ export function HabitTracker() {
       // A tick is a target state, so a stale tab that resends it changes nothing. The server's day wins over this device's clock.
       const r = await setToday({ planId: id, lit: !isLit(store, id, today) });
       if (!r.ok) setFail(habitRefusal(r.code));
+      // The server's day wins: if it is not the day shown, move to it (the screen says so) instead of leaving a tap that did nothing.
+      else if (r.day !== today) setTodayKey(r.day);
     } catch (e) {
       setFail(habitRefusal(e));
     }
@@ -217,7 +231,7 @@ export function HabitTracker() {
                 <button type="button" onClick={() => setPick(p.id)} className="min-w-0 flex-1 truncate text-left touch:min-h-11">
                   {p.title}
                 </button>
-                <span className="text-xs text-mute">best {tally(store, p).best}d</span>
+                <span className="text-xs text-mute">best {tally(store, p, today).best}d</span>
                 <button type="button" onClick={() => void removePlan(p.id)} className="text-mute touch:grid touch:size-11 touch:place-items-center" aria-label={`Remove ${p.title}`}>
                   <Trash2 className="size-4" aria-hidden />
                 </button>
@@ -330,10 +344,10 @@ export function HabitTracker() {
               </p>
               <ul className="mt-5 space-y-2">
                 {[...running]
-                  .sort((a, b) => currentStreak(store, b) - currentStreak(store, a))
+                  .sort((a, b) => currentStreak(store, b, today) - currentStreak(store, a, today))
                   .map((p) => {
-                    const n = currentStreak(store, p);
-                    const b = longestStreak(store, p);
+                    const n = currentStreak(store, p, today);
+                    const b = longestStreak(store, p, today);
                     return (
                       <li key={p.id} className="flex items-center gap-2 text-sm">
                         <span className="size-2.5 rounded-full" style={{ backgroundColor: colorOf(p) }} />
@@ -414,9 +428,9 @@ function HabitCard({
   onOpen: () => void;
   onRemove: () => void;
 }) {
-  const t = tally(store, plan);
+  const t = tally(store, plan, today);
   const done = isLit(store, plan.id, today);
-  const days = river(store, plan, 7);
+  const days = river(store, plan, 7, today);
   const color = colorOf(plan);
 
   return (
@@ -464,7 +478,7 @@ function HabitCard({
         </div>
         {!notYet && (
           <p className="mt-2 text-xs" style={{ color }}>
-            {insight(store, plan)}
+            {insight(store, plan, today)}
           </p>
         )}
       </div>

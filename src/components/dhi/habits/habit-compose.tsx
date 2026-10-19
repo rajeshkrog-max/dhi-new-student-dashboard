@@ -2,8 +2,9 @@
  * Create a habit. Name is always writable. Suggestions are shortcuts.
  * Colour is chosen from the house palette (psychology, not decoration).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MAX_WINDOW_DAYS, START_AHEAD_DAYS } from "@dhi/backend/habitCodes";
+import { isDayKey } from "@dhi/backend/dayRules";
 import { CATALOG, MAX_HABITS, PALETTE, addDays } from "@/lib/dhi/habits";
 import { Sheet } from "@/components/dhi/sheet";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,14 @@ export function HabitCompose({
   const [endOn, setEndOn] = useState(addDays(today, 20));
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState("");
+  // If the form stays open across 04:00, a start from the old day would be refused, so it moves up to today.
+  useEffect(() => {
+    setStartOn((s) => (isDayKey(s) && s < today ? today : s));
+  }, [today]);
+  // The window as the server checks it. The date boxes can hold a cleared or half typed date, so nothing is worked out from one that is not a real day.
+  const startOk = isDayKey(startOn) && startOn >= today && startOn <= addDays(today, START_AHEAD_DAYS);
+  const endMax = isDayKey(startOn) ? addDays(startOn, MAX_WINDOW_DAYS - 1) : undefined;
+  const endOk = startOk && isDayKey(endOn) && endOn >= startOn && endOn <= (endMax as string);
 
   function pick(id: string) {
     const c = CATALOG.find((x) => x.id === id);
@@ -103,7 +112,7 @@ export function HabitCompose({
         </label>
         <label className="text-xs text-mute">
           Ends
-          <input type="date" value={endOn} min={startOn} max={addDays(startOn, MAX_WINDOW_DAYS - 1)} onChange={(e) => setEndOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
+          <input type="date" value={endOn} min={startOn} max={endMax} onChange={(e) => setEndOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
         </label>
       </div>
 
@@ -114,7 +123,7 @@ export function HabitCompose({
       )}
       <button
         type="button"
-        disabled={!title.trim() || remaining <= 0 || endOn < startOn || saving}
+        disabled={!title.trim() || remaining <= 0 || !startOk || !endOk || saving}
         data-testid="habit-create"
         onClick={async () => {
           setSaving(true);

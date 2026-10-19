@@ -6,7 +6,8 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { EXPORT_HABITS_PAGE, MAX_WINDOW_DAYS } from "./habitRules";
 import type { RoomEntry } from "./roomRegistry";
 
-// The days with a lit check inside the habit's window, oldest first. A window is at most 90 days, so 91 rows is exact.
+// The days with a lit check inside the habit's window, oldest first. A window is at most 90 days, so 91 rows is exact. A tick can never land after the
+// day a habit was removed (a removed habit takes none), so the end of the window is simply `endOn`.
 export async function ticksOf(ctx: QueryCtx | MutationCtx, plan: Doc<"habitPlans">): Promise<string[]> {
   const rows = await ctx.db
     .query("habitChecks")
@@ -22,6 +23,7 @@ export const habitRoom: RoomEntry = {
   exporter: async (ctx: QueryCtx | MutationCtx, memberId: Id<"members">, cursor: string | null, limit: number) => {
     const size = Math.min(limit, EXPORT_HABITS_PAGE);
     const after = cursor === null ? null : Number(cursor);
+    if (after !== null && Number.isNaN(after)) return { rows: [], next: null };
     const plans = await ctx.db
       .query("habitPlans")
       .withIndex("by_memberId", (q) => (after === null ? q.eq("memberId", memberId) : q.eq("memberId", memberId).gt("_creationTime", after)))

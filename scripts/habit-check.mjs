@@ -112,6 +112,33 @@ try {
     await late.getByTestId("habit-day-moved").waitFor({ timeout: 20_000 });
   });
 
+  await step("clearing or half typing the start date does not break the room, and Create stays closed until the dates are real", async () => {
+    await openHabits(page);
+    await page.getByRole("button", { name: `Remove Habit 4 ${stamp}` }).click();
+    await page.getByRole("button", { name: `Done Habit 4 ${stamp}` }).waitFor({ state: "detached", timeout: 20_000 });
+    await page.getByRole("button", { name: /New habit/ }).click();
+    await page.getByTestId("habit-title").fill("Dates " + stamp);
+    const start = page.locator('input[type="date"]').first();
+    await start.fill("");
+    expect(await page.getByTestId("habit-title").isVisible(), "the form disappeared when the start date was cleared");
+    expect(await page.getByTestId("habit-create").isDisabled(), "Create is open with a cleared start date");
+    await start.fill(inDays(1));
+    await page.waitForFunction(() => !document.querySelector('[data-testid="habit-create"]')?.hasAttribute("disabled"), null, { timeout: 5_000 });
+    await page.keyboard.press("Escape");
+  });
+
+  await step("a phone that slept past 04:00 moves to the new day when it wakes, and yesterday's tick no longer shows as today's", async () => {
+    const woke = await (await browser.newContext({ baseURL: base.origin, storageState: state })).newPage();
+    await woke.clock.install({ time: new Date() });
+    await openHabits(woke);
+    await woke.getByRole("button", { name: `Undo Water ${stamp}` }).waitFor({ timeout: 20_000 });
+    // The clock jumps (a night asleep) without any timer firing; then the screen is woken.
+    await woke.clock.setSystemTime(new Date(Date.now() + 26 * 3600 * 1000));
+    await woke.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await woke.getByTestId("habit-day-moved").waitFor({ timeout: 20_000 });
+    await woke.getByRole("button", { name: `Done Water ${stamp}` }).waitFor({ timeout: 20_000 });
+  });
+
   await context.close();
 } finally {
   await browser.close();

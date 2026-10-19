@@ -42,6 +42,8 @@ export type HabitStore = {
   studentId: string;
   plans: HabitPlan[];
   checks: HabitCheck[];
+  // The lit days of each habit, built once from the server's ticks so a lookup is not a scan (optional: a store built by hand has none).
+  index?: Map<string, Set<string>>;
 };
 
 export const MILESTONES = [3, 7, 14, 21, 30];

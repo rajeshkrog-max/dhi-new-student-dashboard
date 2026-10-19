@@ -739,7 +739,7 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
   test("covers AC-10, AC-12: no other file reads the events table, and no file outside the allowlist imports the log", () => {
     for (const [name, text] of app) {
       // eventData.ts is the person's own export and erase (house spec 0005): the one other place that reads or deletes events.
-      if (name === "./eventLog.ts" || name === "./eventData.ts" || name === "./moodProof.ts" || name === "./habitProof.ts") continue; // moodProof.ts is the dev only live race check of the mood room
+      if (name === "./eventLog.ts" || name === "./eventData.ts" || name === "./moodProof.ts" || name === "./habitProof.ts") continue; // moodProof.ts and habitProof.ts are the dev only live race checks of the first two rooms // moodProof.ts is the dev only live race check of the mood room
       const c = code(text);
       expect(c, `${name} reads events`).not.toMatch(/query\s*\(\s*["']events["']/);
       expect(c, `${name} gets an event`).not.toMatch(/db\s*\.\s*get\s*\(\s*["']events["']/);

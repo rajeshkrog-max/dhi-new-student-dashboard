@@ -172,7 +172,8 @@ describe("the cap and the window (AC-1, AC-2, AC-7)", () => {
     expect(await add(w.s, { title: "😀".repeat(41) })).toEqual({ ok: false, code: "bad_title" });
     expect(await add(w.s, { kind: "custom", title: "  trimmed  " })).toMatchObject({ ok: true });
     expect((await list(w.s)).some((h) => h.title === "trimmed")).toBe(true);
-    for (const kind of HABIT_KINDS) expect(windowProblem(TODAY, TODAY, TODAY), kind).toBeNull();
+    expect(windowProblem(TODAY, TODAY, TODAY)).toBeNull();
+    expect(HABIT_KINDS).toHaveLength(7);
   });
 
   test("covers AC-7: removing ends the habit and keeps its history; it leaves the list, takes no tick, and a second remove is fine", async () => {
@@ -350,14 +351,33 @@ describe("the list (AC-4)", () => {
 });
 
 describe("the limits (AC-11)", () => {
-  test("covers AC-11: the 61st write in an hour is rate_limited and every attempt counted", async () => {
+  test("covers AC-11: the 61st write in an hour is rate_limited exactly, and a refused attempt still counts", async () => {
     const w = await world();
-    const id = await addOk(w.s);
-    const codes: string[] = [];
-    for (let i = 0; i < 60; i++) codes.push(await refusal(tick(w.s, id, i % 2 === 1)));
-    expect(codes[codes.length - 1]).toBe("rate_limited");
-    // 1 add + 59 more tokens; later ones are refused as too many flips first, then rate limited.
-    expect(codes.filter((c) => c === "rate_limited").length).toBeGreaterThan(0);
+    const id = await addOk(w.s); // write 1
+    // A refused add (bad title) is validated after the write limit, so it takes a write token: 59 more writes fit, the 61st does not.
+    expect(await add(w.s, { title: "" })).toEqual({ ok: false, code: "bad_title" }); // write 2
+    for (let i = 0; i < 58; i++) expect(await w.s.as.mutation(api.habits.remove, { planId: id }), `write ${i + 3}`).toEqual({ ok: true });
+    expect(await w.s.as.mutation(api.habits.remove, { planId: id })).toEqual({ ok: false, code: "rate_limited" }); // write 61
+    expect(await tick(w.s, id)).toEqual({ ok: false, code: "rate_limited" });
+    // Another student has their own 60.
+    expect(await add(w.s2)).toMatchObject({ ok: true });
+  });
+
+  test("covers AC-11: a refused add (a typing mistake, the cap) never uses up the daily add limit", async () => {
+    const w = await world();
+    for (let i = 0; i < 12; i++) expect(await add(w.s, { title: "" })).toEqual({ ok: false, code: "bad_title" });
+    for (let i = 0; i < 5; i++) await addOk(w.s, { title: `H${i}` });
+    // Refused for the cap, not for the daily limit, and still no daily token spent.
+    for (let i = 0; i < 3; i++) expect(await add(w.s, { title: "Sixth" })).toEqual({ ok: false, code: "too_many_habits" });
+    // A new hour would be needed for more writes; the daily limit has been used 5 times of 10, so 5 more real adds fit once slots open.
+    const habits = await list(w.s);
+    for (const h of habits.slice(0, 5)) await w.s.as.mutation(api.habits.remove, { planId: h.id });
+    vi.setSystemTime(NOW + 61 * 60 * 1000); // a fresh hour for the write limit
+    for (let i = 0; i < 5; i++) {
+      expect(await add(w.s, { title: `More${i}` })).toMatchObject({ ok: true });
+    }
+    for (const h of (await list(w.s)).slice(0, 5)) await w.s.as.mutation(api.habits.remove, { planId: h.id });
+    expect(await add(w.s, { title: "Eleventh" })).toEqual({ ok: false, code: "too_many_adds" });
   });
 
   test("covers AC-11: only 10 habits can be added in a day, however many are removed between", async () => {
