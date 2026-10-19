@@ -686,7 +686,7 @@ describe("export (AC-12, AC-16)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections.map((s) => s.section)).toEqual(["header", "events", "events", "events"]);
+    expect(sections.map((s) => s.section)).toEqual(["header", "events", "events", "events", "mood"]); // the mood room adds its own (empty here) section
     const header = sections[0].rows[0] as { profile: Record<string, unknown>; consent: unknown[]; sharing: unknown };
     expect(header.profile).toMatchObject({ name: "Asha Rao", email: "adult@alpha.test", role: "student", institute: "Alpha School", class: "Class 10 A", under18: false });
     expect(header.sharing).toEqual({ parentLevel: "summary" });
@@ -961,7 +961,7 @@ describe("source scans (AC-6, AC-10, AC-13, AC-19)", () => {
   });
 
   test("covers AC-3: consent records are appended only by the files that own them, and never changed or deleted by app code", () => {
-    const writers = ["./consent.ts", "./demo.ts", "./eventProof.ts"]; // eventProof.ts gives its made up proof student the adult's agreement
+    const writers = ["./consent.ts", "./demo.ts", "./eventProof.ts", "./moodProof.ts"]; // eventProof.ts gives its made up proof student the adult's agreement
     for (const [name, text] of app) {
       const c = code(text);
       if (!writers.includes(name)) expect(c, `${name} writes consentRecords`).not.toMatch(/insert\(\s*["']consentRecords["']/);

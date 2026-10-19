@@ -38,10 +38,21 @@ Spec [0003](../../specs/house/0003-one-professional-look/index.md) · code in `s
 
 ## Slice 2: the thin thread (Mood)
 
-### 5. Mood room, real, with the Vedic lens · needs a decision
+### 5. Mood room, real, with the Vedic lens · in-progress
 The thinnest real path through the house: a signed in student picks a mood colour for the day, writes their own words, and reads it back from the server after a reload. The room reads each mood through the three gunas (sattva, rajas, tamas) and offers a daily rhythm (dinacharya) tip. This is reflection only, never a diagnosis and never health advice. The help button stays as it is until the counseling row, and nothing is booked. (basis: tracer bullet practice; mood is logged daily, so it proves login, the event log and the read back fastest)
 **Done when:** a student logs one mood a day, edits it for that day only, sees history after a reload and on another device, the DHI line and guna wording pass the copy rules (no clinical words, no labels like weak or bright), and each entry reaches the event log.
-- [ ] Design it (spec): `/architect mood room, real, with the Vedic lens`
+- [x] Design it (spec): `/architect mood room, real, with the Vedic lens`
+- [ ] Build it: `/develop mood room, real, with the Vedic lens`
+   - [ ] The thread: table, rules file, event type, save and month (AC-1, AC-5, AC-7)
+   - [ ] One entry a day, edits, today only, the note, the limit (AC-2, AC-3, AC-4, AC-10)
+   - [ ] Export, erase and the data map (AC-6, AC-9)
+   - [ ] The words: lines, gunas and tips as drafts (AC-8)
+   - [ ] The screen on the server and the proof (AC-1, AC-8, AC-11, AC-12)
+- [ ] Verify it: `/check verify mood room, real, with the Vedic lens`
+- [ ] Test it: `/test mood room, real, with the Vedic lens`
+- [ ] Review it (fresh model): `/check review mood room, real, with the Vedic lens`
+- [ ] Document it: `/document mood room, real, with the Vedic lens`
+Spec [0006](../../specs/house/0006-mood-room-real/index.md) · code (filled by /develop). Builds on rows 3 and 4. The guna lines and tips are drafts until the owner approves them.
 
 ## Slice 3: body and routine rooms
 

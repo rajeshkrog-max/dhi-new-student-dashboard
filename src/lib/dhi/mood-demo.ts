@@ -5,24 +5,16 @@
  * Client key: dhi-mood-v1
  */
 
-import { uid } from "@/lib/dhi/id";
+import { uid } from "./id.ts";
+import { THOUGHTS, type MoodKey } from "./mood-lines.ts";
+
+export { THOUGHTS, type MoodKey };
 
 export const STORE_KEY = "dhi-mood-v1";
 export const YEAR = 2026;
 export const STUDENT_ID = "stu_suzzy_glass";
 export const COUNSELOR = "Asha Rao";
 
-export type MoodKey =
-  | "best"
-  | "happy"
-  | "motivated"
-  | "determined"
-  | "content"
-  | "tired"
-  | "stressed"
-  | "anxious"
-  | "sad"
-  | "heavy";
 
 export const MOODS: { key: MoodKey; label: string; color: string; glyph: string }[] = [
   { key: "best", label: "Best day", color: "#1e4d3a", glyph: "🪔" },
@@ -37,48 +29,6 @@ export const MOODS: { key: MoodKey; label: string; color: string; glyph: string 
   { key: "heavy", label: "Heavy", color: "#3d4450", glyph: "🌑" },
 ];
 
-export const THOUGHTS: Record<MoodKey, string[]> = {
-  best: [
-    "A lamp that burns this bright still needs oil tomorrow. Keep one quiet hour.",
-    "Joy is a guest. Offer it a seat, then write one line so it can visit again.",
-  ],
-  happy: [
-    "Happiness that can name itself is already wisdom. What fed it today?",
-    "The house is light. Share one small kindness so the lamp does not stay only yours.",
-  ],
-  motivated: [
-    "Fire is useful when it has a hearth. Pick one sitting, not ten.",
-    "Motivation is a morning. Guard it from the first scroll.",
-  ],
-  determined: [
-    "Determination is a spine, not a shout. One honest page is enough.",
-    "The mountain does not hurry. Keep the hour you named.",
-  ],
-  content: [
-    "Content is a quiet table. Do not add a feast just because the day was kind.",
-    "Enough is a rare colour. Sit with it.",
-  ],
-  tired: [
-    "Tired is a request, not a failure. Sleep is also a sitting.",
-    "Put the bag down. The house will still be here at dawn.",
-  ],
-  stressed: [
-    "Stress is a crowd in the chest. Name one thing you can put outside the door.",
-    "Breathe once as if the paper is not watching.",
-  ],
-  anxious: [
-    "Anxiety writes tomorrow too early. Come back to this hour.",
-    "You do not have to solve the night. You only have to stay.",
-  ],
-  sad: [
-    "Sadness is weather, not a verdict. Let it pass through the house without being locked in.",
-    "A low lamp still lights the path. You do not have to shine to be here.",
-  ],
-  heavy: [
-    "Heavy days are for a human sitting, not for carrying alone. Ask. The house has a counselor’s door.",
-    "You do not have to explain the whole night. One sentence is enough to open the door.",
-  ],
-};
 
 export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 

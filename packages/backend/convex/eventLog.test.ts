@@ -717,10 +717,10 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
 
   // The files that may call the log's helpers or read the table. A room adds its file here when it is built (AC-12). Everything not on this
   // list that imports the log fails the scan.
-  const LOG_IMPORTERS = ["./eventLog.ts", "./eventProof.ts"];
+  const LOG_IMPORTERS = ["./eventLog.ts", "./eventProof.ts", "./moods.ts"];
   // eventProof.ts is the development proof of the retry rule (AC-4); it needs the read helper to count what a race stored.
   // staffRead.ts counts, for a class total, which students have data of a kind in a month (house spec 0005, AC-23).
-  const READ_HELPER_IMPORTERS: string[] = ["./eventProof.ts", "./staffRead.ts"];
+  const READ_HELPER_IMPORTERS: string[] = ["./eventProof.ts", "./staffRead.ts", "./moods.ts"]; // moods.ts reads the current event to replace it (house spec 0006)
   const RECORD_ONLY_IMPORTERS: string[] = [];
 
   test("covers AC-10: no app code updates or deletes an event, and only the log inserts one", () => {
@@ -739,7 +739,7 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
   test("covers AC-10, AC-12: no other file reads the events table, and no file outside the allowlist imports the log", () => {
     for (const [name, text] of app) {
       // eventData.ts is the person's own export and erase (house spec 0005): the one other place that reads or deletes events.
-      if (name === "./eventLog.ts" || name === "./eventData.ts") continue;
+      if (name === "./eventLog.ts" || name === "./eventData.ts" || name === "./moodProof.ts") continue; // moodProof.ts is the dev only live race check of the mood room
       const c = code(text);
       expect(c, `${name} reads events`).not.toMatch(/query\s*\(\s*["']events["']/);
       expect(c, `${name} gets an event`).not.toMatch(/db\s*\.\s*get\s*\(\s*["']events["']/);

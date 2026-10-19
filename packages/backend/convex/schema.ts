@@ -448,6 +448,19 @@ export default defineSchema({
     .index("by_hash", ["hash"])
     .index("by_until", ["until"]),
 
+  // The mood room (spec house/0006). One row for each student and day, holding the mood, the student's own few words and which of two DHI lines the
+  // day got. Erase class `erased`. Seen by the student alone: no function reads it for anyone else, and the event the room writes holds only the
+  // mood code. Uniqueness of (memberId, day) holds only because `moods.save` looks it up first.
+  moodDays: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    day: v.string(), // YYYY-MM-DD, the 04:00 to 04:00 India day (dayRules.ts)
+    mood: v.string(), // a code from MOOD_CODES (moodRules.ts)
+    note: v.optional(v.string()), // at most 500 code points; absent when empty
+    lineIx: v.number(), // 0 or 1: which of the two DHI lines this day got, set on the first save
+    changes: v.number(), // how many times the mood changed (the first save is 0)
+  }).index("by_memberId_and_day", ["memberId", "day"]),
+
   // The room event log (spec house/0004). Append only: no app code updates or deletes a row (the only removal is the erase of spec house/0005).
   // Written only by `recordEvent` in eventLog.ts, inside a room's own mutation; no public function reads or writes it. Erase class `erased`:
   // an event is personal data, and a student's export and erase (house/0005) are the only ways one leaves. `payload` holds ids, numbers,

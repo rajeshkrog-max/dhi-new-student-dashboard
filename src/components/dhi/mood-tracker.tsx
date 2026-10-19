@@ -1,79 +1,145 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { Clock, Heart, Sparkles } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@dhi/backend/api";
+import { dayBounds, shiftDay, todayOf } from "@dhi/backend/dayRules";
+import { isMood } from "@dhi/backend/moodRules";
 import {
   COUNSELOR,
   MONTHS,
   MOODS,
   daysInMonth,
   loadMood,
-  logDay,
   moodOf,
   openSlots,
   prettyDate,
-  rangeCounts,
   sendHelp,
-  todayKey,
   type CounselSlot,
-  type MoodDay,
   type MoodKey,
   type MoodStore,
 } from "@/lib/dhi/mood-demo";
+import { GUNA_WORDS, MOOD_WORDS_APPROVED, dhiLine, gunaOf, moodRefusal } from "@/lib/dhi/mood-words";
+import { Notice } from "@/components/dhi/ui/notice";
 import { Sheet } from "@/components/dhi/sheet";
 import { useTouch } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 
 const glass = "rounded-card border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
 
+type DayCell = { mood: MoodKey; note: string; lineIx: number };
+
+// The mood room (spec house/0006). The days are the student's own, read from the server; saving writes today's entry there. The help button
+// below still runs on the demo store until the counseling row, so `store` here holds only the help asks.
 export function MoodTracker() {
   const [store, setStore] = useState<MoodStore>({ studentId: "", year: 2026, days: {}, help: [] });
   const [scope, setScope] = useState<"week" | "month">("week");
   const [pick, setPick] = useState<string | null>(null);
   const [mood, setMood] = useState<MoodKey>("content");
   const [note, setNote] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [fail, setFail] = useState("");
+  const [dayChanged, setDayChanged] = useState(false);
   const [help, setHelp] = useState(false);
   const [confirmHelp, setConfirmHelp] = useState(false);
   const [msg, setMsg] = useState("");
   const [slotId, setSlotId] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  const [month, setMonth] = useState(() => new Date().getMonth());
+  // The day the screen shows as today comes from the shared day rule on the device clock, and moves on at the next 04:00. The save result carries
+  // the server's day, which wins.
+  const [today, setToday] = useState(() => todayOf(Date.now()));
+  const [month, setMonth] = useState(() => Number(todayOf(Date.now()).slice(5, 7)) - 1);
   const touch = useTouch();
   const board = useRef<HTMLDivElement>(null);
+  const saveMood = useMutation(api.moods.save);
 
-  const today = todayKey();
+  const year = Number(today.slice(0, 4));
+  const monthKey = (m: number) => `${year}-${String(m + 1).padStart(2, "0")}`;
+  const currentRows = useQuery(api.moods.month, { month: today.slice(0, 7) });
+  const viewRows = useQuery(api.moods.month, { month: monthKey(month) });
+  const yearRows = useQuery(api.moods.year, { year: String(year) });
   const slots = useMemo(() => openSlots(), []);
 
   useEffect(() => {
-    const s = loadMood();
-    setStore(s);
-    const t = s.days[today];
-    if (t) {
-      setMood(t.mood);
-      setNote(t.note);
-    }
+    const t = window.setTimeout(() => setToday(todayOf(Date.now())), Math.max(1000, dayBounds(today).end - Date.now()) + 50);
+    return () => window.clearTimeout(t);
   }, [today]);
 
+  useEffect(() => {
+    setStore(loadMood());
+  }, []);
+
+  const asCell = (r: { mood: string; note: string; lineIx: number }): DayCell | null => (isMood(r.mood) ? { mood: r.mood, note: r.note, lineIx: r.lineIx } : null);
+  const todayEntry = useMemo(() => {
+    const row = currentRows?.find((r) => r.day === today);
+    return row ? asCell(row) : null;
+  }, [currentRows, today]);
+  const viewDays = useMemo(() => {
+    const days: Record<string, DayCell> = {};
+    for (const r of viewRows ?? []) {
+      const cell = asCell(r);
+      if (cell) days[r.day] = cell;
+    }
+    return days;
+  }, [viewRows]);
+  const yearMoods = useMemo(() => {
+    const days: Record<string, MoodKey> = {};
+    for (const r of yearRows ?? []) if (isMood(r.mood)) days[r.day] = r.mood;
+    return days;
+  }, [yearRows]);
+
+  // The form follows the saved entry (from this tab or another) while the student has not started changing it, and starts fresh on a new day.
+  useEffect(() => {
+    setDirty(false);
+    setFail("");
+  }, [today]);
+  useEffect(() => {
+    if (dirty) return;
+    setMood(todayEntry?.mood ?? "content");
+    setNote(todayEntry?.note ?? "");
+  }, [todayEntry, dirty, today]);
+
   const pie = useMemo(() => {
-    const now = new Date();
-    const from = new Date(now);
-    if (scope === "week") from.setDate(now.getDate() - 6);
-    else from.setDate(1);
-    from.setHours(0, 0, 0, 0);
-    const { counts, n } = rangeCounts(store, from, now);
+    const from = scope === "week" ? shiftDay(today, -6) : `${today.slice(0, 7)}-01`;
+    const counts = Object.fromEntries(MOODS.map((m) => [m.key, 0])) as Record<MoodKey, number>;
+    let n = 0;
+    for (const [day, key] of Object.entries(yearMoods)) {
+      if (day < from || day > today) continue;
+      counts[key] += 1;
+      n += 1;
+    }
     const slices = MOODS.map((m) => ({
       key: m.key,
       label: m.label,
       color: m.color,
       value: counts[m.key],
       pct: n ? Math.round((counts[m.key] / n) * 100) : 0,
-    })).filter((s) => s.value > 0);
+    })).filter((x) => x.value > 0);
     return { slices, n };
-  }, [store, scope]);
+  }, [yearMoods, scope, today]);
 
-  const selected = pick ? store.days[pick] : null;
+  const selected = pick ? (viewDays[pick] ?? null) : null;
 
-  function saveToday() {
-    setStore(logDay(store, today, mood, note));
+  async function saveToday() {
+    setSaving(true);
+    setFail("");
+    try {
+      const r = await saveMood({ mood, note });
+      if (!r.ok) {
+        setFail(moodRefusal(r.code));
+      } else {
+        setDirty(false);
+        if (r.day !== today) {
+          // The server's day wins over a device clock that is off.
+          setToday(r.day);
+          setDayChanged(true);
+        }
+      }
+    } catch (e) {
+      setFail(moodRefusal(e));
+    }
+    setSaving(false);
   }
 
   return (
@@ -93,7 +159,10 @@ export function MoodTracker() {
                 <button
                   key={m.key}
                   type="button"
-                  onClick={() => setMood(m.key)}
+                  onClick={() => {
+                    setMood(m.key);
+                    setDirty(true);
+                  }}
                   className={cn(
                     "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-control border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:text-paper hover:shadow-md",
                     on ? "border-transparent text-paper shadow-md" : "border-white/80 bg-white text-home",
@@ -117,15 +186,56 @@ export function MoodTracker() {
             <p className="mt-0.5 text-xs text-mute">Not a diary. One true sentence is enough.</p>
             <textarea
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(e) => {
+                setNote(e.target.value);
+                setDirty(true);
+              }}
+              maxLength={500}
+              data-testid="mood-note"
               rows={5}
               placeholder="What sat in the chest today…"
               className="mt-3 min-h-32 w-full resize-none rounded-card border border-white bg-white/90 p-4 text-base leading-relaxed text-home outline-none placeholder:text-mute/70"
             />
           </label>
-          <button type="button" onClick={saveToday} className="mt-4 h-12 self-start rounded-full bg-grove px-7 text-sm font-medium text-paper">
-            Colour today
-          </button>
+          <p className="mt-1 text-right text-xs text-mute">{[...note].length} of 500</p>
+          {fail && (
+            <Notice tone="danger" role="alert" data-testid="mood-error" className="mt-3 px-4 py-3 text-sm">
+              {fail}
+            </Notice>
+          )}
+          {dayChanged && (
+            <Notice role="status" data-testid="mood-day-changed" className="mt-3 px-4 py-3 text-sm">
+              The day moved on, so this colours the new day.
+            </Notice>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={saveToday}
+              disabled={saving || currentRows === undefined || (todayEntry !== null && !dirty)}
+              data-testid="mood-save"
+              className="h-12 rounded-full bg-grove px-7 text-sm font-medium text-paper disabled:opacity-50"
+            >
+              {saving ? "Saving…" : currentRows === undefined ? "Loading…" : todayEntry ? (dirty ? "Change today" : "Saved for today") : "Colour today"}
+            </button>
+            {todayEntry && !dirty && (
+              <span className="text-xs text-mute touch:text-sm" data-testid="mood-saved">
+                Your colour for today is saved. You can change it until the day ends.
+              </span>
+            )}
+          </div>
+          {todayEntry && !dirty && (
+            <div className="mt-4 rounded-card bg-white/70 p-4 text-sm" data-testid="mood-guna">
+              <p className="font-medium">{GUNA_WORDS[gunaOf(todayEntry.mood)].line}</p>
+              <p className="mt-1 text-mute">{GUNA_WORDS[gunaOf(todayEntry.mood)].tip}</p>
+              <p className="mt-2 text-mute">{dhiLine(todayEntry.mood, todayEntry.lineIx)}</p>
+              {!MOOD_WORDS_APPROVED && (
+                <p className="mt-2 text-xs text-mute touch:text-sm" data-testid="mood-draft">
+                  Draft words. The guna lines and tips are not approved yet.
+                </p>
+              )}
+            </div>
+          )}
         </article>
 
         <article className={cn(glass, "flex flex-col p-4 sm:p-6")}>
@@ -185,17 +295,17 @@ export function MoodTracker() {
             <h3 className="font-display text-2xl">Year in colour</h3>
             <p className="text-sm text-mute">This month is the sitting. The year is the river behind it. Tap a filled lamp.</p>
           </div>
-          <p className="text-xs text-mute">{store.year}</p>
+          <p className="text-xs text-mute">{year}</p>
         </div>
         <div ref={board} className="scroll-mt-16">
-          <MonthBoard year={store.year} month={month} days={store.days} today={today} onPick={setPick} />
+          <MonthBoard year={year} month={month} days={viewDays} today={today} onPick={setPick} />
         </div>
         <div className="mt-8">
           <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">The year</p>
           <div className="space-y-2">
             {MONTHS.map((name, mi) => {
-              const dim = daysInMonth(store.year, mi);
-              const isNow = mi === new Date().getMonth();
+              const dim = daysInMonth(year, mi);
+              const isNow = mi === Number(today.slice(5, 7)) - 1;
               const label = (
                 <span className={cn("w-20 shrink-0 text-xs", isNow ? "font-medium text-home" : "text-mute")}>{name}</span>
               );
@@ -217,13 +327,13 @@ export function MoodTracker() {
                     {label}
                     <span aria-hidden className="flex flex-wrap gap-1">
                       {Array.from({ length: dim }, (_, di) => {
-                        const key = `${store.year}-${String(mi + 1).padStart(2, "0")}-${String(di + 1).padStart(2, "0")}`;
-                        const cell = store.days[key];
+                        const key = `${year}-${String(mi + 1).padStart(2, "0")}-${String(di + 1).padStart(2, "0")}`;
+                        const cell = yearMoods[key];
                         return (
                           <span
                             key={di}
                             className="size-[18px] rounded-md"
-                            style={{ backgroundColor: cell ? moodOf(cell.mood).color : "var(--color-sand)" }}
+                            style={{ backgroundColor: cell ? moodOf(cell).color : "var(--color-sand)" }}
                           />
                         );
                       })}
@@ -237,18 +347,22 @@ export function MoodTracker() {
                   <div className="flex flex-wrap gap-1">
                     {Array.from({ length: dim }, (_, di) => {
                       const day = di + 1;
-                      const key = `${store.year}-${String(mi + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                      const cell = store.days[key];
+                      const key = `${year}-${String(mi + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                      const cell = yearMoods[key];
                       const future = key > today;
                       return (
                         <button
                           key={day}
                           type="button"
                           disabled={future || !cell}
-                          onClick={() => cell && setPick(key)}
-                          title={cell ? `${key} · ${moodOf(cell.mood).label}` : key}
+                          onClick={() => {
+                            if (!cell) return;
+                            setMonth(mi);
+                            setPick(key);
+                          }}
+                          title={cell ? `${key} · ${moodOf(cell).label}` : key}
                           className="size-[18px] rounded-md disabled:cursor-default"
-                          style={{ backgroundColor: cell ? moodOf(cell.mood).color : "var(--color-sand)" }}
+                          style={{ backgroundColor: cell ? moodOf(cell).color : "var(--color-sand)" }}
                         />
                       );
                     })}
@@ -265,7 +379,8 @@ export function MoodTracker() {
           date={pick}
           mood={selected.mood}
           note={selected.note}
-          thought={selected.thought}
+          thought={dhiLine(selected.mood, selected.lineIx)}
+          guna={GUNA_WORDS[gunaOf(selected.mood)]}
           onClose={() => setPick(null)}
           onHelp={() => {
             setPick(null);
@@ -331,7 +446,7 @@ function MonthBoard({
 }: {
   year: number;
   month: number;
-  days: Record<string, MoodDay>;
+  days: Record<string, { mood: MoodKey }>;
   today: string;
   onPick: (key: string) => void;
 }) {
@@ -385,6 +500,7 @@ function DaySlide({
   mood,
   note,
   thought,
+  guna,
   onClose,
   onHelp,
 }: {
@@ -392,6 +508,7 @@ function DaySlide({
   mood: MoodKey;
   note: string;
   thought: string;
+  guna: { line: string; tip: string };
   onClose: () => void;
   onHelp: () => void;
 }) {
@@ -428,6 +545,8 @@ function DaySlide({
             <Sparkles className="size-3" aria-hidden /> DHI thought
           </p>
           <p className="mt-2 text-sm leading-relaxed text-paper/90">{thought}</p>
+          <p className="mt-3 text-sm leading-relaxed text-paper/80">{guna.line}</p>
+          <p className="mt-1 text-sm leading-relaxed text-paper/80">{guna.tip}</p>
         </div>
         <button type="button" onClick={onHelp} className="lamp-glow flex h-12 w-full items-center justify-center gap-2 rounded-full bg-paper text-sm font-medium text-home">
           <Heart className="size-4" aria-hidden /> Ask DHI for a sitting

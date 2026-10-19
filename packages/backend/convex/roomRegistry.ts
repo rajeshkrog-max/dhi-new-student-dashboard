@@ -7,6 +7,7 @@
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { DataKind } from "./accessRules";
+import { moodRoom } from "./moodRoom";
 
 export type ExportPage = { rows: unknown[]; next: string | null };
 export type ErasePage = { deleted: number; done: boolean };
@@ -21,8 +22,8 @@ export type RoomEntry = {
   eraser: (ctx: MutationCtx, memberId: Id<"members">, limit: number) => Promise<ErasePage>;
 };
 
-// No room stores its data in the backend yet (the rooms still run on demo data in the browser), so the list is empty. Each room row adds its entry.
-export const ROOM_ENTRIES: readonly RoomEntry[] = [];
+// Each room row adds its entry when the room moves to the backend. The mood room (house spec 0006) is the first; the rest still run on demo data.
+export const ROOM_ENTRIES: readonly RoomEntry[] = [moodRoom];
 
 export const EXPORT_PAGE = 100;
 export const ERASE_PAGE = 100;

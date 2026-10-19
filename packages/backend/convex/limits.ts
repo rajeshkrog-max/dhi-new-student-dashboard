@@ -62,6 +62,8 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   // round the 5 an hour. A whole export of 100 row pages fits many times over. The sharing switch: 30 changes an hour for each student.
   dataExportPage: { kind: "token bucket", rate: 300, period: HOUR, capacity: 300 },
   sharingChange: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  // Saving the mood (spec house/0006, AC-10): 30 an hour for each student (key = the member id), taken for every attempt, so a refused save still counts.
+  moodSave: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },
   shareBad: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_BAD_SHARDS, start: 0 },

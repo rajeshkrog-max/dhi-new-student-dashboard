@@ -292,13 +292,23 @@ const SCENES = {
   },
 };
 
-// The demo days are in September, so open that month first: by its row on touch, by the strip on desktop.
+// The room is real now (spec house/0006): its days come from the server. Make sure today has a colour, then open the month that holds it: by its
+// row on touch, by the strip on desktop. The day rule is the house's: 04:00 to 04:00 India time.
 async function openMoodDay(page, width) {
+  const day = new Date(Date.now() + (5.5 - 4) * 3600 * 1000).toISOString().slice(0, 10);
+  const monthName = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][Number(day.slice(5, 7)) - 1];
+  await page.getByTestId("mood-note").waitFor({ timeout: 30_000 });
+  await page.waitForFunction(() => !document.querySelector('[data-testid="mood-save"]')?.textContent?.includes("Loading"), null, { timeout: 30_000 });
+  if (!(await page.getByTestId("mood-saved").count())) {
+    await page.locator("article button", { hasText: "Content" }).first().click();
+    await page.getByTestId("mood-save").click();
+    await page.getByTestId("mood-saved").waitFor({ timeout: 20_000 });
+  }
   if (isTouchWidth(width)) {
-    await page.getByRole("button", { name: "Open September" }).click();
+    await page.getByRole("button", { name: "Open " + monthName }).click();
     await page.locator("[data-day-cell]:not([disabled])").first().click();
   } else {
-    await page.locator('button[title^="2026-09-"]:not([disabled])').first().click();
+    await page.locator('button[title^="' + day.slice(0, 8) + '"]:not([disabled])').first().click();
   }
 }
 

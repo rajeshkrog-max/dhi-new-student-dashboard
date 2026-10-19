@@ -28,7 +28,7 @@ Row numbers run across all three files, so a row keeps one number wherever it li
 | 3 | Room event log and day rules | Foundation | in-progress |
 | 4 | Consent, privacy and access record for minors' house data | Foundation | in-progress |
 | 25 | One professional look for every page, the menu and loading screens | Look and feel | in-progress |
-| 5 | Mood room, real, with the Vedic lens | Slice 2 | planned |
+| 5 | Mood room, real, with the Vedic lens | Slice 2 | in-progress |
 | 6 | Habits room, real | Slice 3 | planned |
 | 7 | Sleep log | Slice 3 | planned |
 | 8 | Food table and the Indian plate catalog | Slice 3 | planned |
