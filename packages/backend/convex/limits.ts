@@ -44,6 +44,13 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   // `start: 0` so they reset together (see the note on shareRead), so the real cap is a little under 28. One visitor's key can never use up
   // another visitor's tokens.
   referralCheck: { kind: "fixed window", rate: 28, period: MINUTE, shards: 4, start: 0 },
+  // The house's people and invites (spec house/0002, AC-17, AC-19). Pressing Join: 10 an hour for each signed in person (key = the sign in
+  // user id). Creating a class list: 10 an hour for each signed in person (key = the sign in user id). Refused invites for an address that is
+  // already in use: 50 a day for each institute (key = the institute id, or the person's id for a DHI admin with no institute). Every one of
+  // these is taken in a function that returns its refusals instead of throwing, so a refused try still counts.
+  inviteClaim: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  inviteBatch: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  emailInUse: { kind: "fixed window", rate: 50, period: DAY },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },
   shareBad: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_BAD_SHARDS, start: 0 },

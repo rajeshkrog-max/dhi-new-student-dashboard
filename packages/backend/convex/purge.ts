@@ -29,6 +29,9 @@ export const purgeAbandoned = internalMutation({
     for (const user of page.page as unknown as AuthUser[]) {
       const student = await ctx.db.query("students").withIndex("by_authUserId", (q) => q.eq("authUserId", user._id)).first();
       if (student) continue;
+      // A person in the house (spec house/0002, AC-15) keeps their sign in account, whether or not they ever made a funnel profile.
+      const member = await ctx.db.query("members").withIndex("by_authUserId", (q) => q.eq("authUserId", user._id)).first();
+      if (member) continue;
       const recent = await ctx.runQuery(components.betterAuth.adapter.findMany, {
         model: "session",
         where: [

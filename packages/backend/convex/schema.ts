@@ -16,6 +16,35 @@ export const classValidator = v.union(
   v.literal("College"),
 );
 
+// The house (spec house/0002): five roles. A person has one role for life; roles never change after an account is made.
+export const roleValidator = v.union(
+  v.literal("student"),
+  v.literal("teacher"),
+  v.literal("institute_admin"),
+  v.literal("dhi_admin"),
+  v.literal("counselor"),
+);
+
+// Every kind of change to access, as a fixed code. The access log holds only these, with ids (spec house/0002, AC-12).
+export const accessActionValidator = v.union(
+  v.literal("invite.create"),
+  v.literal("invite.claim"),
+  v.literal("invite.revoke"),
+  v.literal("invite.extend"),
+  v.literal("invite.update"),
+  v.literal("member.remove"),
+  v.literal("member.reinstate"),
+  v.literal("member.class"),
+  v.literal("member.under18"),
+  v.literal("class.create"),
+  v.literal("class.archive"),
+  v.literal("class.assign"),
+  v.literal("class.unassign"),
+  v.literal("inst.create"),
+  v.literal("inst.suspend"),
+  v.literal("inst.reinstate"),
+);
+
 export const styleKeyValidator = v.union(v.literal("v"), v.literal("p"), v.literal("k"));
 export const confidenceValidator = v.union(v.literal("clear"), v.literal("leaning"), v.literal("blended"));
 
@@ -274,6 +303,86 @@ export default defineSchema({
     .index("by_friendId", ["friendId"]) // at most one referral per friend, kept by createProfile looking here first
     .index("by_referrerId_and_status", ["referrerId", "status"])
     .index("by_status", ["status"]),
+
+  // ---- The house (spec house/0002). All tables are additive; the funnel's tables above are not touched. Uniqueness and tenancy hold only
+  // because every mutation looks rows up by index first. Erase classes (spec 0001 child 0002, funnel spec 0023): `institutes` and `classes`
+  // are `kept` (no person in them); `members`, `teacherClasses` and `invites` are `erased` or `patched` per row 4's rules; `accessLog` is
+  // `kept` and holds ids and codes only.
+
+  // A school or college. Created by a DHI admin only.
+  institutes: defineTable({
+    name: v.string(),
+    nameKey: v.string(), // lowercase and trimmed, for the duplicate check
+    status: v.union(v.literal("active"), v.literal("suspended")),
+    plan: v.optional(v.string()),
+  }).index("by_nameKey", ["nameKey"]),
+
+  // A grade and section of one institute. Archived, never deleted, while members point at it.
+  classes: defineTable({
+    instituteId: v.id("institutes"),
+    grade: classValidator,
+    section: v.string(),
+    archivedAt: v.optional(v.number()),
+  })
+    .index("by_instituteId", ["instituteId"])
+    .index("by_instituteId_and_grade", ["instituteId", "grade"]),
+
+  // One row per person in the house. Identity is always `authUserId`, never `email` (a snapshot only). Shape rules are checked in code on
+  // every write: student, teacher and institute_admin have an instituteId; dhi_admin and counselor do not; only a student has classId and under18.
+  members: defineTable({
+    authUserId: v.string(), // the Better Auth user id, shared with the funnel's `students` row if there is one
+    role: roleValidator,
+    instituteId: v.optional(v.id("institutes")),
+    classId: v.optional(v.id("classes")),
+    name: v.string(),
+    email: v.string(),
+    under18: v.optional(v.boolean()),
+    status: v.union(v.literal("active"), v.literal("removed")),
+    joinedAt: v.number(),
+    removedAt: v.optional(v.number()),
+  })
+    .index("by_authUserId", ["authUserId"])
+    .index("by_email", ["email"])
+    .index("by_instituteId_and_role", ["instituteId", "role"])
+    .index("by_classId", ["classId"]),
+
+  // Which classes a teacher is assigned to.
+  teacherClasses: defineTable({
+    memberId: v.id("members"),
+    classId: v.id("classes"),
+    instituteId: v.id("institutes"),
+  })
+    .index("by_memberId", ["memberId"])
+    .index("by_classId", ["classId"])
+    .index("by_memberId_and_classId", ["memberId", "classId"]),
+
+  // An invitation: the Google email is the key, there is no secret code. Pending means not claimed and not revoked, expired or not.
+  invites: defineTable({
+    instituteId: v.optional(v.id("institutes")),
+    role: roleValidator,
+    email: v.string(),
+    name: v.string(),
+    classId: v.optional(v.id("classes")),
+    under18: v.optional(v.boolean()),
+    createdBy: v.union(v.id("members"), v.literal("owner")),
+    expiresAt: v.number(),
+    claimedAt: v.optional(v.number()),
+    claimedBy: v.optional(v.id("members")),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_email_and_claimedAt", ["email", "claimedAt"])
+    .index("by_instituteId", ["instituteId"])
+    .index("by_classId", ["classId"]),
+
+  // Only ever added to. Ids and a code from the fixed list, never a name, an email or a note (AC-12).
+  accessLog: defineTable({
+    at: v.number(),
+    actor: v.union(v.id("members"), v.literal("owner")),
+    action: accessActionValidator,
+    instituteId: v.optional(v.id("institutes")),
+    targetMemberId: v.optional(v.id("members")),
+    inviteId: v.optional(v.id("invites")),
+  }).index("by_instituteId_and_at", ["instituteId", "at"]),
 
   // One row: the one at a time lease of the copy job, and the numbers the Sync status tab shows.
   sheetStatus: defineTable({
