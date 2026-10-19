@@ -461,6 +461,35 @@ export default defineSchema({
     changes: v.number(), // how many times the mood changed (the first save is 0)
   }).index("by_memberId_and_day", ["memberId", "day"]),
 
+  // The habits room (spec house/0007). A habit has a kind (a fixed code or `custom`), the student's own title, a colour and a window. Erase class
+  // `erased`. Seen by the student alone: no function reads it for anyone else, and the event a tick writes holds only the kind. A removed habit
+  // keeps its rows (`removedOn` is the day it ended). At most five are open for a student, checked by `habits.add`.
+  habitPlans: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    kind: v.string(), // a code from HABIT_KINDS (habitRules.ts)
+    title: v.string(), // 1 to 40 code points, one line
+    color: v.string(), // one of the eight HABIT_COLORS
+    startOn: v.string(), // YYYY-MM-DD
+    endOn: v.string(),
+    removedOn: v.optional(v.string()),
+  })
+    .index("by_memberId", ["memberId"])
+    .index("by_memberId_and_removedOn_and_endOn", ["memberId", "removedOn", "endOn"]),
+
+  // One row for each habit and day, made at the first tick (spec house/0007). `lit` is the current state, `flips` how many times it changed after the
+  // first tick (at most 6). A miss is a day with no lit row and is never stored. Erase class `erased`.
+  habitChecks: defineTable({
+    planId: v.id("habitPlans"),
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    day: v.string(),
+    lit: v.boolean(),
+    flips: v.number(),
+  })
+    .index("by_planId_and_day", ["planId", "day"])
+    .index("by_memberId", ["memberId"]),
+
   // The room event log (spec house/0004). Append only: no app code updates or deletes a row (the only removal is the erase of spec house/0005).
   // Written only by `recordEvent` in eventLog.ts, inside a room's own mutation; no public function reads or writes it. Erase class `erased`:
   // an event is personal data, and a student's export and erase (house/0005) are the only ways one leaves. `payload` holds ids, numbers,

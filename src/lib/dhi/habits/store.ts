@@ -1,22 +1,26 @@
 /**
- * Client store for habit_plans + habit_checks.
- * Same mutations we will POST later: addPlan, lightToday, unlightToday.
+ * Pure helpers for the habits room (spec house/0007). The habits and their ticks come from the server (`habits.list`); the screen turns them into a
+ * `HabitStore` and these functions work out the streaks, tallies, charts and rating when the student looks. Nothing here is stored, and nothing reads
+ * a clock except `todayKey`, which uses the shared day rule (04:00 to 04:00 India time) on the device clock.
  */
 
-import { uid } from "@/lib/dhi/id";
-import { CATALOG } from "./catalog";
-import { emptyHabitStore, MAX_HABITS, MILESTONES, STORE_KEY, STUDENT_ID, type HabitCheck, type HabitPlan, type HabitStore } from "./schema";
+import { dayBounds, shiftDay, todayOf } from "@dhi/backend/dayRules";
+import { CATALOG } from "./catalog.ts";
+import { MILESTONES, type HabitCheck, type HabitPlan, type HabitStore } from "./schema.ts";
 
-export { MAX_HABITS, STUDENT_ID } from "./schema";
+export { MAX_HABITS } from "./schema.ts";
 
-export function todayKey(d = new Date()) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export function todayKey() {
+  return todayOf(Date.now());
 }
 
 export function addDays(iso: string, n: number) {
-  const [y, m, d] = iso.split("-").map(Number);
-  const dt = new Date(y, m - 1, d + n);
-  return todayKey(dt);
+  return shiftDay(iso, n);
+}
+
+// When the shown day ends (the next 04:00), for the screen's timer.
+export function dayEndsAt(day: string) {
+  return dayBounds(day).end;
 }
 
 function spine(from: string, to: string) {
@@ -30,104 +34,26 @@ function spine(from: string, to: string) {
   return out;
 }
 
-function seed(): HabitStore {
-  const t = todayKey();
-  const water: HabitPlan = {
-    id: "plan_water",
-    studentId: STUDENT_ID,
-    catalogId: "water",
-    title: "Eight glasses of water",
-    color: "#3d6ea8",
-    startOn: addDays(t, -10),
-    endOn: addDays(t, 20),
-    createdAt: addDays(t, -10) + "T08:00:00",
-  };
-  const sleep: HabitPlan = {
-    id: "plan_sleep",
-    studentId: STUDENT_ID,
-    catalogId: "sleep",
-    title: "Sleep before eleven",
-    color: "#6b5b95",
-    startOn: addDays(t, -7),
-    endOn: addDays(t, 14),
-    createdAt: addDays(t, -7) + "T21:00:00",
-  };
-  const page: HabitPlan = {
-    id: "plan_page",
-    studentId: STUDENT_ID,
-    catalogId: "page",
-    title: "One honest page",
-    color: "#e8c36a",
-    startOn: addDays(t, -5),
-    endOn: addDays(t, 16),
-    createdAt: addDays(t, -5) + "T07:00:00",
-  };
-  const checks: HabitCheck[] = [];
-  for (let i = 10; i >= 1; i--) {
-    if (i === 3 || i === 6) continue;
-    const on = addDays(t, -i);
-    checks.push({
-      id: `chk_w_${on}`,
-      planId: water.id,
-      studentId: STUDENT_ID,
-      loggedOn: on,
-      lit: true,
-      createdAt: on + "T20:00:00",
-    });
-  }
-  for (let i = 7; i >= 1; i--) {
-    if (i === 1) continue;
-    const on = addDays(t, -i);
-    checks.push({
-      id: `chk_s_${on}`,
-      planId: sleep.id,
-      studentId: STUDENT_ID,
-      loggedOn: on,
-      lit: true,
-      createdAt: on + "T22:30:00",
-    });
-  }
-  for (let i = 5; i >= 2; i--) {
-    const on = addDays(t, -i);
-    checks.push({
-      id: `chk_p_${on}`,
-      planId: page.id,
-      studentId: STUDENT_ID,
-      loggedOn: on,
-      lit: true,
-      createdAt: on + "T19:00:00",
-    });
-  }
-  return { studentId: STUDENT_ID, plans: [water, sleep, page], checks };
-}
-
-export function loadHabits(): HabitStore {
-  if (typeof window === "undefined") return emptyHabitStore();
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw) as HabitStore;
-  } catch {
-    /* ignore */
-  }
-  const s = seed();
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(s));
-  } catch {
-    /* ignore */
-  }
-  return s;
-}
-
-export function saveHabits(store: HabitStore) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  } catch {
-    /* ignore */
-  }
-}
-
+// A habit is open until its end day passes, and a habit that starts in the future is open too (the server counts it toward the five). The list the
+// server sends already leaves out removed habits.
 export function openPlans(store: HabitStore, on = todayKey()) {
+  return store.plans.filter((p) => p.endOn >= on);
+}
+
+// Open and already running: the ones that can be ticked today.
+export function runningPlans(store: HabitStore, on = todayKey()) {
   return store.plans.filter((p) => p.startOn <= on && p.endOn >= on);
+}
+
+export function finishedPlans(store: HabitStore, on = todayKey()) {
+  return store.plans.filter((p) => p.endOn < on);
+}
+
+// The server's habits and ticks as the store the helpers below read.
+export function storeFromServer(rows: { id: string; kind: string; title: string; color: string; startOn: string; endOn: string; ticks: string[] }[]): HabitStore {
+  const plans: HabitPlan[] = rows.map((r) => ({ id: r.id, studentId: "", catalogId: r.kind === "custom" ? null : r.kind, title: r.title, color: r.color, startOn: r.startOn, endOn: r.endOn, createdAt: "" }));
+  const checks: HabitCheck[] = rows.flatMap((r) => r.ticks.map((d) => ({ id: `${r.id}:${d}`, planId: r.id, studentId: "", loggedOn: d, lit: true, createdAt: "" })));
+  return { studentId: "", plans, checks };
 }
 
 export function checksFor(store: HabitStore, planId: string) {
@@ -221,54 +147,6 @@ export function river(store: HabitStore, plan: HabitPlan, n = 21) {
     lit: isLit(store, plan.id, d),
     future: d > todayKey(),
   }));
-}
-
-export function lightToday(store: HabitStore, planId: string, on = todayKey()) {
-  if (isLit(store, planId, on)) return store;
-  const check: HabitCheck = {
-    id: uid(),
-    planId,
-    studentId: store.studentId,
-    loggedOn: on,
-    lit: true,
-    createdAt: new Date().toISOString(),
-  };
-  const next = { ...store, checks: [...store.checks, check] };
-  saveHabits(next);
-  return next;
-}
-
-export function unlightToday(store: HabitStore, planId: string, on = todayKey()) {
-  const next = { ...store, checks: store.checks.filter((c) => !(c.planId === planId && c.loggedOn === on)) };
-  saveHabits(next);
-  return next;
-}
-
-export function addPlan(store: HabitStore, title: string, startOn: string, endOn: string, catalogId: string | null, color: string) {
-  if (openPlans(store).length >= MAX_HABITS) return store;
-  const plan: HabitPlan = {
-    id: uid(),
-    studentId: store.studentId,
-    catalogId,
-    title: title.trim(),
-    color,
-    startOn,
-    endOn,
-    createdAt: new Date().toISOString(),
-  };
-  const next = { ...store, plans: [...store.plans, plan] };
-  saveHabits(next);
-  return next;
-}
-
-export function removePlan(store: HabitStore, planId: string) {
-  const next = {
-    ...store,
-    plans: store.plans.filter((p) => p.id !== planId),
-    checks: store.checks.filter((c) => c.planId !== planId),
-  };
-  saveHabits(next);
-  return next;
 }
 
 export function colorOf(plan: HabitPlan) {

@@ -2,36 +2,40 @@
  * Habit Tracker — colour, streak fire, weekly/monthly graph, DHI news.
  * Five habits. Write your own. Motivation, not shame.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Flag, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { api } from "@dhi/backend/api";
 import {
   HABIT_TIPS,
   MAX_HABITS,
   addDays,
-  addPlan,
   bestStreak,
   colorOf,
   currentStreak,
+  dayEndsAt,
   dhiRating,
+  finishedPlans,
   glyphOf,
   habitScores,
   insight,
   isLit,
   leadingHabit,
-  lightToday,
-  loadHabits,
   longestStreak,
   nextFlag,
   openPlans,
-  removePlan,
   river,
+  runningPlans,
+  storeFromServer,
   tally,
   todayKey,
-  unlightToday,
   type HabitPlan,
   type HabitStore,
 } from "@/lib/dhi/habits";
+import { DAY_MOVED_ON, DRAFT_NOTE, FINISHED_NOTE, FINISHED_TITLE, HABIT_WORDS_APPROVED, habitRefusal, startsOn } from "@/lib/dhi/habits/words";
+import { prettyDate } from "@/lib/dhi/mood-demo";
+import { Notice } from "@/components/dhi/ui/notice";
 import { useMediaQuery } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 import { HabitCompose } from "./habit-compose";
@@ -39,38 +43,93 @@ import { HabitSlide } from "./habit-slide";
 
 const glass = "rounded-card border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
 
+// The habits room (spec house/0007). The habits and their ticks are the student's own, read from the server; ticking, undoing, adding and removing
+// write there. Streaks, tallies and charts are worked out here from the ticks. The day shown as today comes from the shared day rule and moves on
+// at 04:00.
 export function HabitTracker() {
-  const [store, setStore] = useState<HabitStore>({ studentId: "", plans: [], checks: [] });
+  const rows = useQuery(api.habits.list, {});
+  const setToday = useMutation(api.habits.setToday);
+  const addHabit = useMutation(api.habits.add);
+  const removeHabit = useMutation(api.habits.remove);
   const [compose, setCompose] = useState(false);
   const [pick, setPick] = useState<string | null>(null);
   const [scope, setScope] = useState<"week" | "month">("week");
   const [tip, setTip] = useState(0);
+  const [fail, setFail] = useState("");
+  const [dayMoved, setDayMoved] = useState(false);
+  const [busy, setBusy] = useState<Set<string>>(new Set());
+  const [today, setTodayKey] = useState(() => todayKey());
   const narrow = useMediaQuery("(max-width: 639.98px)");
-  const today = todayKey();
 
+  // The next 04:00 moves the shown day on, and says so.
+  const shownDay = useRef(today);
   useEffect(() => {
-    setStore(loadHabits());
-  }, []);
+    const t = window.setTimeout(() => setTodayKey(todayKey()), Math.max(1000, dayEndsAt(today) - Date.now()) + 50);
+    return () => window.clearTimeout(t);
+  }, [today]);
+  useEffect(() => {
+    if (shownDay.current === today) return;
+    shownDay.current = today;
+    setDayMoved(true);
+    setFail("");
+  }, [today]);
 
+  const store: HabitStore = useMemo(() => storeFromServer(rows ?? []), [rows]);
   const open = useMemo(() => openPlans(store, today), [store, today]);
+  const running = useMemo(() => runningPlans(store, today), [store, today]);
+  const finished = useMemo(() => finishedPlans(store, today), [store, today]);
   const remaining = MAX_HABITS - open.length;
-  const doneToday = open.filter((p) => isLit(store, p.id, today)).length;
+  const doneToday = running.filter((p) => isLit(store, p.id, today)).length;
   const weekFrom = addDays(today, -6);
   const monthFrom = addDays(today, -29);
-  const weekScores = habitScores(store, open, weekFrom, today);
-  const monthScores = habitScores(store, open, monthFrom, today);
+  const weekScores = habitScores(store, running, weekFrom, today);
+  const monthScores = habitScores(store, running, monthFrom, today);
   const scores = scope === "week" ? weekScores : monthScores;
   const rating = dhiRating(scores);
-  const leader = leadingHabit(store, open);
+  const leader = leadingHabit(store, running);
   const leadStreak = leader ? currentStreak(store, leader) : 0;
   const leadBest = leader ? longestStreak(store, leader) : 0;
   const flag = nextFlag(leadStreak);
-  const houseBest = bestStreak(store, open);
+  const houseBest = bestStreak(store, running);
   const selected = store.plans.find((p) => p.id === pick);
   const news = HABIT_TIPS[tip % HABIT_TIPS.length];
 
-  function toggle(id: string) {
-    setStore((s) => (isLit(s, id) ? unlightToday(s, id) : lightToday(s, id)));
+  async function toggle(id: string) {
+    if (busy.has(id)) return;
+    setFail("");
+    setBusy((s) => new Set(s).add(id));
+    try {
+      // A tick is a target state, so a stale tab that resends it changes nothing. The server's day wins over this device's clock.
+      const r = await setToday({ planId: id, lit: !isLit(store, id, today) });
+      if (!r.ok) setFail(habitRefusal(r.code));
+    } catch (e) {
+      setFail(habitRefusal(e));
+    }
+    setBusy((s) => {
+      const next = new Set(s);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  async function removePlan(id: string) {
+    setFail("");
+    try {
+      const r = await removeHabit({ planId: id });
+      if (!r.ok) setFail(habitRefusal(r.code));
+    } catch (e) {
+      setFail(habitRefusal(e));
+    }
+  }
+
+  // Resolves to a plain line when the server refuses, so the form can show it and stay open; to null when the habit was made.
+  async function create(title: string, startOn: string, endOn: string, catalogId: string | null, color: string): Promise<string | null> {
+    try {
+      const r = await addHabit({ kind: catalogId ?? "custom", title, color, startOn, endOn });
+      return r.ok ? null : habitRefusal(r.code);
+    } catch (e) {
+      return habitRefusal(e);
+    }
   }
 
   return (
@@ -79,7 +138,7 @@ export function HabitTracker() {
         <p className="max-w-xl text-sm text-mute">Five habits. Colour them. Tick today. Watch the streak walk to the next flag.</p>
         <button
           type="button"
-          disabled={remaining <= 0}
+          disabled={remaining <= 0 || rows === undefined}
           onClick={() => setCompose(true)}
           className="flex h-11 items-center gap-2 rounded-full bg-grove px-4 text-sm font-medium text-paper disabled:opacity-40"
         >
@@ -87,8 +146,19 @@ export function HabitTracker() {
         </button>
       </div>
 
+      {fail && (
+        <Notice tone="danger" role="alert" data-testid="habit-error" className="px-4 py-3 text-sm">
+          {fail}
+        </Notice>
+      )}
+      {dayMoved && (
+        <Notice role="status" data-testid="habit-day-moved" className="px-4 py-3 text-sm">
+          {DAY_MOVED_ON}
+        </Notice>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Tile label="Today" value={`${doneToday} / ${open.length || 0}`} note="habits done" tone="mint" />
+        <Tile label="Today" value={`${doneToday} / ${running.length || 0}`} note="habits done" tone="mint" />
         <Tile
           label="Best streak"
           value={`${houseBest}d`}
@@ -113,7 +183,9 @@ export function HabitTracker() {
       <article className={cn(glass, "p-4 sm:p-6")}>
         <h3 className="font-display text-2xl">Today’s habits</h3>
         <p className="text-sm text-mute">Tap the circle. Open the card for the streak.</p>
-        {open.length === 0 ? (
+        {rows === undefined ? (
+          <p className="mt-6 text-sm text-mute">Loading…</p>
+        ) : open.length === 0 ? (
           <p className="mt-6 text-sm text-mute">No habit yet. Write your own — water, sleep, a page.</p>
         ) : (
           <ul className="mt-5 grid gap-3 lg:grid-cols-2">
@@ -123,14 +195,37 @@ export function HabitTracker() {
                 plan={p}
                 store={store}
                 today={today}
-                onToggle={() => toggle(p.id)}
+                notYet={p.startOn > today}
+                busy={busy.has(p.id)}
+                onToggle={() => void toggle(p.id)}
                 onOpen={() => setPick(p.id)}
-                onRemove={() => setStore(removePlan(store, p.id))}
+                onRemove={() => void removePlan(p.id)}
               />
             ))}
           </ul>
         )}
       </article>
+
+      {finished.length > 0 && (
+        <article className={cn(glass, "p-4 sm:p-6")} data-testid="habit-finished">
+          <h3 className="font-display text-2xl">{FINISHED_TITLE}</h3>
+          <p className="text-sm text-mute">{FINISHED_NOTE}</p>
+          <ul className="mt-4 space-y-2">
+            {finished.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 rounded-control bg-white px-3 py-2 text-sm">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorOf(p) }} />
+                <button type="button" onClick={() => setPick(p.id)} className="min-w-0 flex-1 truncate text-left touch:min-h-11">
+                  {p.title}
+                </button>
+                <span className="text-xs text-mute">best {tally(store, p).best}d</span>
+                <button type="button" onClick={() => void removePlan(p.id)} className="text-mute touch:grid touch:size-11 touch:place-items-center" aria-label={`Remove ${p.title}`}>
+                  <Trash2 className="size-4" aria-hidden />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </article>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <article className={cn(glass, "p-4 sm:p-6")}>
@@ -234,7 +329,7 @@ export function HabitTracker() {
                 Next flag for {leader.title}: {flag.target} days ({flag.left} to go)
               </p>
               <ul className="mt-5 space-y-2">
-                {[...open]
+                {[...running]
                   .sort((a, b) => currentStreak(store, b) - currentStreak(store, a))
                   .map((p) => {
                     const n = currentStreak(store, p);
@@ -280,14 +375,22 @@ export function HabitTracker() {
         <HabitCompose
           remaining={remaining}
           onClose={() => setCompose(false)}
-          onSave={(title, startOn, endOn, catalogId, color) => {
-            setStore(addPlan(store, title, startOn, endOn, catalogId, color));
-            setCompose(false);
+          today={today}
+          onSave={async (title, startOn, endOn, catalogId, color) => {
+            const problem = await create(title, startOn, endOn, catalogId, color);
+            if (!problem) setCompose(false);
+            return problem;
           }}
         />
       )}
 
-      {selected && <HabitSlide plan={selected} store={store} onClose={() => setPick(null)} onToggle={() => toggle(selected.id)} />}
+      {selected && <HabitSlide plan={selected} store={store} today={today} onClose={() => setPick(null)} onToggle={() => void toggle(selected.id)} />}
+
+      {!HABIT_WORDS_APPROVED && (
+        <p className="text-xs text-mute touch:text-sm" data-testid="habit-draft">
+          {DRAFT_NOTE}
+        </p>
+      )}
     </div>
   );
 }
@@ -296,6 +399,8 @@ function HabitCard({
   plan,
   store,
   today,
+  notYet,
+  busy,
   onToggle,
   onOpen,
   onRemove,
@@ -303,6 +408,8 @@ function HabitCard({
   plan: HabitPlan;
   store: HabitStore;
   today: string;
+  notYet: boolean;
+  busy: boolean;
   onToggle: () => void;
   onOpen: () => void;
   onRemove: () => void;
@@ -320,8 +427,10 @@ function HabitCard({
           <button
             type="button"
             onClick={onToggle}
+            disabled={notYet || busy}
+            data-testid="habit-tick"
             aria-label={done ? `Undo ${plan.title}` : `Done ${plan.title}`}
-            className="grid size-12 shrink-0 place-items-center rounded-full text-lg text-paper transition"
+            className="grid size-12 shrink-0 place-items-center rounded-full text-lg text-paper transition disabled:opacity-50"
             style={{ backgroundColor: done ? color : "var(--color-sand)", color: done ? "var(--color-paper)" : "var(--color-home)" }}
           >
             {glyphOf(plan)}
@@ -329,8 +438,14 @@ function HabitCard({
           <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left touch:min-h-11">
             <p className="font-medium">{plan.title}</p>
             <p className="text-xs text-mute">
-              {t.streak > 0 && <span className="streak-fire mr-1 text-sm">🔥</span>}
-              {t.streak} day streak · best {t.best}
+              {notYet ? (
+                startsOn(prettyDate(plan.startOn))
+              ) : (
+                <>
+                  {t.streak > 0 && <span className="streak-fire mr-1 text-sm">🔥</span>}
+                  {t.streak} day streak · best {t.best}
+                </>
+              )}
             </p>
           </button>
           <button
@@ -347,9 +462,11 @@ function HabitCard({
             <span key={d.date} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: d.lit ? color : "var(--color-sand)" }} />
           ))}
         </div>
-        <p className="mt-2 text-xs" style={{ color }}>
-          {insight(store, plan)}
-        </p>
+        {!notYet && (
+          <p className="mt-2 text-xs" style={{ color }}>
+            {insight(store, plan)}
+          </p>
+        )}
       </div>
     </li>
   );

@@ -221,6 +221,14 @@ const SCENES = {
   "habits-slide": {
     room: "habits",
     run: async (page) => {
+      // The room is real now (spec house/0007): the demo student's habits come from the server, so make one if there is none yet.
+      await page.waitForFunction(() => !document.body.innerText.includes("Loading…"), null, { timeout: 30_000 });
+      if (!(await page.getByRole("button", { name: /day streak/ }).count())) {
+        await page.getByRole("button", { name: /New habit/ }).click();
+        await page.getByTestId("habit-title").fill("Sweep habit");
+        await page.getByTestId("habit-create").click();
+        await page.getByTestId("habit-title").waitFor({ state: "detached", timeout: 20_000 });
+      }
       await page
         .getByRole("button", { name: /day streak/ })
         .first()

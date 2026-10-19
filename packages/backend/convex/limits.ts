@@ -64,6 +64,10 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   sharingChange: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
   // Saving the mood (spec house/0006, AC-10): 30 an hour for each student (key = the member id), taken for every attempt, so a refused save still counts.
   moodSave: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  // The habits room (spec house/0007, AC-11): adding, ticking, undoing and removing together 60 an hour for each student (key = the member id), and
+  // 10 new habits a day, so cycles of add and remove cannot fill the log's 500 events a day. Both are taken for every attempt.
+  habitWrite: { kind: "token bucket", rate: 60, period: HOUR, capacity: 60 },
+  habitAddDay: { kind: "fixed window", rate: 10, period: DAY },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },
   shareBad: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_BAD_SHARDS, start: 0 },

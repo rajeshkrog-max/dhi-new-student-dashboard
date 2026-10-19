@@ -3,24 +3,31 @@
  * Colour is chosen from the house palette (psychology, not decoration).
  */
 import { useState } from "react";
-import { CATALOG, MAX_HABITS, PALETTE, addDays, todayKey } from "@/lib/dhi/habits";
+import { MAX_WINDOW_DAYS, START_AHEAD_DAYS } from "@dhi/backend/habitCodes";
+import { CATALOG, MAX_HABITS, PALETTE, addDays } from "@/lib/dhi/habits";
 import { Sheet } from "@/components/dhi/sheet";
 import { cn } from "@/lib/utils";
 
 export function HabitCompose({
   remaining,
+  today,
   onClose,
   onSave,
 }: {
   remaining: number;
+  today: string;
   onClose: () => void;
-  onSave: (title: string, startOn: string, endOn: string, catalogId: string | null, color: string) => void;
+  // Resolves to a plain line when the server refuses (the form stays open and shows it), or to null when the habit was made.
+  onSave: (title: string, startOn: string, endOn: string, catalogId: string | null, color: string) => Promise<string | null>;
 }) {
   const [title, setTitle] = useState("");
   const [catalogId, setCatalogId] = useState<string | null>(null);
   const [color, setColor] = useState<string>(PALETTE[0].hex);
-  const [startOn, setStartOn] = useState(todayKey());
-  const [endOn, setEndOn] = useState(addDays(todayKey(), 21));
+  // The window the server accepts: a start from today to 14 days ahead, and an end up to 89 days after the start.
+  const [startOn, setStartOn] = useState(today);
+  const [endOn, setEndOn] = useState(addDays(today, 20));
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState("");
 
   function pick(id: string) {
     const c = CATALOG.find((x) => x.id === id);
@@ -42,6 +49,8 @@ export function HabitCompose({
         Your habit
         <input
           value={title}
+          maxLength={40}
+          data-testid="habit-title"
           onChange={(e) => {
             setTitle(e.target.value);
             setCatalogId(null);
@@ -90,22 +99,34 @@ export function HabitCompose({
       <div className="mt-4 grid grid-cols-2 gap-3">
         <label className="text-xs text-mute">
           Starts
-          <input type="date" value={startOn} onChange={(e) => setStartOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
+          <input type="date" value={startOn} min={today} max={addDays(today, START_AHEAD_DAYS)} onChange={(e) => setStartOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
         </label>
         <label className="text-xs text-mute">
           Ends
-          <input type="date" value={endOn} min={startOn} onChange={(e) => setEndOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
+          <input type="date" value={endOn} min={startOn} max={addDays(startOn, MAX_WINDOW_DAYS - 1)} onChange={(e) => setEndOn(e.target.value)} className="mt-1 h-11 w-full rounded-control bg-white px-3 text-sm text-home" />
         </label>
       </div>
 
+      {problem && (
+        <p role="alert" data-testid="habit-compose-error" className="mt-4 rounded-control bg-peach px-4 py-3 text-sm text-ink">
+          {problem}
+        </p>
+      )}
       <button
         type="button"
-        disabled={!title.trim() || remaining <= 0 || endOn < startOn}
-        onClick={() => onSave(title.trim(), startOn, endOn, catalogId, color)}
+        disabled={!title.trim() || remaining <= 0 || endOn < startOn || saving}
+        data-testid="habit-create"
+        onClick={async () => {
+          setSaving(true);
+          setProblem("");
+          const line = await onSave(title.trim(), startOn, endOn, catalogId, color);
+          if (line) setProblem(line);
+          setSaving(false);
+        }}
         className="mt-5 h-12 w-full rounded-full text-sm font-medium text-paper disabled:opacity-40"
         style={{ backgroundColor: color }}
       >
-        Create habit
+        {saving ? "Saving…" : "Create habit"}
       </button>
     </Sheet>
   );

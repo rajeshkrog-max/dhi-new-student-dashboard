@@ -9,18 +9,22 @@ import { prettyDate } from "@/lib/dhi/mood-demo";
 export function HabitSlide({
   plan,
   store,
+  today,
   onClose,
   onToggle,
 }: {
   plan: HabitPlan;
   store: HabitStore;
+  today: string;
   onClose: () => void;
   onToggle: () => void;
 }) {
   const t = tally(store, plan);
   const days = river(store, plan, 28);
   const flag = nextFlag(t.streak);
-  const done = isLit(store, plan.id);
+  const done = isLit(store, plan.id, today);
+  // A habit can be ticked only inside its window: not before it starts, not after it ends.
+  const open = plan.startOn <= today && plan.endOn >= today;
 
   return (
     <Sheet
@@ -70,7 +74,7 @@ export function HabitSlide({
           <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">DHI</p>
           <p className="font-display mt-2 text-xl leading-snug">{insight(store, plan)}</p>
         </div>
-        <button type="button" onClick={onToggle} className="lamp-glow h-12 w-full rounded-full bg-paper text-sm font-medium text-home">
+        <button type="button" onClick={onToggle} disabled={!open} className="lamp-glow h-12 w-full rounded-full bg-paper text-sm font-medium text-home disabled:opacity-50">
           {done ? "Undo today" : "Done for today"}
         </button>
       </div>

@@ -15,6 +15,7 @@
     "./consentText": "./convex/consentText.ts",
     "./dayRules": "./convex/dayRules.ts",
     "./moodRules": "./convex/moodRules.ts",
+    "./habitCodes": "./convex/habitCodes.ts",
     "./feedbackRules": "./convex/feedbackRules.ts",
     "./challengeRules": "./convex/challengeRules.ts",
     "./reportVersion": "./convex/reportVersion.ts"

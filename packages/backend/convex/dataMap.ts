@@ -27,6 +27,8 @@ export const DATA_MAP: Readonly<Record<string, DataMapEntry>> = {
   houseErasures: { owner: "house", class: "kept", retention: "Kept. The receipt of an erase: counts only, no student id." },
   houseErasedEmails: { owner: "house", class: "system", retention: "Deleted when the 30 day block ends. A keyed hash, never the email." },
   classTotals: { owner: "house", class: "kept", retention: "Kept. The first answer of a class total for one complete month: a class, a kind and a count, no person in it." },
+  habitPlans: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Their habits: the kind, their own title, a colour and a window. Seen by the student alone." },
+  habitChecks: { owner: "house", class: "erased", retention: "Deleted when the student is erased. One row for each habit and day ticked." },
   moodDays: { owner: "house", class: "erased", retention: "Deleted when the student is erased. The mood, their own few words and a line index. Seen by the student alone." },
   events: { owner: "house", class: "erased", retention: "Deleted when the student is erased." },
 

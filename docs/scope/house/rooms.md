@@ -60,17 +60,17 @@ Spec [0006](../../specs/house/0006-mood-room-real/index.md) · code in `packages
 Up to 5 habits per student, each with its own label, start, end, daily tick and streak, saved on the server. A miss is a day in the window with no tick, and history is never rewritten. The cap of 5 is checked on the server as well as on the screen.
 **Done when:** a sixth habit is refused by the server, ticks survive a reload, a missed day shows as a miss, a tick on a future or closed day is refused, and each tick reaches the event log.
 - [x] Design it (spec): `/architect habits room, real`
-- [ ] Build it: `/develop habits room, real`
-   - [ ] The thread: tables, rules file, event type, add, list and tick (AC-1, AC-3, AC-4, AC-6, AC-8)
-   - [ ] The window and field rules, the cap, undo and flips, remove, the limit (AC-2, AC-5, AC-7, AC-11)
-   - [ ] Export, erase and the data map (AC-9, AC-10)
-   - [ ] The screen on the server (AC-4, AC-12)
-   - [ ] The proof (AC-1 to AC-13)
-- [ ] Verify it: `/check verify habits room, real`
-- [ ] Test it: `/test habits room, real`
+- [x] Build it: `/develop habits room, real`
+   - [x] The thread: tables, rules file, event type, add, list and tick (AC-1, AC-3, AC-4, AC-6, AC-8)
+   - [x] The window and field rules, the cap, undo and flips, remove, the limit (AC-2, AC-5, AC-7, AC-11)
+   - [x] Export, erase and the data map (AC-9, AC-10)
+   - [x] The screen on the server (AC-4, AC-12)
+   - [x] The proof (AC-1 to AC-13)
+- [x] Verify it: `/check verify habits room, real`
+- [x] Test it: `/test habits room, real`
 - [ ] Review it (fresh model): `/check review habits room, real`
 - [ ] Document it: `/document habits room, real`
-Spec [0007](../../specs/house/0007-habits-room-real/index.md) · code (filled by /develop). Builds on rows 3 and 4 and follows the Mood room (row 5).
+Spec [0007](../../specs/house/0007-habits-room-real/index.md) · code in `packages/backend/convex/{habits,habitCodes,habitRules,habitRoom,habitProof}.ts`, `packages/backend/convex/eventTypes/habits.ts`, `src/components/dhi/habits/`, `src/lib/dhi/habits/`, `scripts/{habit-check,fresh-student}.mjs`. Built 2026-10-19; the live race check passed on the development deployment. Builds on rows 3 and 4 and follows the Mood room (row 5).
 
 ### 7. Sleep log · needs a decision
 A new two tap entry for bedtime and wake time, prefilled from yesterday. Sleep is the signal your research brief leans on most, and no room records it today. Where it lives (its own card, or inside Habits or Mood) is the decision.

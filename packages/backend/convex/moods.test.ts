@@ -289,7 +289,7 @@ describe("export and erase (AC-9)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections).toEqual(["header", "events", "mood", "mood", "mood"]);
+    expect(sections).toEqual(["header", "events", "mood", "mood", "mood", "habits"]); // the habits room adds its own (empty here) section after
     expect(rows).toHaveLength(230);
     expect(new Set(rows.map((r) => r.day)).size).toBe(230);
     expect(Object.keys(rows[0]).sort()).toEqual(["day", "mood", "note"]);
@@ -319,7 +319,7 @@ describe("the words and the map (AC-8)", () => {
 
   test("covers AC-9: the mood room is registered with its kind and its table is in the data map", async () => {
     const { ROOM_ENTRIES } = await import("./roomRegistry");
-    expect(ROOM_ENTRIES.map((e) => [e.room, e.table, e.kinds])).toEqual([["mood", "moodDays", ["mood"]]]);
+    expect(ROOM_ENTRIES.find((e) => e.room === "mood")).toMatchObject({ table: "moodDays", kinds: ["mood"] });
     const { DATA_MAP } = await import("./dataMap");
     expect(DATA_MAP.moodDays.class).toBe("erased");
     const { eventDef } = await import("./eventRegistry");

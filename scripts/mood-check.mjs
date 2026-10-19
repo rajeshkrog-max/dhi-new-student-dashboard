@@ -7,7 +7,8 @@
 // not this machine. It leaves one mood row for the demo student for today (the room allows today to be changed, so a rerun just changes it).
 import { chromium } from "playwright";
 import { assertLocalDevelopment } from "./local-dev-guard.mjs";
-import { PEOPLE, signIn, signInMember } from "./test-student.mjs";
+import { PEOPLE, signInMember } from "./test-student.mjs";
+import { freshStudent } from "./fresh-student.mjs";
 
 const argUrl = process.argv.includes("--url") ? process.argv[process.argv.indexOf("--url") + 1] : "http://localhost:8080";
 const base = assertLocalDevelopment("mood-check", argUrl);
@@ -41,44 +42,9 @@ async function pickMood(page, label) {
   await page.locator("article button", { hasText: label }).first().click();
 }
 
-// A fresh made up student for each run (invited by the demo institute admin, joined, and agreed), so the room's limit of 10 mood changes a day
-// never carries over from an earlier run.
-async function freshStudent(browser) {
-  const unique = `mood${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-  const person = { email: `${unique}@example.test`, name: `Mood Proof ${unique.slice(-4)}` };
-  const adminState = await signInMember(browser, base, PEOPLE.admin);
-  const adminContext = await browser.newContext({ baseURL: base.origin, storageState: adminState });
-  const admin = await adminContext.newPage();
-  await admin.goto("/staff");
-  await admin.locator('[data-room="invites"]:visible').click();
-  await admin.getByTestId("invite-role").selectOption("student");
-  await admin.getByTestId("invite-name").fill(person.name);
-  await admin.getByTestId("invite-email").fill(person.email);
-  await admin.getByTestId("invite-class").selectOption({ label: "Class 10 A" });
-  await admin.getByTestId("invite-under18").selectOption("no");
-  await admin.getByTestId("invite-create").click();
-  await admin.getByTestId("staff-done").waitFor({ timeout: 20_000 });
-  await adminContext.close();
-
-  const context = await browser.newContext({ baseURL: base.origin });
-  const page = await context.newPage();
-  await signIn(page, person);
-  await page.waitForURL((url) => url.pathname.startsWith("/join"), { timeout: 30_000 });
-  await page.getByTestId("join").click();
-  await page.waitForURL((url) => url.pathname.startsWith("/dashboard"), { timeout: 30_000 });
-  await page.waitForFunction(() => (document.querySelector('[data-testid="notice-box"]')?.textContent ?? "").includes("privacy@"), null, { timeout: 30_000 });
-  await page.getByTestId("notice-box").evaluate((el) => el.scrollTo(0, el.scrollHeight));
-  await page.waitForFunction(() => !document.querySelector('[data-testid="agree"]')?.hasAttribute("disabled"), null, { timeout: 10_000 });
-  await page.getByTestId("agree").click();
-  await page.locator('[data-room="mood"]:visible').waitFor({ timeout: 30_000 });
-  const state = await context.storageState();
-  await context.close();
-  return state;
-}
-
 const browser = await chromium.launch();
 try {
-  const state = await freshStudent(browser).catch((error) => {
+  const state = await freshStudent(browser, base).catch((error) => {
     console.error(`mood-check: could not make a fresh student (${String(error?.message ?? error).split("\n")[0]}).`);
     console.error("Run `pnpm --filter @dhi/backend exec convex run demo:seed` once on the development deployment, then try again.");
     process.exit(2);
