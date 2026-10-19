@@ -53,6 +53,9 @@ export function MoodTracker() {
   const touch = useTouch();
   const board = useRef<HTMLDivElement>(null);
   const saveMood = useMutation(api.moods.save);
+  // What is on the form right now, so a save that returns can tell whether the student kept typing while it was in flight.
+  const form = useRef({ mood, note });
+  form.current = { mood, note };
 
   const year = Number(today.slice(0, 4));
   const monthKey = (m: number) => `${year}-${String(m + 1).padStart(2, "0")}`;
@@ -90,9 +93,15 @@ export function MoodTracker() {
   }, [yearRows]);
 
   // The form follows the saved entry (from this tab or another) while the student has not started changing it, and starts fresh on a new day.
+  // When the day moves on (the 04:00 timer, or the server's day winning), say so, keep any half written line (it now belongs to the new day) and
+  // show the month of the new day.
+  const shownDay = useRef(today);
   useEffect(() => {
-    setDirty(false);
+    if (shownDay.current === today) return;
+    shownDay.current = today;
+    setDayChanged(true);
     setFail("");
+    setMonth(Number(today.slice(5, 7)) - 1);
   }, [today]);
   useEffect(() => {
     if (dirty) return;
@@ -124,16 +133,19 @@ export function MoodTracker() {
   async function saveToday() {
     setSaving(true);
     setFail("");
+    const sent = { mood, note };
     try {
-      const r = await saveMood({ mood, note });
+      const r = await saveMood(sent);
       if (!r.ok) {
         setFail(moodRefusal(r.code));
       } else {
-        setDirty(false);
+        // Only a form that still holds what was sent is clean; anything typed while the save was in flight stays.
+        if (form.current.mood === sent.mood && form.current.note === sent.note) setDirty(false);
         if (r.day !== today) {
           // The server's day wins over a device clock that is off.
           setToday(r.day);
-          setDayChanged(true);
+        } else {
+          setDayChanged(false);
         }
       }
     } catch (e) {
@@ -187,10 +199,11 @@ export function MoodTracker() {
             <textarea
               value={note}
               onChange={(e) => {
-                setNote(e.target.value);
+                // 500 characters as the server counts them (code points), so an emoji counts once.
+                const chars = [...e.target.value];
+                setNote(chars.length > 500 ? chars.slice(0, 500).join("") : e.target.value);
                 setDirty(true);
               }}
-              maxLength={500}
               data-testid="mood-note"
               rows={5}
               placeholder="What sat in the chest today…"

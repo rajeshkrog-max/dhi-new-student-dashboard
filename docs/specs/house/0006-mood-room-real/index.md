@@ -1,7 +1,7 @@
 # 0006. Mood room, real, with the Vedic lens
 
 **Date**: 2026-10-19
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 
@@ -116,12 +116,12 @@ Event: room `mood`, type `mood.logged`, version 1, payload `{ mood: <code> }`, `
 
 Build approach: Tracer Bullet (from the house scope). The thin thread first (one save and one read end to end), then the rules around it.
 
-1. **The thread.** The `moodDays` table, `moodRules.ts` (codes and the guna map, exported as `@dhi/backend/moodRules`), the `mood.logged` event type in the registry, `moods.save` and `moods.month` for the happy path, and the schema pushed to the development deployment. Satisfies **AC-1**, **AC-5**, **AC-7**.
-2. **The rules.** One entry a day with the mood change and note only paths, the no-op, today only from one clock read, the note limits, the 10 changes cap, the rate limit, `moods.year`. Satisfies **AC-2**, **AC-3**, **AC-4**, **AC-7**, **AC-10**.
-3. **Export, erase and the data map.** The room's entry in the room registry (exporter and eraser), the data map entry, and the privacy scan. Satisfies **AC-6**, **AC-9**.
-4. **The words.** `mood-words.ts` with the 20 existing lines, the guna lines and the tips (drafts), and the copy rules test. Satisfies **AC-8**.
-5. **The screen.** Rewire `mood-tracker.tsx` to `moods.save`, `moods.month` and `moods.year`, with the loading, saving and failure states, the 04:00 reset, a draft note for the new words, and the demo store kept only for the help button. Satisfies **AC-1**, **AC-8**, **AC-11**.
-6. **Proof.** The backend suite, a live race check on the development deployment (two first saves at once leave one row), the browser proof (save, reload, edit, another context), the responsive sweep for the mood room, and the funnel suite unchanged. Satisfies **AC-1** to **AC-12**.
+1. [x] **The thread.** The `moodDays` table, `moodRules.ts` (codes and the guna map, exported as `@dhi/backend/moodRules`), the `mood.logged` event type in the registry, `moods.save` and `moods.month` for the happy path, and the schema pushed to the development deployment. Satisfies **AC-1**, **AC-5**, **AC-7**.
+2. [x] **The rules.** One entry a day with the mood change and note only paths, the no-op, today only from one clock read, the note limits, the 10 changes cap, the rate limit, `moods.year`. Satisfies **AC-2**, **AC-3**, **AC-4**, **AC-7**, **AC-10**.
+3. [x] **Export, erase and the data map.** The room's entry in the room registry (exporter and eraser), the data map entry, and the privacy scan. Satisfies **AC-6**, **AC-9**.
+4. [x] **The words.** `mood-words.ts` with the 20 existing lines, the guna lines and the tips (drafts), and the copy rules test. Satisfies **AC-8**.
+5. [x] **The screen.** Rewire `mood-tracker.tsx` to `moods.save`, `moods.month` and `moods.year`, with the loading, saving and failure states, the 04:00 reset, a draft note for the new words, and the demo store kept only for the help button. Satisfies **AC-1**, **AC-8**, **AC-11**.
+6. [x] **Proof.** The backend suite, a live race check on the development deployment (two first saves at once leave one row), the browser proof (save, reload, edit, another context), the responsive sweep for the mood room, and the funnel suite unchanged. Satisfies **AC-1** to **AC-12**.
 
 ## Consequences
 
