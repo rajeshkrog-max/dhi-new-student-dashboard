@@ -270,6 +270,8 @@ const SCENES = {
 // Data the scenes above need, made once before the sweep with the development helpers (the sweep refuses production, and so do they).
 function prepare(selected) {
   const run = (command) => execSync(`npx convex run ${command}`, { cwd: "packages/backend", stdio: "pipe" });
+  // A proof that stopped part way may have left the demo student in a sitting, which the server's exam lock would hold them in.
+  run("papersProof:resetDemoSitting");
   const wants = (prefix) => selected.some((name) => name === prefix || name.startsWith(`${prefix}-`));
   if (wants("papers")) {
     run("papersProof:assignDemoTeacher");
@@ -512,6 +514,8 @@ async function main() {
           rows.push({ room, width, ok: false, error: String(err.message ?? err).split("\n")[0] });
         }
         await page.close();
+        // A sitting scene leaves the demo student's paper open, and the server's exam lock would then close every later room: undo it.
+        if (room.startsWith("papers-")) execSync("npx convex run papersProof:resetDemoSitting", { cwd: "packages/backend", stdio: "pipe" });
       }
       await Promise.all(Object.values(contexts).map((context) => context.close()));
     }

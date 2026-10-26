@@ -1,6 +1,6 @@
-// Repeatable browser proof of the meals room (spec house/0010) and the desk coming soon page (spec house/0016), against the dev server:
+// Repeatable browser proof of the meals room (spec house/0010), and that the desk (spec house/0016) opens after it, against the dev server:
 //   pnpm dev, then pnpm meals:check. A fresh student adds their own dish with numbers, logs a plate, sees the food group count (never a calorie
-//   total), removes the plate, and sees the desk's coming soon page. Needs the demo institute and VITE_TEST_SIGNIN=true in .env.local.
+//   total), removes the plate, and opens the desk, which shows their coins. Needs the demo institute and VITE_TEST_SIGNIN=true in .env.local.
 import { chromium } from "playwright";
 import { assertLocalDevelopment } from "./local-dev-guard.mjs";
 import { freshStudent } from "./fresh-student.mjs";
@@ -73,9 +73,11 @@ try {
     expect(text.includes("Days you logged a meal"), "the presence line is missing");
   });
 
-  await step("the DHI desk shows its coming soon page", async () => {
+  // The desk is real now (house spec 0016) and has its own proof (desk:check); here it only has to open from the menu after the meals room.
+  await step("the DHI desk opens from the menu and shows the student's coins", async () => {
     await page.locator('[data-room="dhi"]:visible').click();
-    await page.getByTestId("coming-soon").waitFor({ timeout: 20_000 });
+    await page.getByTestId("desk-room").waitFor({ timeout: 20_000 });
+    await page.getByTestId("desk-coins").waitFor({ timeout: 20_000 });
   });
 
   await context.close();

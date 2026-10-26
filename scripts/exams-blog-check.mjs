@@ -7,6 +7,7 @@
 // mark and accepts the feedback. The student then posts to the blog, and the demo teacher approves the post in Reviews, and the student sees it
 // shared. Needs the demo institute (`pnpm --filter @dhi/backend exec convex run demo:seed`)
 // and VITE_TEST_SIGNIN=true in .env.local. It refuses production and any address that is not this machine. Each run uses a unique paper title.
+import { execSync } from "node:child_process";
 import { chromium } from "playwright";
 import { assertLocalDevelopment } from "./local-dev-guard.mjs";
 import { PEOPLE, signInMember } from "./test-student.mjs";
@@ -41,6 +42,9 @@ const post = `Proof post ${Date.now().toString(36)}`;
 // A 1 by 1 PNG, so the proof sends a real picture without a file on disk.
 const TINY_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 const story = `Once there was a proof ${Date.now().toString(36)}.`;
+
+// A run that stopped part way may have left the demo student in a sitting, which the server's exam lock would hold them in (house spec 0012 AC-7).
+execSync("npx convex run papersProof:resetDemoSitting", { cwd: "packages/backend", stdio: "pipe" });
 
 const browser = await chromium.launch();
 try {
@@ -112,9 +116,11 @@ try {
     await student.getByTestId("sitting").waitFor({ timeout: 20_000 });
   });
 
-  await step("the rest of the house is locked while the sitting is open", async () => {
-    expect(await student.locator('[data-room="blog"]:visible').isDisabled(), "the Blog menu item is not locked during the sitting");
-    expect(await student.getByTestId("leave").isDisabled(), "Leave is not locked during the sitting");
+  // The rooms that could help with a paper close (owner, 2026-10-26); the logging rooms, Your data and Leave stay open.
+  await step("the desk, blog, study hour and films are locked while the sitting is open, and Mood, Your data and Leave are not", async () => {
+    for (const room of ["blog", "dhi", "hour", "modules"]) expect(await student.locator(`[data-room="${room}"]:visible`).isDisabled(), `the ${room} menu item is not locked during the sitting`);
+    for (const room of ["mood", "data"]) expect(!(await student.locator(`[data-room="${room}"]:visible`).isDisabled()), `the ${room} menu item is locked during the sitting`);
+    expect(!(await student.getByTestId("leave").isDisabled()), "Leave is locked during the sitting");
     await student.getByText("Exam is going on").first().waitFor({ timeout: 10_000 });
   });
 
