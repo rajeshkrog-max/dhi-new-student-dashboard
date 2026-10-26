@@ -304,7 +304,12 @@ describe("export, erase and the wall (AC-8, AC-9)", () => {
     const page = await w.t.run((ctx) => brainRoom.exporter(ctx, w.s.memberId, null, 10));
     expect(page.rows).toHaveLength(1);
     expect(page.rows[0]).toMatchObject({ day: TODAY, values: { E03: { num: 1, den: 1 } } });
-    expect(page.next).toBeNull();
+    // The hidden pattern follows the days, on its own page.
+    expect(page.next).toBe("h:");
+    const hides = await w.t.run((ctx) => brainRoom.exporter(ctx, w.s.memberId, "h:", 10));
+    expect(hides.next).toBeNull();
+    expect(hides.rows).toHaveLength(1);
+    expect(Object.keys(hides.rows[0] as object).sort()).toEqual(["hiddenPattern", "until"]);
     const erased = await w.t.run((ctx) => brainRoom.eraser(ctx, w.s.memberId, 10));
     expect(erased.done).toBe(true);
     expect(await daysOf(w, w.s.memberId)).toEqual([]);

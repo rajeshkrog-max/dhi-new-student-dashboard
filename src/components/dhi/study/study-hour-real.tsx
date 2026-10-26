@@ -233,7 +233,20 @@ function OpenHour({ closesAt, now, mode }: { closesAt: number; now: number; mode
 
 function Seats() {
   const seats = useQuery(api.studyHour.seats, {});
-  if (seats === undefined || !seats.seated) return null;
+  // While the seats load, the card holds the place of the student's own seat, so the chat below does not jump when they arrive.
+  if (seats === undefined) {
+    return (
+      <Card className="space-y-3" data-testid="seat-list-loading">
+        <h2 className="text-sm font-semibold">In the hour with you</h2>
+        <div className="rounded-control border border-home/20 bg-white/80 p-4" aria-hidden>
+          <p className="font-display text-xl">&nbsp;</p>
+          <p className="text-xs text-mute">&nbsp;</p>
+        </div>
+        <p className="text-sm text-mute">&nbsp;</p>
+      </Card>
+    );
+  }
+  if (!seats.seated) return null;
   const mine = seats.people.find((p) => p.mine);
   const others = seats.people.filter((p) => !p.mine);
   const alone = mine?.mode === "dnd";

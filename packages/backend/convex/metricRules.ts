@@ -14,7 +14,9 @@ import { PROCESSING } from "./foodRules";
 // Version 5 (2026-10-24): X02, the minutes at the desk. A plain measure (owner, 2026-10-24): it feeds no lamp and no home score, and a day with only desk
 // time is not a logged day for the chains.
 // Version 6 (2026-10-24): A10 (desk study days) and A12 (active learning share of desk sittings), plain measures like X02.
-export const METRIC_VERSION = 6;
+// Version 7 (2026-10-26): a day an open paper touched has no real zero for the study hour (H12, X01), because the exam lock closed it (owner,
+// 2026-10-26; brainDay.ts with examLock.sittingWithin).
+export const METRIC_VERSION = 7;
 
 // E06 is the mood mix, one measure for each family of moods; E15 the tags of the posts, one for each tag; H03 the meal times, one for each slot. The Master
 // Spec keeps these as breakdowns of one id; here each key is its own id so a day stays one top and one bottom for each id.

@@ -170,4 +170,14 @@ describe("a hint that gives the answer away (house/0012)", () => {
     expect(gives("Start with who, then what happened.")).toBe(false);
     expect(gives("")).toBe(false);
   });
+
+  // Review of 2026-10-26. The check stays a guard on the teacher's own text, not a proof (spec 0012 AC-4 is noted in the review file).
+  test("it finds the right option split by a hyphen or a space, and a small letter after 'answer is' at the end of a sentence", () => {
+    const science = ["Respiration", "Photosynthesis", "Digestion"];
+    expect(gives("Think of photo-synthesis.", science, 1)).toBe(true);
+    expect(gives("It is photo synthesis", science, 1)).toBe(true);
+    expect(gives("the answer is b.")).toBe(true);
+    expect(gives("the answer is a simple idea about light")).toBe(false);
+    expect(gives("Think about what leaves do in sunlight.", science, 1)).toBe(false);
+  });
 });

@@ -8,6 +8,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { recordEvent } from "./eventLog";
 import { fail } from "./helpers";
 import { requireDhiAdmin, requireMember, type MemberContext } from "./houseAuth";
+import { refuseWhileSitting } from "./examLock";
 import { rateLimiter } from "./limits";
 import { LINK_TTL_MS, progressAfter, playUrlOf, reachedEnd, uploadProblem, CHECKS_FOR_ACADEMIC } from "./moduleRules";
 
@@ -109,6 +110,7 @@ export const list = query({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const films = await ctx.db.query("films").withIndex("by_status", (q) => q.eq("status", "approved")).take(100);
     const out = [];
     let keptCount = 0;
@@ -163,6 +165,7 @@ export const playLink = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const limit = await rateLimiter.limit(ctx, "filmCall", { key: mc.member._id });
     if (!limit.ok) return { ok: false as const, code: "rate_limited" };
     const found = await filmAndProgress(ctx, mc, args.filmId);
@@ -180,6 +183,7 @@ export const progress = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const limit = await rateLimiter.limit(ctx, "filmCall", { key: mc.member._id });
     if (!limit.ok) return { ok: false as const, code: "rate_limited" };
     const found = await filmAndProgress(ctx, mc, args.filmId);
@@ -201,6 +205,7 @@ export const finish = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const limit = await rateLimiter.limit(ctx, "filmCall", { key: mc.member._id });
     if (!limit.ok) return { ok: false as const, code: "rate_limited" };
     const found = await filmAndProgress(ctx, mc, args.filmId);

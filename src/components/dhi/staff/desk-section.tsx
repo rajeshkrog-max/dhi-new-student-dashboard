@@ -65,6 +65,12 @@ export function DeskSection() {
               : `, set ${when(current.updatedAt)}.`}
           </p>
         )}
+        {current !== undefined && (
+          <p className="text-sm" data-testid="desk-today">
+            Today {current.questionsToday} of {current.dailyCap} new questions have gone to the model,
+            for all institutes together.
+          </p>
+        )}
         <p className="text-xs text-mute">
           A new question costs 1 coin, and a question asked before or a clarifying question costs
           none. Unused coins carry over to the next month. A change counts from each student's next

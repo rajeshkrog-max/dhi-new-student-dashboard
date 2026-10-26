@@ -41,6 +41,11 @@ export const open = mutation({
     const member = await ctx.db.get(link.memberId);
     if (!member || member.role !== "student") return await gone();
     const setting = await ctx.db.query("sharingSettings").withIndex("by_memberId", (q) => q.eq("memberId", member._id)).first();
+    // While the student's class is paused the page reads as gone, and it opens again by itself on resume (owner, 2026-10-26). Staff views carry
+    // on through a pause (house spec 0021), so this is the parent page's own rule and `standingOf` is unchanged.
+    const cls = member.classId ? await ctx.db.get(member.classId) : null;
+    // Answered plainly, not through `gone`, so the refreshes of a paused class's parents never use the allowance kept for wrong codes.
+    if (cls?.pausedAt !== undefined && cls !== null) return { ok: false as const, code: "gone" };
     const standing = await standingOf(ctx, member);
     if (canView("parent", "none", "brain", { standing, parentLevel: setting?.parentLevel ?? "none" }) !== "summary") return await gone();
 

@@ -13,6 +13,20 @@ export const PRICES: Readonly<Record<DeskKind, number>> = { chat: 1, clarify: 0,
 // The owner's monthly allotment (2026-10-24): 60 coins, set by the DHI admin afterwards. Unused coins roll over to the next month.
 export const DEFAULT_MONTHLY_COINS = 60;
 export const MAX_MONTHLY_COINS = 1000;
+// The ceiling on the model bill (owner, 2026-10-26): at most this many questions reach the model in one India day, across the whole deployment. A cache
+// hit and the care text never reach the model, so they never count. `DESK_DAILY_CAP` on the deployment changes it without a deploy (0 stops the model).
+export const DESK_DAILY_CAP = 300;
+export const MAX_DESK_DAILY_CAP = 100000;
+// One student's share of that, per India day (owner, 2026-10-26). Clarify counts, because it reaches the model; a stored answer and the care text do not.
+export const DESK_STUDENT_DAILY = 20;
+
+// The day's cap from the deployment variable: a whole number from 0 to MAX_DESK_DAILY_CAP, or DESK_DAILY_CAP when unset or malformed.
+export function dailyCapOf(raw: string | undefined): number {
+  const text = (raw ?? "").trim();
+  if (!/^\d+$/.test(text)) return DESK_DAILY_CAP;
+  const n = Number(text);
+  return n <= MAX_DESK_DAILY_CAP ? n : DESK_DAILY_CAP;
+}
 
 export const QUESTION_MAX = 600; // code points the student may type
 export const WRITE_MAX = 1500; // code points of a piece of writing sent for feedback (owner, 2026-10-24)
@@ -193,7 +207,8 @@ export function cleanSvg(raw: string): string | null {
   const open = /^<svg\b[^>]*>/.exec(svg)?.[0] ?? "";
   if (!/\sxmlns=/.test(open)) svg = svg.replace("<svg", `<svg xmlns="${SVG_NAMESPACE}"`);
   if (!/\sviewBox=/.test(open)) svg = svg.replace("<svg", '<svg viewBox="0 0 400 300"');
-  return svg;
+  // The length again after the two attributes, so a diagram is never cut short when it is stored (review of 2026-10-26).
+  return svg.length <= DRAW_SVG_MAX ? svg : null;
 }
 
 // The instruction for the Draw kind. A draft until the owner approves it (DESK_WORDS_APPROVED).

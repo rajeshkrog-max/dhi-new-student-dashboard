@@ -13,6 +13,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { recordEvent, recordSystemEvent, type EventActor } from "./eventLog";
 import { fail } from "./helpers";
 import { requireMember } from "./houseAuth";
+import { hasOpenSitting } from "./examLock";
 import { rateLimiter } from "./limits";
 import { isOpenAt } from "./papersRules";
 import { pausedWithin } from "./pauseHistory";
@@ -131,6 +132,18 @@ export const sweep = internalMutation({
     }
     if (more) await ctx.scheduler.runAfter(0, internal.exams.sweep, {});
     return closed;
+  },
+});
+
+// Whether the student has a sitting open (the exam lock, owner 2026-10-26): the house frame locks every other room while it is true, also after a
+// reload, and the rooms refuse on the server (examLock.ts).
+export const sitting = query({
+  args: {},
+  returns: v.object({ open: v.boolean() }),
+  handler: async (ctx) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    return { open: await hasOpenSitting(ctx, mc.member._id) };
   },
 });
 

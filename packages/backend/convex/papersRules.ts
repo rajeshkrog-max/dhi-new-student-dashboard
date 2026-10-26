@@ -60,6 +60,8 @@ const POINTS_AT_OPTION = [
   new RegExp(`\\b(?:[Aa]nswer|[Aa]ns|[Cc]orrect|[Rr]ight)(?:'s|\u2019s)?\\b[\\s:=\\-\\u2013\\u2014]*(?:is\\s*)?\\(?(?:[A-F]|[1-9])\\)?(?![\\p{L}\\p{N}])`, "u"),
   // a letter or a digit alone in brackets, "(b)" or "(2)"
   /\(\s*(?:[A-Fa-f]|[1-9])\s*\)/u,
+  // a small letter after "answer is" that ends the sentence, "the answer is b." ("the answer is a simple idea" goes on, so it is fine)
+  /\b(?:answer|ans)\s+is\s+\(?[a-f]\)?(?=\s*(?:[.,!?;:]|$))/u,
 ];
 
 export function hintGivesAnswer(hint: string, options: readonly string[], rightOption: number): boolean {
@@ -68,6 +70,9 @@ export function hintGivesAnswer(hint: string, options: readonly string[], rightO
   const words = right.trim();
   if (words.length > 1 || /^\p{N}$/u.test(words)) {
     if (spaced(hint).includes(right)) return true;
+    // The same words with the spaces gone, so "photo-synthesis" still finds "Photosynthesis" (review of 2026-10-26).
+    const squash = (s: string) => spaced(s).replace(/\s+/g, "");
+    if (squash(rightRaw).length >= 6 && squash(hint).includes(squash(rightRaw))) return true;
   } else if (words.length === 0 && rightRaw.length > 0 && hint.toLowerCase().includes(rightRaw.toLowerCase())) {
     // An option made only of marks, like "+", has no words to find, so the marks themselves are looked for.
     return true;

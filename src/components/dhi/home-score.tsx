@@ -38,7 +38,8 @@ export function HomeScore() {
             <ul className="mt-1 space-y-1 text-xs text-mute">
               {l.inputs.map((i) => (
                 <li key={i.label}>
-                  {i.label}: {i.value}
+                  {/* The value keeps the width of the widest it can be ("Not yet"), so "…" turning into it never moves a line. */}
+                  {i.label}: <span className="inline-block min-w-14 tabular-nums">{i.value}</span>
                 </li>
               ))}
             </ul>

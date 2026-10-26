@@ -8,6 +8,7 @@ import { isHeldByPicture } from "./avatarState";
 import { inGoodStanding } from "./consentState";
 import { fail } from "./helpers";
 import { requireMember, teacherClassIds } from "./houseAuth";
+import { refuseWhileSitting } from "./examLock";
 import { dayOf, shiftDay, todayOf } from "./dayRules";
 import { MAX_AGE_DAYS, recordEvent } from "./eventLog";
 import { rateLimiter } from "./limits";
@@ -21,6 +22,7 @@ export const photoUploadUrl = mutation({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     if (!(await rateLimiter.limit(ctx, "blogPhoto", { key: mc.member._id })).ok) fail("slow_down");
     return await ctx.storage.generateUploadUrl();
   },
@@ -45,6 +47,7 @@ export const write = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     // Six new posts an hour. The refusal is thrown, which rolls the token back too, so only posts that were really stored use the allowance.
     if (!(await rateLimiter.limit(ctx, "blogPost", { key: mc.member._id })).ok) fail("slow_down");
     const titleBad = titleProblem(args.title);
@@ -87,7 +90,14 @@ export const list = query({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
-    const rows = await ctx.db.query("blogPosts").withIndex("by_instituteId", (q) => q.eq("instituteId", mc.member.instituteId as NonNullable<typeof mc.member.instituteId>)).order("desc").take(100);
+    await refuseWhileSitting(ctx, mc);
+    // The institute's newest 100 approved posts and the student's own newest 50 in any state, newest first: many pending posts of others never push
+    // an approved post out of view.
+    const instituteId = mc.member.instituteId as NonNullable<typeof mc.member.instituteId>;
+    const approved = await ctx.db.query("blogPosts").withIndex("by_instituteId_and_status", (q) => q.eq("instituteId", instituteId).eq("status", "approved")).order("desc").take(100);
+    const own = await ctx.db.query("blogPosts").withIndex("by_authorMemberId", (q) => q.eq("authorMemberId", mc.member._id)).order("desc").take(50);
+    const seen = new Set(approved.map((p) => p._id));
+    const rows = [...approved, ...own.filter((p) => !seen.has(p._id) && p.instituteId === instituteId)].sort((a, b) => b._creationTime - a._creationTime).slice(0, 100);
     const out = [];
     // A student who withdrew, was removed or is not through consent is not shown to classmates: their posts and comments go quiet.
     const standing = new Map<Id<"members">, boolean>();
@@ -134,6 +144,7 @@ export const comment = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     if (!(await rateLimiter.limit(ctx, "blogComment", { key: mc.member._id })).ok) fail("slow_down");
     const post = await ctx.db.get(args.postId);
     if (!post || post.instituteId !== mc.member.instituteId || post.status !== "approved") fail("not_found");
@@ -272,9 +283,8 @@ export const pendingForTeacher = query({
     const instituteId = mc.member.instituteId as NonNullable<typeof mc.member.instituteId>;
     const posts = [];
     const comments = [];
-    const rows = await ctx.db.query("blogPosts").withIndex("by_instituteId", (q) => q.eq("instituteId", instituteId)).order("desc").take(200);
+    const rows = await ctx.db.query("blogPosts").withIndex("by_instituteId_and_status", (q) => q.eq("instituteId", instituteId).eq("status", "pending")).take(200);
     for (const post of rows) {
-      if (post.status !== "pending") continue;
       const author = await ctx.db.get(post.authorMemberId);
       if (!author?.classId || !mine.includes(author.classId) || !(await inGoodStanding(ctx, author))) continue;
       posts.push({ postId: post._id, title: post.title, tag: post.tag, body: post.body, authorName: author.name, photoUrl: post.photoId !== undefined ? await ctx.storage.getUrl(post.photoId) : null });

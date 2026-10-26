@@ -5,6 +5,9 @@
 // to run where the test sign in is off (production). Run after `demo:seed` and a sign in of both demo people:
 //   npx convex run papersProof:assignDemoTeacher
 //   npx convex run papersProof:openDemoPaper
+// `resetDemoSitting` puts every open sitting of the demo student back to not started (a proof that stopped part way can leave one), so the server's
+// exam lock (examLock.ts) does not hold the demo student in every later room of the sweep and of the other proofs.
+//   npx convex run papersProof:resetDemoSitting
 import { internalMutation, env } from "./_generated/server";
 import { fail } from "./helpers";
 
@@ -52,5 +55,20 @@ export const openDemoPaper = internalMutation({
     await ctx.db.insert("paperQuestions", { paperId, order: 1, kind: "long", subject: "English", topic: "Story", text: "Tell a short story about a lamp.", maxMarks: 10, rubric: "Plot, voice, ending", hint: "Say who, then what happened." });
     await ctx.db.insert("paperAttempts", { paperId, memberId: student._id, instituteId: student.instituteId, status: "assigned", opensAt: now - 60 * 60 * 1000, dueAt: now + 24 * 60 * 60 * 1000 });
     return { paperId };
+  },
+});
+
+export const resetDemoSitting = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    if (env.TEST_SIGNIN_ENABLED !== "true") fail("proof_disabled");
+    const student = await ctx.db.query("members").withIndex("by_email", (q) => q.eq("email", "demo-student@example.test")).first();
+    if (!student) return { reset: 0 };
+    let reset = 0;
+    for (const row of await ctx.db.query("paperAttempts").withIndex("by_memberId_and_status", (q) => q.eq("memberId", student._id).eq("status", "open")).take(20)) {
+      await ctx.db.patch(row._id, { status: "assigned", startedAt: undefined, answers: undefined, hintsOpened: undefined });
+      reset += 1;
+    }
+    return { reset };
   },
 });

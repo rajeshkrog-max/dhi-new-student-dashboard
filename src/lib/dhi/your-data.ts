@@ -15,10 +15,11 @@ export function dayLabel(day: string): string {
 
 export type ExportSection = { section: string; rows: unknown[] };
 
-type Header = { profile: unknown; consent: unknown; sharing: unknown };
+type Header = { profile: unknown; consent: unknown; sharing: unknown; funnel: unknown };
 
 // The pages come back as sections: the header once, then events in pages, then each room. The file is
-// `{ schema, exportedAt, profile, consent, sharing, events: [{ type, day, id }], rooms: { <room>: [...] } }`.
+// `{ schema, exportedAt, profile, consent, sharing, funnel, events: [{ type, day, id }], rooms: { <room>: [...] } }`. `funnel` holds the student's own
+// DhiRise answers when they linked the check (`funnelLink.funnelExport`), and is null otherwise.
 export function joinExport(schema: string, exportedAt: number, sections: ExportSection[]) {
   const header = (sections.find((s) => s.section === "header")?.rows[0] ?? {}) as Partial<Header>;
   const events = sections.filter((s) => s.section === "events").flatMap((s) => s.rows);
@@ -27,5 +28,5 @@ export function joinExport(schema: string, exportedAt: number, sections: ExportS
     if (s.section === "header" || s.section === "events") continue;
     rooms[s.section] = [...(rooms[s.section] ?? []), ...s.rows];
   }
-  return { schema, exportedAt, profile: header.profile ?? null, consent: header.consent ?? [], sharing: header.sharing ?? null, events, rooms };
+  return { schema, exportedAt, profile: header.profile ?? null, consent: header.consent ?? [], sharing: header.sharing ?? null, funnel: header.funnel ?? null, events, rooms };
 }

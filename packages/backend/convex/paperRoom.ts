@@ -28,6 +28,8 @@ export const examRoom: RoomEntry = {
         status: r.status,
         total: (r.mcqCorrect ?? 0) + totalOf(r.marks ?? []),
         remarks: r.remarks ?? "",
+        // The student's own answers, the long written ones included (review of 2026-10-26): the choice they picked and the text they wrote.
+        answers: (r.answers ?? []).map((a) => ({ question: a.question, choice: a.choice ?? null, text: a.text ?? "" })),
       })),
       next: rows.length > limit ? String(page[page.length - 1]._creationTime) : null,
     };

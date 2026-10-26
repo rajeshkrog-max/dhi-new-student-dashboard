@@ -86,7 +86,8 @@ export function cleanSection(raw: string): string | null {
 }
 
 export type BatchRowInput = { name: string; email: string; class: string; under18: boolean | undefined | null };
-export type BadRowReason = "bad_name" | "bad_email" | "duplicate_in_file" | "email_in_use" | "class_not_found" | "class_not_in_scope" | "under18_missing";
+// `not_checked`: the list already named a day's worth of addresses that cannot be invited, so the later rows were not looked up (AC-19).
+export type BadRowReason = "bad_name" | "bad_email" | "duplicate_in_file" | "email_in_use" | "class_not_found" | "class_not_in_scope" | "under18_missing" | "not_checked";
 export type BadRow = { row: number; reason: BadRowReason };
 
 // Everything in a class list row that needs no database: the name, the address, a repeat inside the file and the yes or no. The first reason

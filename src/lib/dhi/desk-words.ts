@@ -10,6 +10,10 @@ const DESK_REFUSALS: Record<string, string> = {
     "You have no coins left this month. Questions you asked before still answer for free, and new coins come next month.",
   exam_open: "The desk is closed while a paper is open. It opens again when you hand in.",
   model_not_chosen: "The desk is not switched on yet. Please try again later.",
+  desk_my_day_full:
+    "You have asked all the new questions you can for today. Questions you asked before still answer for free. No coin was taken. Please come back tomorrow.",
+  desk_day_full:
+    "The desk has answered all the new questions it can for today. Questions you asked before still answer for free. No coin was taken. Please try again tomorrow.",
   not_open_yet: "That part of the desk is not open yet.",
   bad_question: "Please type a question of up to 600 letters, or a piece of writing of up to 1500 letters.",
   nothing_to_clarify: "Ask a question first, then you can ask for it to be said again.",

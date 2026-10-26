@@ -9,6 +9,7 @@ import { fail, getSignedInUser, requireSignedIn } from "./helpers";
 import { gateOf } from "./consentState";
 import { recordDemoConsent } from "./demo";
 import { logAccess, memberOfUser, requireDhiAdmin, requireMember } from "./houseAuth";
+import { dropLinks } from "./parentLinkCore";
 import { isExpired, mayClaimUnverified, memberShapeProblem, PAGE_SIZE } from "./houseCore";
 import { pendingInviteFor } from "./inviteCore";
 import { rateLimiter } from "./limits";
@@ -242,6 +243,8 @@ export const remove = mutation({
     if (target.status === "removed") return { status: "removed" as const };
     if (await isLastAdmin(ctx, target)) fail("last_admin");
     await ctx.db.patch(target._id, { status: "removed", removedAt: Date.now() });
+    // A removal ends the student's parent link for good, as a withdrawal does (spec house/0022 AC-5).
+    if (target.role === "student") await dropLinks(ctx, target);
     await logAccess(ctx, { actor: mc.member._id, action: "member.remove", instituteId: target.instituteId, targetMemberId: target._id });
     return { status: "removed" as const };
   },
@@ -280,6 +283,9 @@ export const reinstate = mutation({
     const mc = await requireMember(ctx);
     const target = await targetFor(ctx, mc, args.memberId);
     if (target.status === "active") return { status: "active" as const };
+    // A class may be archived while its only students are removed, so a student comes back only into an open class: move them first (setClass).
+    const cls = target.role === "student" && target.classId ? await ctx.db.get(target.classId) : null;
+    if (cls && cls.archivedAt !== undefined) fail("class_archived");
     await ctx.db.patch(target._id, { status: "active", removedAt: undefined });
     await logAccess(ctx, { actor: mc.member._id, action: "member.reinstate", instituteId: target.instituteId, targetMemberId: target._id });
     return { status: "active" as const };

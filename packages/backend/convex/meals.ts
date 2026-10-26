@@ -65,7 +65,8 @@ export const log = mutation({
 type Plate = { plateId: Id<"mealPlates">; meal: string; group: string; count: number; foodName: string; eatenAt: number };
 
 async function platesOf(ctx: QueryCtx | MutationCtx, memberId: Id<"members">, day: string): Promise<Plate[]> {
-  const rows = await ctx.db.query("mealPlates").withIndex("by_memberId_and_day", (q) => q.eq("memberId", memberId).eq("day", day)).take(200);
+  // 500 is the event log's cap of a day, so every plate of a day is read, removed ones included, before they are skipped.
+  const rows = await ctx.db.query("mealPlates").withIndex("by_memberId_and_day", (q) => q.eq("memberId", memberId).eq("day", day)).take(500);
   const out: Plate[] = [];
   for (const r of rows) {
     if (r.removedAt !== undefined) continue;
@@ -75,26 +76,30 @@ async function platesOf(ctx: QueryCtx | MutationCtx, memberId: Id<"members">, da
   return out.sort((a, b) => a.eatenAt - b.eatenAt);
 }
 
-// Today's plates (the house day now) and the food group counts for the day. No calorie or protein total is returned.
+// Today's plates (the house day now) and the food group counts for the day, and yesterday's plates so one logged late or by mistake can still be
+// removed (a plate may be logged up to a day back). No calorie or protein total is returned. `today` is the screen's own house day: the server reads
+// its clock, and the argument only makes the query run again when the screen's day turns at 04:00 (a query is not rerun by the clock alone).
 export const day = query({
-  args: {},
+  args: { today: v.optional(v.string()) },
   returns: v.object({
     day: v.string(),
     plates: v.array(v.object({ plateId: v.id("mealPlates"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
     groups: v.object({ grain: v.number(), dal: v.number(), vegetable: v.number(), dairy: v.number(), fruit: v.number() }),
+    yesterday: v.array(v.object({ plateId: v.id("mealPlates"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
   }),
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
     const today = dayOf(Date.now());
     const plates = await platesOf(ctx, mc.member._id, today);
-    return { day: today, plates, groups: groupCounts(plates) };
+    const yesterday = await platesOf(ctx, mc.member._id, shiftDay(today, -1));
+    return { day: today, plates, groups: groupCounts(plates), yesterday };
   },
 });
 
-// The food group counts of each of the last 7 house days, oldest first. The week does not reset when the day does.
+// The food group counts of each of the last 7 house days, oldest first. The week does not reset when the day does. `today` as in `day`.
 export const week = query({
-  args: {},
+  args: { today: v.optional(v.string()) },
   returns: v.array(v.object({ day: v.string(), groups: v.object({ grain: v.number(), dal: v.number(), vegetable: v.number(), dairy: v.number(), fruit: v.number() }) })),
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
@@ -116,6 +121,9 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    // Removing shares the logging limit, so log and remove together stay under 60 an hour.
+    const limit = await rateLimiter.limit(ctx, "mealLog", { key: mc.member._id });
+    if (!limit.ok) fail("rate_limited");
     const plate = await ctx.db.get(args.plateId);
     if (!plate || plate.memberId !== mc.member._id) fail("not_found");
     if (plate.removedAt !== undefined) return { ok: true as const };

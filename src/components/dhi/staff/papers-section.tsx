@@ -396,7 +396,7 @@ function Reviews() {
           <p className="text-sm font-medium">
             {p.title} · {p.authorName} · {p.tag}
           </p>
-          <div className="text-sm" dangerouslySetInnerHTML={{ __html: p.body }} />
+          <div className="whitespace-pre-line text-sm" dangerouslySetInnerHTML={{ __html: p.body }} />
           {p.photoUrl && <img src={p.photoUrl} alt={`The picture on the post "${p.title}"`} loading="lazy" className="max-h-60 rounded-control" data-testid="review-photo" />}
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => act("post", p.postId, "approve")}>Approve</Button>

@@ -185,6 +185,15 @@ describe("the module rules", () => {
     expect(progressAfter({ furthest: 0, lastAt: undefined, now: 0, reported: -5, durationSec: 100 })).toEqual({ furthest: 0, accepted: false });
   });
 
+  // Review of 2026-10-26: a pause used to build up credit, so one call after a long pause could jump to the end of a 20 minute film.
+  test("a pause builds up no credit: one report after 20 minutes moves the furthest point by at most 31 seconds, finish included", () => {
+    const paused = { furthest: 10, lastAt: 0, now: 20 * 60_000, reported: 1200, durationSec: 1200 };
+    expect(progressAfter(paused)).toEqual({ furthest: 41, accepted: true });
+    const jump = progressAfter({ ...paused, ignoreInterval: true });
+    expect(jump.furthest).toBe(41);
+    expect(reachedEnd(jump.furthest, 1200)).toBe(false);
+  });
+
   test("the end of a film is within the tolerance of its length", () => {
     expect(reachedEnd(100 - FINISH_TOLERANCE_SEC, 100)).toBe(true);
     expect(reachedEnd(100 - FINISH_TOLERANCE_SEC - 1, 100)).toBe(false);

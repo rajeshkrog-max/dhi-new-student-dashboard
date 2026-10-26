@@ -55,6 +55,8 @@ const app = defineApp({
     OPENAI_API_KEY: v.optional(v.string()),
     DESK_MODEL: v.optional(v.string()),
     DESK_LIVE: v.optional(v.string()),
+    // The most questions that reach the model in one India day across the deployment (`deskRules.dailyCapOf`): unset means 300, `0` stops the model.
+    DESK_DAILY_CAP: v.optional(v.string()),
   },
 });
 app.use(betterAuth);

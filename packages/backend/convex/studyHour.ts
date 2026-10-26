@@ -4,11 +4,13 @@
 // Every chat message is stored, so a teacher or a DHI admin can review it, and a student can report one. When a seat ends, one `hour.present`
 // event holds the whole minutes the student was there. Every function starts with `requireMember` or `requireDhiAdmin`, so the consent gate applies.
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { internalMutation, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { recordEvent, recordSystemEvent } from "./eventLog";
 import { fail } from "./helpers";
 import { requireDhiAdmin, requireMember, teacherClassIds, type MemberContext } from "./houseAuth";
+import { refuseWhileSitting } from "./examLock";
 import { asksForCard } from "./sessionRules";
 import { rateLimiter } from "./limits";
 import {
@@ -103,6 +105,7 @@ export const current = query({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const now = Date.now();
     const open = await openHour(ctx, now);
     if (open) {
@@ -122,6 +125,7 @@ export const enter = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const limit = await rateLimiter.limit(ctx, "hourSeat", { key: mc.member._id });
     if (!limit.ok) return { ok: false as const, code: "rate_limited" };
     if (!isMode(args.mode)) return { ok: false as const, code: "bad_mode" };
@@ -157,6 +161,7 @@ export const beat = mutation({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const limit = await rateLimiter.limit(ctx, "hourBeat", { key: mc.member._id });
     if (!limit.ok) return { open: true, seated: false };
     const now = Date.now();
@@ -207,6 +212,7 @@ export const seats = query({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const now = Date.now();
     const hour = await openHour(ctx, now);
     if (!hour) return { seated: false, people: [] };
@@ -235,6 +241,7 @@ export const chat = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const limit = await rateLimiter.limit(ctx, "hourChat", { key: mc.member._id });
     if (!limit.ok) return { ok: false as const, code: "rate_limited" };
     const now = Date.now();
@@ -265,6 +272,7 @@ export const messages = query({
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const now = Date.now();
     const hour = await openHour(ctx, now);
     if (!hour) return [];
@@ -292,6 +300,7 @@ export const report = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
     const message = await ctx.db.get(args.messageId);
     const hour = await openHour(ctx, Date.now());
     if (!message || !hour || message.hourId !== hour._id || message.instituteId !== mc.member.instituteId) fail("not_found");
@@ -311,9 +320,8 @@ export const review = query({
     if (mc.role !== "teacher" && mc.role !== "dhi_admin") fail("forbidden");
     const out = [];
     if (mc.role === "dhi_admin") {
-      const rows = await ctx.db.query("chatMessages").order("desc").take(200);
+      const rows = await ctx.db.query("chatMessages").withIndex("by_reported", (q) => q.eq("reported", true)).order("desc").take(200);
       for (const m of rows) {
-        if (!m.reported) continue;
         const author = await ctx.db.get(m.authorMemberId);
         out.push({ messageId: m._id, text: m.text, authorName: author?.name ?? "", createdAt: m.createdAt, reported: m.reported, status: m.status });
       }
@@ -321,9 +329,8 @@ export const review = query({
     }
     const mine = await teacherClassIds(ctx, mc.member._id);
     const instituteId = mc.member.instituteId as NonNullable<typeof mc.member.instituteId>;
-    const rows = await ctx.db.query("chatMessages").order("desc").take(400);
+    const rows = await ctx.db.query("chatMessages").withIndex("by_instituteId", (q) => q.eq("instituteId", instituteId)).order("desc").take(400);
     for (const m of rows) {
-      if (m.instituteId !== instituteId) continue;
       const author = await ctx.db.get(m.authorMemberId);
       if (!author?.classId || !mine.includes(author.classId)) continue;
       out.push({ messageId: m._id, text: m.text, authorName: author.name, createdAt: m.createdAt, reported: m.reported, status: m.status });
@@ -354,13 +361,16 @@ export const hideMessage = mutation({
 });
 
 // The scheduled sweep (every minute): drops every seat whose heartbeat stopped for 60 seconds, and every seat of an hour that has closed. It
-// writes the presence events as the system.
+// writes the presence events as the system. It goes through every open seat in pages of 200 and schedules itself for the next page, so seats that
+// are still live never hold up the stale ones behind them (review of 2026-10-26).
 export const sweep = internalMutation({
-  args: {},
+  args: { cursor: v.optional(v.union(v.string(), v.null())) },
   returns: v.number(),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const now = Date.now();
-    const open = await ctx.db.query("seats").withIndex("by_leftAt", (q) => q.eq("leftAt", undefined)).take(500);
+    const page = await ctx.db.query("seats").withIndex("by_leftAt", (q) => q.eq("leftAt", undefined)).paginate({ numItems: 200, cursor: args.cursor ?? null });
+    if (!page.isDone) await ctx.scheduler.runAfter(0, internal.studyHour.sweep, { cursor: page.continueCursor });
+    const open = page.page;
     let ended = 0;
     for (const seat of open) {
       const hour = await ctx.db.get(seat.hourId);

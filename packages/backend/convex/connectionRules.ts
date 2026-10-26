@@ -47,7 +47,7 @@ function samplesOf(id: ConnectionId, days: ReadonlyMap<string, DayValues>, finis
       }
     } else if (id === "bedtime_mood") {
       const bed = v.H06?.num;
-      if (bed !== undefined && has(v, "E06L", "E06S", "E06H")) out.push({ group: bed < BED_CUT ? "a" : "b", y: v.E06L ? 1 : 0 });
+      if (bed !== undefined && has(v, "E06L", "E06S", "E06H")) out.push({ group: bed < BED_CUT ? "a" : "b", y: v.E06L?.num === 1 ? 1 : 0 }); // a mood day holds all three bands, the chosen one at 1 (review of 2026-10-26)
     } else {
       // late_room_feeling: a study room day by how late it ran, and the feeling the next day.
       const late = v.H11?.num;

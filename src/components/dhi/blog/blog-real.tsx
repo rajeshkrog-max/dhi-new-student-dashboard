@@ -204,8 +204,9 @@ function PostCard({ post }: { post: Post }) {
           {post.tag} · {post.mine ? "Your post" : post.authorName} · {STATUS[post.status] ?? post.status}
         </span>
       </div>
-      {/* The body is already cleaned on the server to bold, italic and a numbered list, so it is shown as that markup. */}
-      <div className="text-sm" dangerouslySetInnerHTML={{ __html: post.body }} />
+      {/* The body is already cleaned on the server to bold, italic and a numbered list, so it is shown as that markup. The student types line
+          breaks in a plain box, so they are kept as written (pre-line). */}
+      <div className="whitespace-pre-line text-sm" dangerouslySetInnerHTML={{ __html: post.body }} />
       {post.photoUrl && <img src={post.photoUrl} alt={`The picture on the post "${post.title}"`} loading="lazy" className="max-h-72 w-full rounded-control object-cover" data-testid="blog-post-photo" />}
       <ul className="space-y-1 border-t border-home/10 pt-2 text-sm">
         {post.comments.map((c) => (

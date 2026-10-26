@@ -12,7 +12,22 @@ export const hourRoom: RoomEntry = {
   table: "seats",
   kinds: ["hour"],
   // The cursor is the creation time of the last seat sent, read with `gt` on the index, oldest first.
+  // After the seats, pages of the student's own chat messages (cursor `m:` and the creation time of the last message sent), until the 30 day sweep
+  // deletes them.
   exporter: async (ctx: QueryCtx | MutationCtx, memberId: Id<"members">, cursor: string | null, limit: number) => {
+    if (cursor !== null && cursor.startsWith("m:")) {
+      const after = Number(cursor.slice(2));
+      if (Number.isNaN(after)) return { rows: [], next: null };
+      const messages = await ctx.db
+        .query("chatMessages")
+        .withIndex("by_authorMemberId", (q) => q.eq("authorMemberId", memberId).gt("_creationTime", after))
+        .take(limit + 1);
+      const page = messages.slice(0, limit);
+      return {
+        rows: page.map((m) => ({ message: m.text, day: dayOf(m.createdAt), status: m.status })),
+        next: messages.length > limit ? `m:${page[page.length - 1]._creationTime}` : null,
+      };
+    }
     const rows = await ctx.db
       .query("seats")
       .withIndex("by_memberId", (q) => (cursor === null ? q.eq("memberId", memberId) : q.eq("memberId", memberId).gt("_creationTime", Number(cursor))))
@@ -27,7 +42,12 @@ export const hourRoom: RoomEntry = {
         feel: r.feel ?? "",
         focus: r.focus ?? 0,
       })),
-      next: rows.length > limit ? String(page[page.length - 1]._creationTime) : null,
+      next:
+        rows.length > limit
+          ? String(page[page.length - 1]._creationTime)
+          : (await ctx.db.query("chatMessages").withIndex("by_authorMemberId", (q) => q.eq("authorMemberId", memberId)).first())
+            ? "m:0"
+            : null,
     };
   },
   eraser: async (ctx: MutationCtx, memberId: Id<"members">, limit: number) => {

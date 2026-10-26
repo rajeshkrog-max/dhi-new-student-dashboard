@@ -36,6 +36,7 @@ type Env = {
   readonly CHALLENGE_LIVE: string | undefined;
   readonly CLOUDFLARE_ACCOUNT_ID: string | undefined;
   readonly CLOUDFLARE_API_TOKEN: string | undefined;
+  readonly DESK_DAILY_CAP: string | undefined;
   readonly DESK_LIVE: string | undefined;
   readonly DESK_MODEL: string | undefined;
   readonly ERASURE_HASH_SECRET: string | undefined;

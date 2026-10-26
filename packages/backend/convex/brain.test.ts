@@ -2,7 +2,7 @@
 // stored the way the rollup stores them, and today is worked out live from the real rooms. Each test names the criterion it covers.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "./_generated/api";
-import { scenarioRows, type Scenario } from "./brainFixtures";
+import { connectedRows, scenarioRows, type Scenario } from "./brainFixtures";
 import { HIDE_DAYS } from "./brainRules";
 import { DAY_MS, shiftDay, todayOf } from "./dayRules";
 import { HABIT_COLORS } from "./habitRules";
@@ -141,6 +141,18 @@ describe("the connections (house spec 0023)", () => {
     await storeSleepAndPapers(w, w.s);
     expect((await report(w.s)).connections).toEqual([{ id: "sleep_papers", a: 80, b: 30, nA: 20, nB: 20 }]);
     expect((await report(w.other)).connections).toEqual([]);
+  });
+
+  // The seed of the browser proof (brainProof "connected", brainFixtures.connectedRows) really shows the bedtime and mood connection.
+  test("the connected seed scenario shows the bedtime and mood connection", async () => {
+    const w = await world();
+    await w.t.run(async (ctx) => {
+      const member = await ctx.db.get(w.s.memberId);
+      for (const row of connectedRows(TODAY)) {
+        await ctx.db.insert("brainDays", { memberId: w.s.memberId, instituteId: member!.instituteId!, day: row.day, values: row.v as Record<string, { num: number; den: number }>, version: METRIC_VERSION, computedAt: Date.now() });
+      }
+    });
+    expect((await report(w.s)).connections.map((c) => c.id)).toContain("bedtime_mood");
   });
 
   test("no difference between the two kinds of night shows nothing", async () => {

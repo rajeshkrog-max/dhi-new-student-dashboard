@@ -45,6 +45,7 @@ const WORDS: Record<string, string> = {
   // Consent and your data (spec house/0005)
   consent_required: "Please agree to the house notice first.",
   consent_withdrawn: "Consent is withdrawn, so the house is paused for you.",
+  exam_open: "The house is closed while a paper is open. It opens again when you hand in.",
   consent_text_changed: "The notice changed. Please read it again and then agree.",
   not_withdrawn_by_you: "Your school withdrew this, so only your school can bring it back.",
   not_under18: "Only a student marked under 18 needs a parent record.",
@@ -79,6 +80,7 @@ export const BAD_ROW_WORDS: Record<string, string> = {
   class_not_found: "The class does not match a class of this institute.",
   class_not_in_scope: "The class is not one of yours.",
   under18_missing: "Under 18 needs a yes or a no.",
+  not_checked: "This row was not checked today. Please send it again tomorrow.",
 };
 
 export function badRowWords(reason: string): string {

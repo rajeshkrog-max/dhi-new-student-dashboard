@@ -6,6 +6,7 @@ import { DAY, HOUR, MINUTE, RateLimiter } from "@convex-dev/rate-limiter";
 import { components } from "./_generated/api";
 import { SHARE_BAD_SHARDS, SHARE_MAKE_PER_HOUR, SHARE_READ_PER_MINUTE, SHARE_READ_SHARDS } from "./shareCore";
 import { TEAM_OPEN_PER_HOUR } from "./teamCore";
+import { DESK_STUDENT_DAILY } from "./deskRules";
 
 export const rateLimiter = new RateLimiter(components.rateLimiter, {
   submitLead: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
@@ -106,6 +107,9 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   funnelLink: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
   deskAsk: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
   deskClarify: { kind: "token bucket", rate: 20, period: HOUR, capacity: 20 },
+  // Each student's share of the deployment's daily cap (owner, 2026-10-26): 20 questions to the model in one India day, so one student can never use
+  // up the day for everyone. The window starts at 04:00 India time, with the house day. Taken only on the way to the model (desk.begin).
+  deskStudentDay: { kind: "fixed window", rate: DESK_STUDENT_DAILY, period: DAY, start: Date.parse("2026-01-01T04:00:00+05:30") },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },
   shareBad: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_BAD_SHARDS, start: 0 },

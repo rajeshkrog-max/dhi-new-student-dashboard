@@ -12,16 +12,20 @@ export const brainRoom: RoomEntry = {
   table: BRAIN_TABLE,
   kinds: ["brain"],
   // The cursor is the last day sent, read with `gt` on the day index, oldest first.
+  // After the days, one page of the patterns the student hid (cursor `h:`): only a few, at most 50.
   exporter: async (ctx: QueryCtx | MutationCtx, memberId: Id<"members">, cursor: string | null, limit: number) => {
+    if (cursor === "h:") {
+      const hides = await ctx.db.query("brainHides").withIndex("by_memberId_and_patternId", (q) => q.eq("memberId", memberId)).take(Math.min(limit, 50));
+      return { rows: hides.map((h) => ({ hiddenPattern: h.patternId, until: h.until })), next: null };
+    }
     const rows = await ctx.db
       .query("brainDays")
       .withIndex("by_memberId_and_day", (q) => (cursor === null ? q.eq("memberId", memberId) : q.eq("memberId", memberId).gt("day", cursor)))
       .take(limit + 1);
     const page = rows.slice(0, limit);
-    return {
-      rows: page.map((r) => ({ day: r.day, values: r.values })),
-      next: rows.length > limit ? page[page.length - 1].day : null,
-    };
+    if (rows.length > limit) return { rows: page.map((r) => ({ day: r.day, values: r.values })), next: page[page.length - 1].day };
+    const someHidden = await ctx.db.query("brainHides").withIndex("by_memberId_and_patternId", (q) => q.eq("memberId", memberId)).first();
+    return { rows: page.map((r) => ({ day: r.day, values: r.values })), next: someHidden ? "h:" : null };
   },
   // The hidden patterns go with the first page of days: there are only a few of them.
   eraser: async (ctx: MutationCtx, memberId: Id<"members">, limit: number) => {

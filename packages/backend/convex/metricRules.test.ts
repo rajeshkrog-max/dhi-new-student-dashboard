@@ -108,8 +108,8 @@ describe("one fixture for each measure (AC-1)", () => {
 });
 
 describe("the second formula (AC-4)", () => {
-  test("covers AC-4: the formula is version 6", () => {
-    expect(METRIC_VERSION).toBe(6);
+  test("covers AC-4: the formula is version 7", () => {
+    expect(METRIC_VERSION).toBe(7);
   });
 
   test("covers AC-4: A10 is a desk study day only for a sitting of 3 questions, A12 is the share of sittings with an active kind, and neither is a logged day", () => {

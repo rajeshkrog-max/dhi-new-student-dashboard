@@ -62,8 +62,12 @@ export async function saveFor(
     if (!moodChanged && !noteChanged) return { ok: true as const, day, mood: row.mood, note: row.note ?? "", lineIx: row.lineIx, changed: false };
     if (moodChanged && row.changes >= MAX_MOOD_CHANGES) return { ok: false as const, code: "too_many_changes" };
 
-    if (moodChanged) {
-      // A new mood is a new event that replaces the earlier one. A change of the note alone writes no event: the event would be identical.
+    // A new mood, or a note whose word count changed, is a new event that replaces the earlier one (the event holds the count, which the Brain reads
+    // for its note days). A note edit that keeps the count writes none: the event would be identical. A note edit has its own key counter
+    // (`noteEdits`), so it never takes the key of a later mood change.
+    const wordsChanged = noteWords(row.note ?? "") !== noteWords(note);
+    const noteEdits = row.noteEdits ?? 0;
+    if (moodChanged || wordsChanged) {
       const about = `mood:${row._id}`;
       const previous = await currentFor(ctx, { memberId, about, day });
       await recordEvent(ctx, {
@@ -73,12 +77,17 @@ export async function saveFor(
         type: "mood.logged",
         payload: { mood: args.mood, noteWords: noteWords(note) },
         occurredAt: now,
-        eventKey: `${about}-${row.changes + 1}`,
+        eventKey: moodChanged ? `${about}-${row.changes + 1}` : `${about}-n${noteEdits + 1}`,
         about,
         ...(previous ? { replaces: previous._id } : {}),
       });
     }
-    await ctx.db.patch(row._id, { mood: args.mood, note: note || undefined, changes: moodChanged ? row.changes + 1 : row.changes });
+    await ctx.db.patch(row._id, {
+      mood: args.mood,
+      note: note || undefined,
+      changes: moodChanged ? row.changes + 1 : row.changes,
+      ...(!moodChanged && wordsChanged ? { noteEdits: noteEdits + 1 } : {}),
+    });
     return { ok: true as const, day, mood: args.mood, note, lineIx: row.lineIx, changed: true };
 }
 

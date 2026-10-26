@@ -67,8 +67,11 @@ describe("the food table", () => {
     expect((await dhi.as.query(api.foods.unpublished, {})).map((f) => f.nameEn)).toEqual(["Dal tadka"]);
     await dhi.as.mutation(api.foods.publish, { foodId: id });
     const copies = await s.as.query(api.foods.search, { text: "dal" });
-    expect(copies.map((c) => c.status).sort()).toEqual(["catalog", "custom"]);
-    expect(copies.find((c) => c.status === "catalog")).toBeDefined();
+    // Review of 2026-10-26: the student finds the dish once (the catalog copy), it leaves the waiting list, and a second publish is refused.
+    expect(copies.map((c) => c.status)).toEqual(["catalog"]);
+    expect(await dhi.as.query(api.foods.unpublished, {})).toEqual([]);
+    expect(await refusal(dhi.as.mutation(api.foods.publish, { foodId: id }))).toBe("not_found");
+    expect(await s.as.mutation(api.meals.log, { foodId: id, count: 1, meal: "lunch", eatenAt: Date.now() - 60_000 })).toMatchObject({ ok: true });
   });
 
   test("covers AC-2: the numbers must be finite and not negative", async () => {
@@ -154,7 +157,7 @@ describe("the meals room", () => {
     await s.as.mutation(api.meals.log, { foodId, count: 1, meal: "lunch", eatenAt: NOW - 1000 });
     const page = await t.run((ctx) => mealsRoom.exporter(ctx, s.memberId, null, 10));
     expect(page.rows).toHaveLength(1);
-    expect(Object.keys(page.rows[0] as object).sort()).toEqual(["count", "day", "food", "group", "meal"]);
+    expect(Object.keys(page.rows[0] as object).sort()).toEqual(["count", "day", "food", "group", "meal", "removed"]);
     await t.run((ctx) => mealsRoom.eraser(ctx, s.memberId, 10));
     expect(await s.as.query(api.foods.search, { text: "dal" })).toEqual([]);
   });
@@ -165,5 +168,20 @@ describe("the food rules", () => {
     expect(groupCounts([{ group: "dal", count: 2 }, { group: "fruit", count: 1 }])).toEqual({ grain: 0, dal: 2, vegetable: 0, dairy: 0, fruit: 1 });
     expect(matches("Dal Tadka", " tadka ")).toBe(true);
     expect(matches("Dal Tadka", "rice")).toBe(false);
+  });
+});
+
+describe("review of 2026-10-26: the meals room", () => {
+  test("a plate logged for yesterday is listed with today's so it can be removed, and removing shares the logging limit", async () => {
+    const { s } = await world();
+    const id = await s.as.mutation(api.foods.addCustom, dal);
+    vi.setSystemTime(at("2026-10-20T09:00:00+05:30"));
+    const late = await s.as.mutation(api.meals.log, { foodId: id, count: 1, meal: "dinner", eatenAt: at("2026-10-19T23:00:00+05:30") });
+    expect(late).toMatchObject({ ok: true });
+    const view = await s.as.query(api.meals.day, { today: "2026-10-20" });
+    expect(view.plates).toEqual([]);
+    expect(view.yesterday).toHaveLength(1);
+    await s.as.mutation(api.meals.remove, { plateId: view.yesterday[0].plateId });
+    expect((await s.as.query(api.meals.day, {})).yesterday).toEqual([]);
   });
 });

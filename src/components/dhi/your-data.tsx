@@ -118,7 +118,10 @@ export function YourData({
   const gate = state?.gate;
   // The link functions need a student who is through consent, so a locked student never asks (it would be refused).
   const sharingOn = sharing?.parentLevel === "summary";
-  const link = useQuery(api.parentLink.mine, !reduced && gate?.state === "ok" && sharingOn ? {} : "skip");
+  const link = useQuery(
+    api.parentLink.mine,
+    !reduced && gate?.state === "ok" && sharingOn ? {} : "skip",
+  );
 
   async function makeParentLink() {
     setError("");
@@ -221,9 +224,7 @@ export function YourData({
       {!reduced && (
         <Card>
           <h2 className="text-sm font-semibold">Sharing with your parent</h2>
-          <p className="mt-2 text-sm text-mute touch:text-base">
-            {LINK_COPY.sharingText}
-          </p>
+          <p className="mt-2 text-sm text-mute touch:text-base">{LINK_COPY.sharingText}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Chip
               tone={sharing?.parentLevel === "summary" ? "mint" : "lilac"}
@@ -258,7 +259,14 @@ export function YourData({
                 {link === undefined
                   ? "\u00a0"
                   : link
-                    ? LINK_COPY.live(new Date(link.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }))
+                    ? LINK_COPY.live(
+                        new Date(link.expiresAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          timeZone: "Asia/Kolkata",
+                        }),
+                      )
                     : LINK_COPY.none}
               </p>
               {newLink && (
@@ -280,14 +288,21 @@ export function YourData({
                 </div>
               )}
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="quiet" disabled={busy || link === undefined} onClick={makeParentLink} data-testid="parent-link-make">
+                <Button
+                  variant="quiet"
+                  disabled={busy || link === undefined}
+                  onClick={makeParentLink}
+                  data-testid="parent-link-make"
+                >
                   {link ? LINK_COPY.renew : LINK_COPY.make}
                 </Button>
                 {link && (
                   <Button
                     variant="quiet"
                     disabled={busy}
-                    onClick={() => run(() => removeLink({}), "The link has ended.").then(() => setNewLink(""))}
+                    onClick={() =>
+                      run(() => removeLink({}), "The link has ended.").then(() => setNewLink(""))
+                    }
                     data-testid="parent-link-remove"
                   >
                     {LINK_COPY.remove}
@@ -344,7 +359,8 @@ export function YourData({
         </Card>
       )}
 
-      {!reduced && <FunnelLinkCard />}
+      {/* Only while consent is in place: `funnelLink.status` sits behind the consent gate, and a withdrawn student makes no new link. */}
+      {!reduced && gate?.state === "ok" && <FunnelLinkCard />}
 
       <Card>
         <h2 className="text-sm font-semibold">Download or erase</h2>

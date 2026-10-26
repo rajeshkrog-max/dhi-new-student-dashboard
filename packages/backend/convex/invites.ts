@@ -118,6 +118,11 @@ export const createBatch = mutation({
         bad.push({ row: i + 1, reason: shape.reason });
         continue;
       }
+      // One list can confirm at most a day's worth of taken addresses: after that, no row is looked up, so no row says whether it is taken.
+      if (inUse >= IN_USE_PER_DAY) {
+        bad.push({ row: i + 1, reason: "not_checked" });
+        continue;
+      }
       if (await emailTaken(ctx, shape.email)) {
         bad.push({ row: i + 1, reason: "email_in_use" });
         inUse += 1;

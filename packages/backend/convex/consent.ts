@@ -20,6 +20,7 @@ import {
 } from "./consentText";
 import { fail } from "./helpers";
 import { logAccess, requireMember, requireMemberAllowLocked, type MemberContext } from "./houseAuth";
+import { dropLinks } from "./parentLinkCore";
 import { PAGE_SIZE } from "./houseCore";
 import { rateLimiter } from "./limits";
 
@@ -109,6 +110,9 @@ async function recordSide(ctx: MutationCtx, member: Doc<"members">, side: "self"
     textVersion: side === "self" ? HOUSE_NOTICE_VERSION : HOUSE_PARENT_VERSION,
     under18AtTime: isMinor(member.under18),
   });
+  // A withdrawal by either side ends the parent link for good, so agreeing again never brings an old link back (spec house/0022 AC-5; review of
+  // 2026-10-26). The student makes a new one if they want to.
+  if (kind === "withdrawn") await dropLinks(ctx, member);
 }
 
 // The student withdraws their own consent. From the next call every room refuses with `consent_withdrawn`, and the data is kept until they

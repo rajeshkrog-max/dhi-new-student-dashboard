@@ -15,6 +15,7 @@ import {
   THREADS_SHOWN,
   answerMaxFor,
   cacheKeyOf,
+  dailyCapOf,
   cleanQuestion,
   isDeskKind,
   isLiveKind,
@@ -23,11 +24,18 @@ import {
   titleOf,
 } from "./deskRules";
 import { touchSitting } from "./deskSitting";
+import { hasOpenSitting } from "./examLock";
 import { fail } from "./helpers";
 import { requireDhiAdmin, requireMember } from "./houseAuth";
 import { rateLimiter } from "./limits";
 
 const MAX_TURNS_IN_THREAD = 100;
+
+// The cache key is a hash of the normalised question (spec house/0016), so the cache never keeps a student's words, only the answer.
+async function hashedKey(normalised: string): Promise<string> {
+  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalised)));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 const DAY_MS = 24 * 60 * 60 * 1000;
 const refused = v.object({ ok: v.literal(false), code: v.string() });
 
@@ -159,14 +167,22 @@ export const removeThread = mutation({
   },
 });
 
-// What DHI admin sees on the desk's staff screen: the coins every student gets each month, and when it was last set (null while nobody has set it).
+// What DHI admin sees on the desk's staff screen: the coins every student gets each month, and when it was last set (null while nobody has set it),
+// and today's questions to the model against the daily cap, for the whole deployment (counts only, no student).
 export const allotment = query({
   args: {},
-  returns: v.object({ monthlyCoins: v.number(), updatedAt: v.union(v.number(), v.null()) }),
+  returns: v.object({ monthlyCoins: v.number(), updatedAt: v.union(v.number(), v.null()), questionsToday: v.number(), dailyCap: v.number() }),
   handler: async (ctx) => {
     await requireDhiAdmin(ctx);
     const row = await ctx.db.query("deskSettings").first();
-    return { monthlyCoins: row ? row.monthlyCoins : DEFAULT_MONTHLY_COINS, updatedAt: row ? row.updatedAt : null };
+    const today = dayOf(Date.now());
+    const daily = await ctx.db.query("deskDaily").withIndex("by_day", (q) => q.eq("day", today)).first();
+    return {
+      monthlyCoins: row ? row.monthlyCoins : DEFAULT_MONTHLY_COINS,
+      updatedAt: row ? row.updatedAt : null,
+      questionsToday: daily?.questions ?? 0,
+      dailyCap: dailyCapOf(env.DESK_DAILY_CAP),
+    };
   },
 });
 
@@ -233,12 +249,12 @@ export const begin = internalMutation({
     const question = cleanQuestion(args.question, kind);
     if (!question) return { ok: false as const, code: "bad_question" };
 
-    // The exam lock (Desk Design rule 5): while a paper is open for this student the desk is closed, so it can never answer a paper.
-    const attempts = await ctx.db.query("paperAttempts").withIndex("by_memberId", (q) => q.eq("memberId", member._id)).take(200);
-    if (attempts.some((a) => a.status === "open")) return { ok: false as const, code: "exam_open" };
-
-    // Feelings are not handled by the model (rule 6): nothing is stored, no coins are taken and no model is called.
+    // Feelings are not handled by the model (rule 6): nothing is stored, no coins are taken and no model is called. It comes before the exam lock, so
+    // a student in distress during a paper still gets the care text (review of 2026-10-26); it can never answer a paper.
     if (looksDistressed(question)) return { ok: true as const, mode: "care" as const };
+
+    // The exam lock (Desk Design rule 5): while a paper is open for this student the desk is closed, so it can never answer a paper.
+    if (await hasOpenSitting(ctx, member._id)) return { ok: false as const, code: "exam_open" };
 
     const now = Date.now();
     let existing: Doc<"deskThreads"> | null = null;
@@ -262,7 +278,7 @@ export const begin = internalMutation({
     const instituteId = member.instituteId as NonNullable<typeof member.instituteId>;
 
     // The cache (a repeated question). Only a stand alone chat question is stored and reused; a clarifying question depends on its talk.
-    const key = cacheKeyOf(kind, question);
+    const key = await hashedKey(cacheKeyOf(kind, question));
     if (kind === "chat" && !looksPersonal(question)) {
       const hit = await ctx.db.query("deskCache").withIndex("by_instituteId_and_key", (q) => q.eq("instituteId", instituteId).eq("key", key)).first();
       if (hit && now - hit.createdAt <= CACHE_DAYS * DAY_MS) {
@@ -288,6 +304,15 @@ export const begin = internalMutation({
 
     const price = PRICES[kind];
     if (wallet.balance < price) return { ok: false as const, code: "not_enough_coins" };
+    // The daily cap for the whole deployment, counted only here, on the way to the model. A question that later fails still counts: the cap is a
+    // ceiling on calls, and a failed call may still cost.
+    const today = dayOf(now);
+    const daily = await ctx.db.query("deskDaily").withIndex("by_day", (q) => q.eq("day", today)).first();
+    if ((daily?.questions ?? 0) >= dailyCapOf(env.DESK_DAILY_CAP)) return { ok: false as const, code: "desk_day_full" };
+    const share = await rateLimiter.limit(ctx, "deskStudentDay", { key: member._id });
+    if (!share.ok) return { ok: false as const, code: "desk_my_day_full" };
+    if (daily) await ctx.db.patch(daily._id, { questions: daily.questions + 1 });
+    else await ctx.db.insert("deskDaily", { day: today, questions: 1 });
     const threadId = existing?._id ?? (await ctx.db.insert("deskThreads", { memberId: member._id, instituteId, title: titleOf(question), lastAt: now }));
     if (existing) await ctx.db.patch(existing._id, { lastAt: now });
     if (price > 0) await ctx.db.patch(wallet._id, { balance: wallet.balance - price });
@@ -330,7 +355,7 @@ export const finish = internalMutation({
     const answer = args.answer.slice(0, answerMaxFor(turn.kind));
     await ctx.db.patch(turn._id, { status: "answered", answer, model: args.model, tokensIn: args.tokensIn, tokensOut: args.tokensOut });
     if (turn.kind === "chat" && !looksPersonal(turn.question)) {
-      const key = cacheKeyOf("chat", turn.question);
+      const key = await hashedKey(cacheKeyOf("chat", turn.question));
       const row = await ctx.db.query("deskCache").withIndex("by_instituteId_and_key", (q) => q.eq("instituteId", turn.instituteId).eq("key", key)).first();
       const now = Date.now();
       if (row) await ctx.db.patch(row._id, { answer, createdAt: now });

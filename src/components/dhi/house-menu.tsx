@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EXAM_LOCKED_ROOMS } from "@/lib/dhi/exam-lock";
 import { ProfileCard } from "@/components/dhi/ui/profile-card";
 
 export type HouseRoom = { id: string; label: string; icon: LucideIcon };
@@ -32,7 +33,7 @@ export function HouseMenu({
         {rooms.map((item) => {
           const Icon = item.icon;
           const on = tab === item.id;
-          const freeze = locked && item.id !== "papers";
+          const freeze = locked && EXAM_LOCKED_ROOMS.includes(item.id);
           return (
             <div key={item.id} className="relative">
               <button
@@ -64,13 +65,11 @@ export function HouseMenu({
             "flex w-full items-center gap-3 rounded-control px-3 text-sm text-mute hover:bg-white/40 disabled:opacity-40",
             "h-11",
           )}
-          disabled={locked}
           onClick={onLeave}
         >
           <LogOut className="size-4" aria-hidden />
           Leave
         </button>
-        {locked && !drawer && <FrozenOverlay />}
       </div>
       {locked && (
         <p role="status" className="mt-2 rounded-control bg-home px-4 py-2.5 text-sm text-paper">

@@ -3,7 +3,7 @@
 // sent, so the coin, cache and care rules are proven without a real model. Time is fixed with a fake clock.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
-import { cacheKeyOf, cleanQuestion, cleanSvg, isLiveKind, looksDistressed, looksPersonal, PRICES } from "./deskRules";
+import { cacheKeyOf, cleanQuestion, cleanSvg, dailyCapOf, DESK_DAILY_CAP, isLiveKind, looksDistressed, looksPersonal, PRICES } from "./deskRules";
 import { deskReady } from "./desk";
 import { deskRoom } from "./deskRoom";
 import { makeBackend } from "../tests/convexTestUtils";
@@ -549,9 +549,9 @@ describe("the allotment screen's query (AC-5)", () => {
     const w = await world();
     expect(await refusal(w.A.admin.as.query(api.desk.allotment, {}))).toBe("forbidden");
     expect(await refusal(w.s.as.query(api.desk.allotment, {}))).toBe("forbidden");
-    expect(await w.dhi.as.query(api.desk.allotment, {})).toEqual({ monthlyCoins: 60, updatedAt: null });
+    expect(await w.dhi.as.query(api.desk.allotment, {})).toEqual({ monthlyCoins: 60, updatedAt: null, questionsToday: 0, dailyCap: 300 });
     await w.dhi.as.mutation(api.desk.allot, { monthlyCoins: 45 });
-    expect(await w.dhi.as.query(api.desk.allotment, {})).toEqual({ monthlyCoins: 45, updatedAt: NOW });
+    expect(await w.dhi.as.query(api.desk.allotment, {})).toEqual({ monthlyCoins: 45, updatedAt: NOW, questionsToday: 0, dailyCap: 300 });
   });
 });
 
@@ -667,7 +667,10 @@ describe("clarify (free) and failures", () => {
     const a = await okAsk(w.s, "What is torque?");
     await okAsk(w.s, "Simpler please", { kind: "clarify", threadId: a.threadId });
     const rows = await w.t.run(async (ctx) => await ctx.db.query("deskCache").take(5));
-    expect(rows.map((r) => r.key)).toEqual(["chat:what is torque"]);
+    expect(rows).toHaveLength(1);
+    // The key is a hash of "chat:what is torque" (review of 2026-10-26): the cache never keeps the student's words.
+    expect(rows[0].key).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(rows)).not.toContain("torque?");
   });
 
   test("clarify has its own hourly limit", async () => {
@@ -736,7 +739,7 @@ describe("deleting a talk, export and erase", () => {
     await okAsk(w.s, "What is torque?");
     await okAsk(w.s2, "What is a lever?");
     const exported = await w.t.run(async (ctx) => await deskRoom.exporter(ctx, w.s.memberId, null, 100));
-    expect(exported.rows).toMatchObject([{ title: "What is torque?", turns: [{ question: "What is torque?", answer: "Answer 1", coinsSpent: 1 }] }]);
+    expect(exported.rows).toMatchObject([{ wallet: { balance: 59 } }, { title: "What is torque?", turns: [{ question: "What is torque?", answer: "Answer 1", coinsSpent: 1 }] }]);
     expect(JSON.stringify(exported)).not.toContain("lever");
     const erased = await w.t.run(async (ctx) => await deskRoom.eraser(ctx, w.s.memberId, 100));
     expect(erased.done).toBe(true);
@@ -749,3 +752,118 @@ describe("deleting a talk, export and erase", () => {
     expect((await rowsOf(w, w.s2)).turns).toBe(1);
   });
 });
+
+describe("the daily cap for the whole deployment (owner, 2026-10-26)", () => {
+  afterEach(() => {
+    delete process.env.DESK_DAILY_CAP;
+  });
+
+  test("the pure rule: unset or malformed is 300, a whole number is used, and 0 stops the model", () => {
+    expect(dailyCapOf(undefined)).toBe(DESK_DAILY_CAP);
+    expect(DESK_DAILY_CAP).toBe(300);
+    expect(dailyCapOf(" 25 ")).toBe(25);
+    expect(dailyCapOf("0")).toBe(0);
+    for (const bad of ["", "-1", "2.5", "ten", "1e3", "999999999"]) expect(dailyCapOf(bad)).toBe(DESK_DAILY_CAP);
+  });
+
+  test("questions of every institute count together; at the cap the next is refused before any coin or model call", async () => {
+    process.env.DESK_DAILY_CAP = "2";
+    const w = await world();
+    await okAsk(w.s, "What is torque?");
+    await okAsk(w.sb, "What is inertia?");
+    const before = await balanceOf(w.s2);
+    expect(await ask(w.s2, "What is momentum?")).toEqual({ ok: false, code: "desk_day_full" });
+    expect(sent).toHaveLength(2);
+    expect(await balanceOf(w.s2)).toBe(before);
+    expect(await rowsOf(w, w.s2)).toEqual({ threads: 0, turns: 0 });
+  });
+
+  test("a stored answer and the care text never count and still answer at the cap", async () => {
+    process.env.DESK_DAILY_CAP = "1";
+    const w = await world();
+    await okAsk(w.s, "What is torque?");
+    const hit = await okAsk(w.s2, "What is torque?");
+    expect(hit.cached).toBe(true);
+    const care = await okAsk(w.s2, "I want to die");
+    expect(care.care).toBe(true);
+    expect(sent).toHaveLength(1);
+    const days = await w.t.run((ctx) => ctx.db.query("deskDaily").take(5));
+    expect(days.map((d) => d.questions)).toEqual([1]);
+  });
+
+  test("a new India day starts from zero, a failed call still counts, and the DHI admin sees today's count and the cap", async () => {
+    process.env.DESK_DAILY_CAP = "2";
+    const w = await world();
+    modelStatus = 500;
+    expect((await ask(w.s, "What is torque?")).ok).toBe(false);
+    modelStatus = 200;
+    await okAsk(w.s, "What is inertia?");
+    expect(await ask(w.s, "What is momentum?")).toEqual({ ok: false, code: "desk_day_full" });
+    expect(await w.dhi.as.query(api.desk.allotment, {})).toMatchObject({ questionsToday: 2, dailyCap: 2 });
+    expect(await refusal(w.A.admin.as.query(api.desk.allotment, {}))).toBe("forbidden");
+    vi.setSystemTime(NOW + DAY);
+    await okAsk(w.s, "What is momentum?");
+    expect(await w.dhi.as.query(api.desk.allotment, {})).toMatchObject({ questionsToday: 1, dailyCap: 2 });
+  });
+});
+
+describe("who reaches the desk (group D of the production run, 2026-10-26)", () => {
+  test("a student at the gate, one who withdrew, a removed one, one of a paused institute, a counselor and a signed out caller reach no desk function", async () => {
+    const w = await world();
+    const gate = await makeStudent(w.t, w.A.admin, w.a1, "gate@alpha.test", false, { consent: false });
+    const left = await makeStudent(w.t, w.A.admin, w.a1, "left@alpha.test", false);
+    const removed = await makeStudent(w.t, w.A.admin, w.a1, "removed@alpha.test", false);
+    await left.as.mutation(api.consent.withdraw, {});
+    await w.A.admin.as.mutation(api.members.remove, { memberId: removed.memberId });
+    await w.dhi.as.mutation(api.institutes.update, { instituteId: w.B.instituteId, status: "suspended" });
+    const calls: Record<string, (p: Person) => Promise<unknown>> = {
+      open: (p) => p.as.mutation(api.desk.open, {}),
+      wallet: (p) => p.as.query(api.desk.wallet, {}),
+      threads: (p) => p.as.query(api.desk.threads, {}),
+      thread: (p) => p.as.query(api.desk.thread, { threadId: "x" }),
+      removeThread: (p) => p.as.mutation(api.desk.removeThread, { threadId: "x" }),
+      ask: (p) => p.as.action(api.deskAsk.ask, { kind: "chat", question: "What is torque?" }),
+    };
+    for (const [name, call] of Object.entries(calls)) {
+      expect(await refusal(call(gate)), `${name} at the gate`).toBe("consent_required");
+      expect(await refusal(call(left)), `${name} withdrawn`).toBe("consent_withdrawn");
+      expect(await refusal(call(removed)), `${name} removed`).toBe("removed");
+      expect(await refusal(call(w.sb)), `${name} paused institute`).toBe("institute_suspended");
+      for (const staff of [w.teacher, w.A.admin, w.dhi]) expect(await refusal(call(staff)), `${name} as staff`).toBe("forbidden");
+      expect(await refusal(call({ as: w.t } as unknown as Person)), `${name} signed out`).toBe("not_signed_in");
+    }
+    expect(sent).toHaveLength(0);
+  });
+});
+
+describe("review of 2026-10-26: the desk", () => {
+  test("each student has 20 questions to the model a day; stored answers and the care text stay free past it", async () => {
+    const w = await world();
+    for (let i = 0; i < 20; i++) await okAsk(w.s, `Question number ${i} about light`);
+    expect(await ask(w.s, "Question number 20 about light")).toEqual({ ok: false, code: "desk_my_day_full" });
+    expect((await okAsk(w.s, "I want to die")).care).toBe(true);
+    expect((await okAsk(w.s2, "Question number 3 about light")).cached).toBe(true);
+    await okAsk(w.s2, "A question of my own");
+    vi.setSystemTime(NOW + DAY);
+    await okAsk(w.s, "Question number 21 about light");
+  });
+
+  test("the care text wins over the exam lock, and a diagram that grows past the limit when its attributes are added is refused", async () => {
+    const w = await world();
+    await w.t.run(async (ctx) => {
+      const member = (await ctx.db.get(w.s.memberId))!;
+      const paperId = await ctx.db.insert("papers", { teacherMemberId: w.teacher.memberId, instituteId: member.instituteId!, title: "Open", status: "sent", createdAt: NOW });
+      await ctx.db.insert("paperAttempts", { paperId, memberId: w.s.memberId, instituteId: member.instituteId!, status: "open", opensAt: NOW - 1000, dueAt: NOW + DAY });
+    });
+    expect((await okAsk(w.s, "I want to die")).care).toBe(true);
+    expect(await ask(w.s, "What is torque?")).toEqual({ ok: false, code: "exam_open" });
+    // One text element, so only the length decides: under the limit as sent, over it once xmlns and viewBox are added.
+    const wrap = (n: number) => `<svg><text x="1" y="1">${"a".repeat(n)}</text></svg>`;
+    const shortOne = wrap(100);
+    expect(cleanSvg(shortOne)).not.toBeNull();
+    const near = wrap(11990 - wrap(0).length);
+    expect(near.length).toBe(11990);
+    expect(cleanSvg(near)).toBeNull();
+  });
+});
+

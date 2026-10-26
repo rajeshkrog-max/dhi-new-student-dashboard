@@ -145,7 +145,7 @@ const matchArgs = { email: v.string(), school: v.string(), class: v.string(), no
 async function findMatch(ctx: Parameters<typeof beginErase>[0], args: { email: string; school: string; class: string }) {
   const email = args.email.trim().toLowerCase();
   const member = email ? await ctx.db.query("members").withIndex("by_email", (q) => q.eq("email", email)).first() : null;
-  if (!member || member.role !== "student" || member.erasedAt !== undefined || member.under18 !== true) return null;
+  if (!member || member.role !== "student" || member.erasedAt !== undefined || member.under18 === false) return null; // a missing flag counts as under 18, as at the gate
   const institute = member.instituteId ? await ctx.db.get(member.instituteId) : null;
   const cls = member.classId ? await ctx.db.get(member.classId) : null;
   if (!institute || !cls) return null;

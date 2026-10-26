@@ -499,6 +499,7 @@ export default defineSchema({
     note: v.optional(v.string()), // at most 500 code points; absent when empty
     lineIx: v.number(), // 0 or 1: which of the two DHI lines this day got, set on the first save
     changes: v.number(), // how many times the mood changed (the first save is 0)
+    noteEdits: v.optional(v.number()), // how many note edits changed the word count and so wrote an event (the key counter of those events)
   }).index("by_memberId_and_day", ["memberId", "day"]),
 
   // The papers room (spec house/0011). A teacher's paper: its questions (the right answers and the wrong option tags stay here and never reach a
@@ -563,6 +564,7 @@ export default defineSchema({
   })
     .index("by_memberId", ["memberId"])
     .index("by_paperId_and_memberId", ["paperId", "memberId"])
+    .index("by_memberId_and_status", ["memberId", "status"]) // the exam lock (examLock.ts) finds an open sitting
     .index("by_status_and_dueAt", ["status", "dueAt"]),
 
   // The blog room (spec house/0014). A post is written by a student and stays pending until a teacher of the author's class approves it. Only an
@@ -582,6 +584,8 @@ export default defineSchema({
   })
     .index("by_authorMemberId", ["authorMemberId"])
     .index("by_instituteId", ["instituteId"])
+    // A teacher's pending list and a classmate's approved list (review of 2026-10-26), so many newer posts never hide an older one waiting.
+    .index("by_instituteId_and_status", ["instituteId", "status"])
     .index("by_photoId", ["photoId"]),
 
   blogComments: defineTable({
@@ -634,7 +638,7 @@ export default defineSchema({
   // student's own custom dish (status "custom") holds the numbers the student gave, and counts for them at once. DHI can publish a custom dish,
   // which copies it into the catalog with the source "DHI checked". Numbers are per serving.
   foods: defineTable({
-    status: v.string(), // "catalog" or "custom"
+    status: v.string(), // "catalog", "custom", or "published" (a custom dish DHI copied into the catalog; the copy has no owner)
     nameEn: v.string(),
     nameHi: v.optional(v.string()),
     aliases: v.optional(v.array(v.string())),
@@ -747,7 +751,11 @@ export default defineSchema({
     status: v.string(), // "shown" or "hidden"
   })
     .index("by_hourId_and_instituteId", ["hourId", "instituteId"])
-    .index("by_authorMemberId", ["authorMemberId"]),
+    .index("by_authorMemberId", ["authorMemberId"])
+    // The review screens (review of 2026-10-26): a teacher reads their own institute's newest messages, and a DHI admin the reported ones, so a busy
+    // institute never pushes another out of view.
+    .index("by_instituteId", ["instituteId"])
+    .index("by_reported", ["reported"]),
 
   // The sleep room (spec house/0008). One row for each student and night, holding the bed time and the length of sleep, both as minutes on the
   // noon shifted scale (sleepRules.ts). Erase class `erased`. Seen by the student alone: no function reads it for anyone else, and the event the room
@@ -797,6 +805,13 @@ export default defineSchema({
     updatedAt: v.number(),
   }),
 
+  // The desk's count of questions sent to the model on one India day (YYYY-MM-DD), for the whole deployment: the daily cap reads it, and it is the
+  // spend count to watch after launch. One row a day, written only by `desk.begin`. No student in it; erase class `system`.
+  deskDaily: defineTable({
+    day: v.string(),
+    questions: v.number(),
+  }).index("by_day", ["day"]),
+
   // A student's coins. One row, made at the first visit. `grantedMonth` is the India month (YYYY-MM) the allotment was last added for, so the month's
   // coins are added once, the first time the student asks that month, and the balance rolls over. The balance never goes below zero: a question
   // takes its coins in the same step that stores it. Erase class `erased`.
@@ -845,7 +860,9 @@ export default defineSchema({
     answer: v.string(),
     hits: v.number(),
     createdAt: v.number(),
-  }).index("by_instituteId_and_key", ["instituteId", "key"]),
+  })
+    .index("by_instituteId_and_key", ["instituteId", "key"])
+    .index("by_createdAt", ["createdAt"]), // the retention sweep deletes an answer after its 90 days
 
   // A desk sitting (spec house/0018, desk part): a run of questions with no gap over 15 minutes, kept so the after session card can be offered. `startedAt`
   // is the first question, `lastAt` the latest. `feedbackStatus` is empty while the sitting is open, then `none` (under 10 minutes), `pending`, `answered` or

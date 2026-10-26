@@ -29,6 +29,7 @@ import { SleepTracker } from "@/components/dhi/sleep-tracker";
 import { MealsRoom } from "@/components/dhi/meals/meals-real";
 import { MoodTracker } from "@/components/dhi/mood-tracker";
 import { HouseMenu } from "@/components/dhi/house-menu";
+import { EXAM_LOCKED_ROOMS } from "@/lib/dhi/exam-lock";
 import { NotificationBell } from "@/components/dhi/notification-bell";
 import { ROOM_ACTIONS_ID } from "@/components/dhi/room-actions";
 import { ExamsRoom } from "@/components/dhi/exams/exams-room";
@@ -75,8 +76,16 @@ const NAV = [
 export function StudentHome() {
   const student = useStudent();
   const [tab, setTab] = useState("home");
-  // True while an exam sitting is open: the exams room sets it, and both menus read it (house spec 0012, AC-7).
-  const [locked, setLocked] = useState(false);
+  // True while an exam sitting is open (house spec 0012, AC-7): the exams room says so while the sitting is on screen, and the server says so from
+  // Start until the student hands in or the window closes, also after a reload (owner, 2026-10-26). Both menus read it.
+  const [sittingOnScreen, setSittingOnScreen] = useState(false);
+  const sitting = useQuery(api.exams.sitting, {});
+  const locked = sittingOnScreen || sitting?.open === true;
+  // A room the paper closes is left for Exams; any other room stays as it is.
+  useEffect(() => {
+    if (sitting?.open === true) setTab((t) => (EXAM_LOCKED_ROOMS.includes(t) ? "papers" : t));
+  }, [sitting?.open]);
+  const mayOpen = (room: string) => !(locked && EXAM_LOCKED_ROOMS.includes(room));
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
 
@@ -124,7 +133,7 @@ export function StudentHome() {
                 <Menu className="size-5" aria-hidden />
               </button>
             }
-            end={<NotificationBell onOpen={(room) => !locked && setTab(room)} />}
+            end={<NotificationBell onOpen={(room) => mayOpen(room) && setTab(room)} />}
           />
           <Sheet
             open={menuOpen}
@@ -191,7 +200,7 @@ export function StudentHome() {
           </div>
           <p className="text-sm text-mute">
             {locked
-              ? "Pariksha in sitting — the house is locked"
+              ? "Pariksha in sitting — the desk, blog, study hour and films are closed"
               : tab === "papers"
                 ? "Windows the teacher opened. Sit before they close."
                 : tab === "day"
@@ -240,7 +249,7 @@ export function StudentHome() {
               />
             </label>
           )}
-          <NotificationBell className="hidden lg:grid" onOpen={(room) => !locked && setTab(room)} />
+          <NotificationBell className="hidden lg:grid" onOpen={(room) => mayOpen(room) && setTab(room)} />
           <div className="hidden items-center gap-2 rounded-control border border-white/80 bg-white/70 px-2 py-1.5 backdrop-blur-md sm:flex">
             <div data-decorative className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-peach to-lilac text-[11px] font-semibold text-white">
               {student.initials}
@@ -253,11 +262,11 @@ export function StudentHome() {
         </div>
       </header>
 
-      <RoomGuard>
+      <RoomGuard key={tab}>
       {tab === "home" ? (
-        <HomeBody onOpen={(id) => !locked && setTab(id)} />
+        <HomeBody onOpen={(id) => mayOpen(id) && setTab(id)} />
       ) : tab === "papers" ? (
-        <ExamsRoom onSitting={setLocked} />
+        <ExamsRoom onSitting={setSittingOnScreen} />
       ) : tab === "day" ? (
         <MealsRoom />
       ) : tab === "mood" ? (

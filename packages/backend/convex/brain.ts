@@ -67,7 +67,8 @@ export const report = query({
     const fired = patternsOf(rows, today);
     const note = expressionNote(rows, today);
     // The connections read every finished day of the last four months, not only the chain window.
-    const connected = connectionsOf(await windowRows(ctx, mc.member, now, CONNECTION_WINDOW), today);
+    // One more than the window, because today is in the rows and the connections drop it: 120 finished days (review of 2026-10-26).
+    const connected = connectionsOf(await windowRows(ctx, mc.member, now, CONNECTION_WINDOW + 1), today);
     const hidden = [...fired.map((p) => p.id as string), ...connected.map((c) => c.id as string), ...(note ? ["expression"] : [])].filter((id) => hiddenNow.has(id));
     const support = supportOffer(rows, today);
     const { score, lamps } = lampsOf(rows, today);

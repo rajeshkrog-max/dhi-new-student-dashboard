@@ -214,16 +214,34 @@ describe("the link (AC-4, AC-5)", () => {
     expect(await linksOf(w)).toEqual([]);
   });
 
-  test("covers AC-5: a student who withdraws, or is removed, is invisible to the parent", async () => {
+  // Review of 2026-10-26: a withdrawal or a removal ends the link for good, so agreeing again or a reinstatement never brings the old one back.
+  test("covers AC-5: a withdrawal or a removal ends the link for good; agreeing again needs a new link", async () => {
     const w = await world();
     const code = await makeLink(w, w.s);
     expect((await open(w, code)).ok).toBe(true);
     await w.s.as.mutation(api.consent.withdraw, {});
     expect(await open(w, code)).toEqual({ ok: false, code: "gone" });
+    expect(await linksOf(w)).toHaveLength(0);
     await w.s.as.mutation(api.consent.restore, {});
-    expect((await open(w, code)).ok).toBe(true);
-    await w.A.admin.as.mutation(api.members.remove, { memberId: w.s.memberId });
     expect(await open(w, code)).toEqual({ ok: false, code: "gone" });
+    const again = await w.s.as.mutation(api.parentLink.make, {});
+    if (!again.ok) throw new Error(again.code);
+    expect((await open(w, again.code)).ok).toBe(true);
+    await w.A.admin.as.mutation(api.members.remove, { memberId: w.s.memberId });
+    expect(await linksOf(w)).toHaveLength(0);
+    await w.A.admin.as.mutation(api.members.reinstate, { memberId: w.s.memberId });
+    expect(await open(w, again.code)).toEqual({ ok: false, code: "gone" });
+  });
+
+  test("while the student's class is paused the page reads as gone, and it opens again on resume with the link kept (owner, 2026-10-26)", async () => {
+    const w = await world();
+    const code = await makeLink(w, w.s);
+    expect((await open(w, code)).ok).toBe(true);
+    await w.A.admin.as.mutation(api.classes.pause, { classId: w.a1 });
+    expect(await open(w, code)).toEqual({ ok: false, code: "gone" });
+    expect(await linksOf(w)).toHaveLength(1);
+    await w.A.admin.as.mutation(api.classes.resume, { classId: w.a1 });
+    expect((await open(w, code)).ok).toBe(true);
   });
 
   test("covers AC-5: a wrong, short or made up code is the same plain answer, and a flood of them is limited", async () => {

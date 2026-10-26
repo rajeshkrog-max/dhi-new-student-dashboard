@@ -285,3 +285,39 @@ describe("hints, events, the close sweep and the feedback (spec house/0012)", ()
     expect(view.attempts.map((a) => a.missed).sort()).toEqual([false, true]);
   });
 });
+
+// The exam lock on the server (owner, 2026-10-26): from Start until the student hands in, every other room refuses; Your data and the frame do not.
+describe("the exam lock on the server (AC-7)", () => {
+  test("an open sitting closes every other room, keeps Your data and the frame open, and lifts on submit; a classmate is not locked", async () => {
+    const { s, s2, attemptOf } = await world();
+    const attempt = await attemptOf(s.memberId);
+    vi.setSystemTime(OPENS + 1000);
+    expect(await s.as.query(api.exams.sitting, {})).toEqual({ open: false });
+    await s.as.mutation(api.exams.start, { attemptId: attempt._id });
+    expect(await s.as.query(api.exams.sitting, {})).toEqual({ open: true });
+    // The rooms that could help with a paper are closed (owner, 2026-10-26); the logging rooms, Progress and leaving a seat stay open.
+    const rooms: Record<string, () => Promise<unknown>> = {
+      "blog.list": () => s.as.query(api.blog.list, {}),
+      "films.list": () => s.as.query(api.films.list, {}),
+      "studyHour.current": () => s.as.query(api.studyHour.current, {}),
+      "studyHour.messages": () => s.as.query(api.studyHour.messages, {}),
+    };
+    for (const [name, call] of Object.entries(rooms)) expect(await refusal(call()), name).toBe("exam_open");
+    for (const [name, call] of Object.entries({
+      "moods.save": () => s.as.mutation(api.moods.save, { mood: "happy", note: "" }),
+      "sleep.recent": () => s.as.query(api.sleep.recent, {}),
+      "meals.day": () => s.as.query(api.meals.day, {}),
+      "habits.list": () => s.as.query(api.habits.list, {}),
+      "brain.report": () => s.as.query(api.brain.report, {}),
+      "studyHour.leave": () => s.as.mutation(api.studyHour.leave, {}),
+    })) expect(await refusal(call()), `${name} stays open`).not.toBe("exam_open");
+    expect(await refusal(s.as.query(api.members.me, {}))).toBe("ok");
+    expect(await refusal(s.as.mutation(api.dataRights.exportMine, {}))).toBe("ok");
+    expect(await refusal(s.as.query(api.sharing.get, {}))).toBe("ok");
+    expect(await refusal(s2.as.query(api.blog.list, {}))).toBe("ok");
+    await s.as.mutation(api.exams.submit, { attemptId: attempt._id });
+    expect(await s.as.query(api.exams.sitting, {})).toEqual({ open: false });
+    for (const [name, call] of Object.entries(rooms)) expect(await refusal(call()), `${name} after submit`).toBe("ok");
+  });
+});
+

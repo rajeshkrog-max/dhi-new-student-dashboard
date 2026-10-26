@@ -21,7 +21,7 @@ async function world() {
   const teacher = await makeTeacher(t, A.admin, "teacher@alpha.test", [a1]);
   const s = await makeStudent(t, A.admin, a1, "s@alpha.test", false);
   const s2 = await makeStudent(t, A.admin, a1, "s2@alpha.test", false);
-  return { t, s, s2, teacher };
+  return { t, s, s2, teacher, admin: A.admin };
 }
 type World = Awaited<ReturnType<typeof world>>;
 
@@ -111,5 +111,23 @@ describe("the funnel link", () => {
     const w = await world();
     expect(await refusal(w.teacher.as.mutation(api.funnelLink.link, {}))).toBe("forbidden");
     expect(await refusal(w.teacher.as.query(api.funnelLink.status, {}))).toBe("forbidden");
+  });
+
+  // Your data shows the card only while consent is in place, because these functions sit behind the consent gate; a link made before stays in the
+  // download, which a locked student still reaches.
+  test("a withdrawn or paused student cannot read or make the link, and an earlier link stays in their download", async () => {
+    const w = await world();
+    await takeCheck(w, w.s);
+    await w.s.as.mutation(api.funnelLink.link, {});
+    await w.s.as.mutation(api.consent.withdraw, {});
+    expect(await refusal(w.s.as.query(api.funnelLink.status, {}))).toBe("consent_withdrawn");
+    expect(await refusal(w.s.as.mutation(api.funnelLink.link, {}))).toBe("consent_withdrawn");
+    expect(await refusal(w.s.as.mutation(api.funnelLink.unlink, {}))).toBe("consent_withdrawn");
+    expect((await headerOf(w.s)).funnel).not.toBeNull();
+
+    await takeCheck(w, w.s2);
+    await w.admin.as.mutation(api.members.remove, { memberId: w.s2.memberId });
+    expect(await refusal(w.s2.as.mutation(api.funnelLink.link, {}))).not.toBeNull();
+    expect(await w.t.run((ctx) => ctx.db.query("funnelLinks").take(10))).toHaveLength(1);
   });
 });

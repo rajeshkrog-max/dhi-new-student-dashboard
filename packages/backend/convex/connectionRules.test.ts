@@ -87,8 +87,9 @@ describe("the fixed pairs", () => {
   test("P3: a light mood on more days after an early bedtime", () => {
     const list: DayValues[] = [];
     for (let i = 0; i < 16; i += 1) {
-      list.push({ H06: one(600), E06L: one(1) });
-      list.push({ H06: one(720), E06H: one(1) });
+      // A real mood day holds all three bands, the chosen one at 1 and the others at 0 (metricRules.valuesOfDay; review of 2026-10-26).
+      list.push({ H06: one(600), E06L: one(1), E06S: one(0), E06H: one(0) });
+      list.push({ H06: one(720), E06L: one(0), E06S: one(0), E06H: one(1) });
     }
     const { rows, today } = fromList(list);
     expect(connectionsOf(rows, today)).toEqual([{ id: "bedtime_mood", a: 100, b: 0, nA: 16, nB: 16 }]);

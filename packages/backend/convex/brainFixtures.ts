@@ -88,8 +88,20 @@ export const PACKAGED_PLAN: Plan = {
   heavyMeals: [11, 8, 5, 3],
 };
 
-export const SCENARIOS = ["heavy", "steady", "packaged"] as const;
+// Forty finished days for the connections (house spec 0023): on the 20 early nights (bed before 23:30) the mood is light, on the 20 late nights
+// it is heavy, so the bedtime and mood pair shows a clear difference. Only for the browser proof of the connections; no pattern reads these alone.
+export function connectedRows(today: string): DayRow[] {
+  const rows: DayRow[] = [];
+  for (let back = 40; back >= 1; back -= 1) {
+    const late = back % 2 === 0;
+    // All three mood bands, as a real mood day holds them: light on the early nights, heavy on the late ones.
+    rows.push({ day: shiftDay(today, -back), v: { H06: { num: late ? 750 : 630, den: 1 }, E06L: { num: late ? 0 : 1, den: 1 }, E06S: { num: 0, den: 1 }, E06H: { num: late ? 1 : 0, den: 1 }, C01: { num: 1, den: 1 } } });
+  }
+  return rows.reverse();
+}
+
+export const SCENARIOS = ["heavy", "steady", "packaged", "connected"] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 export const isScenario = (text: unknown): text is Scenario => typeof text === "string" && (SCENARIOS as readonly string[]).includes(text);
-const PLANS: Readonly<Record<Scenario, Plan>> = { heavy: HEAVY_PLAN, steady: STEADY_PLAN, packaged: PACKAGED_PLAN };
-export const scenarioRows = (scenario: Scenario, today: string): DayRow[] => rowsFromPlan(PLANS[scenario], today);
+const PLANS: Readonly<Record<Exclude<Scenario, "connected">, Plan>> = { heavy: HEAVY_PLAN, steady: STEADY_PLAN, packaged: PACKAGED_PLAN };
+export const scenarioRows = (scenario: Scenario, today: string): DayRow[] => (scenario === "connected" ? connectedRows(today) : rowsFromPlan(PLANS[scenario], today));

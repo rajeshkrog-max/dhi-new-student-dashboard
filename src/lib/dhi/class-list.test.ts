@@ -37,7 +37,7 @@ test("a short row is passed on with what is there, so the server can say what is
 
 test("the words cover every role and every reason, and never say where an address is in use", () => {
   for (const role of ["student", "teacher", "institute_admin", "dhi_admin", "counselor"] as const) assert.ok(ROLE_LABEL[role]);
-  for (const reason of ["bad_name", "bad_email", "duplicate_in_file", "email_in_use", "class_not_found", "class_not_in_scope", "under18_missing"]) {
+  for (const reason of ["bad_name", "bad_email", "duplicate_in_file", "email_in_use", "class_not_found", "class_not_in_scope", "under18_missing", "not_checked"]) {
     assert.ok(BAD_ROW_WORDS[reason], reason);
   }
   assert.equal(badRowWords("something_new"), "This row needs fixing.");

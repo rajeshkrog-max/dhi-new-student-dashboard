@@ -8,6 +8,7 @@ import { gateOf } from "./consentState";
 import { dayBounds, dayOf, shiftDay, todayOf } from "./dayRules";
 import { eventsForDay } from "./eventLog";
 import { pausedWithin } from "./pauseHistory";
+import { sittingWithin } from "./examLock";
 import { MOOD_LIGHTNESS, valuesOfDay, type DayRow, type DayValues } from "./metricRules";
 
 type Reader = QueryCtx | MutationCtx;
@@ -49,9 +50,11 @@ export async function valuesFor(ctx: Reader, member: Doc<"members">, day: string
   // counts, but no real zero is written for a habit not ticked or an hour not sat. The day is then the same before and after the resume.
   const { start, end } = dayBounds(day);
   const paused = await pausedWithin(ctx, member.classId, start, end);
+  // A day an open paper touched: the exam lock closed the study hour, so it is not expected that day (an hour the student did sit still counts).
+  const sitting = await sittingWithin(ctx, member._id, start, end);
   return valuesOfDay(events, {
     openHabits: await openHabitsOn(ctx, member, day),
-    hourOpen: await hourOpenOn(ctx, day),
+    hourOpen: (await hourOpenOn(ctx, day)) && !sitting,
     finished: day < todayOf(now) && !paused,
     prevLightness: events.some((e) => e.type === "mood.logged") ? await previousLightness(ctx, member, day) : undefined,
   });

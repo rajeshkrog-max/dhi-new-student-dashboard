@@ -128,6 +128,24 @@ describe("edits, one entry a day (AC-2)", () => {
     expect(await eventsOf(w, w.s.memberId)).toHaveLength(1);
   });
 
+  // Review of 2026-10-26: the event holds the note's word count, which the Brain reads for its note days, so a note edit that changes it is a new event.
+  test("covers AC-2: a note edit that changes the word count writes a replacing event, and a later mood change still gets its own key", async () => {
+    const w = await world();
+    await save(w.s, "happy");
+    expect(await save(w.s, "happy", "a much longer note today")).toMatchObject({ ok: true, changed: true });
+    const all = await eventsOf(w, w.s.memberId);
+    expect(all).toHaveLength(2);
+    expect(all[1].payload).toEqual({ mood: "happy", noteWords: 5 });
+    expect(all[1].replaces).toBe(all[0]._id);
+    expect((await rowsOf(w, w.s.memberId))[0]).toMatchObject({ changes: 0, noteEdits: 1 });
+    expect(await save(w.s, "sad", "a much longer note today")).toMatchObject({ ok: true, changed: true });
+    expect(await save(w.s, "sad", "")).toMatchObject({ ok: true, changed: true });
+    const after = await eventsOf(w, w.s.memberId);
+    expect(after).toHaveLength(4);
+    expect(new Set(after.map((e) => e.eventKey)).size).toBe(4);
+    expect(after[3].payload).toEqual({ mood: "sad", noteWords: 0 });
+  });
+
   test("covers AC-2: the same mood and note again writes no row and no event", async () => {
     const w = await world();
     await save(w.s, "happy", "same");
@@ -143,7 +161,8 @@ describe("edits, one entry a day (AC-2)", () => {
     for (let i = 1; i <= MAX_MOOD_CHANGES; i++) expect(await save(w.s, MOOD_CODES[i % 10 === 0 ? 1 : i % 10]), `change ${i}`).toMatchObject({ ok: true });
     expect(await save(w.s, "heavy")).toEqual({ ok: false, code: "too_many_changes" });
     expect(await save(w.s, MOOD_CODES[MAX_MOOD_CHANGES % 10 === 0 ? 1 : MAX_MOOD_CHANGES % 10], "a note after")).toMatchObject({ ok: true, changed: true });
-    expect((await eventsOf(w, w.s.memberId)).length).toBe(1 + MAX_MOOD_CHANGES);
+    // The note went from no words to three, so it is one more event (review of 2026-10-26); the cap is on mood changes only.
+    expect((await eventsOf(w, w.s.memberId)).length).toBe(2 + MAX_MOOD_CHANGES);
   });
 
   test("covers AC-2: yesterday's entry is never touched by today's save", async () => {

@@ -20,6 +20,9 @@ export const MAX_CHECK_TEXT = 200;
 export const MIN_INTERVAL_MS = 4000;
 export const SLACK_SEC = 1;
 export const FIRST_ALLOWANCE_SEC = 5;
+// The most one report can move the furthest point, however long it has been since the last one (review of 2026-10-26). The screen reports every 5
+// seconds while the film plays, so 30 leaves room for a slow network, and a pause never builds up credit to jump with.
+export const MAX_STEP_SEC = 30;
 // A film counts as watched to its end when the furthest point is within 3 seconds of its length (the last moments are credits).
 export const FINISH_TOLERANCE_SEC = 3;
 // The play link of a film is good for 10 minutes.
@@ -59,12 +62,12 @@ export type ProgressInput = {
 };
 
 // The new furthest point. A report that is not a number, is negative, or comes too soon changes nothing. Otherwise the furthest point rises to
-// the reported position, but not by more than the real time since the last accepted report plus one second (5 seconds for the first report),
-// never goes down, and never passes the length of the film.
+// the reported position, but not by more than the real time since the last accepted report plus one second, and never by more than MAX_STEP_SEC
+// in one report (5 seconds for the first report), never goes down, and never passes the length of the film.
 export function progressAfter(i: ProgressInput): { furthest: number; accepted: boolean } {
   if (!Number.isFinite(i.reported) || i.reported < 0) return { furthest: i.furthest, accepted: false };
   if (i.lastAt !== undefined && i.ignoreInterval !== true && i.now - i.lastAt < MIN_INTERVAL_MS) return { furthest: i.furthest, accepted: false };
-  const gain = i.lastAt === undefined ? FIRST_ALLOWANCE_SEC : Math.max(0, (i.now - i.lastAt) / 1000) + SLACK_SEC;
+  const gain = i.lastAt === undefined ? FIRST_ALLOWANCE_SEC : Math.min(MAX_STEP_SEC, Math.max(0, (i.now - i.lastAt) / 1000)) + SLACK_SEC;
   const next = Math.max(i.furthest, Math.min(i.reported, i.furthest + gain, i.durationSec));
   return { furthest: next, accepted: true };
 }

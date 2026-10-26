@@ -48,7 +48,12 @@ export const deskRoom: RoomEntry = {
       .withIndex("by_memberId_and_lastAt", (q) => (after === null ? q.eq("memberId", memberId) : q.eq("memberId", memberId).gt("lastAt", after)))
       .take(size + 1);
     const page = talks.slice(0, size);
-    const rows = [];
+    const rows: Record<string, unknown>[] = [];
+    // The coin balance goes once, at the top of the first page (a talks page is 10, so the page stays far under the limit).
+    if (after === null) {
+      const wallet = await ctx.db.query("deskWallets").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).first();
+      if (wallet) rows.push({ wallet: { balance: wallet.balance, grantedMonth: wallet.grantedMonth } });
+    }
     for (const t of page) {
       const turns = await ctx.db.query("deskTurns").withIndex("by_threadId", (q) => q.eq("threadId", t._id)).take(TURNS_PER_TALK);
       rows.push({

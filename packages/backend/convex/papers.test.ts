@@ -138,13 +138,13 @@ describe("the papers room, teacher side", () => {
     expect(await refusal(other.as.mutation(api.papers.openForTeacher, { paperId: id }))).toBe("forbidden");
   });
 
-  test("covers AC-7 and AC-9: the export holds titles, windows and confirmed marks, never answers, and erase removes the attempts", async () => {
+  test("covers AC-7 and AC-9: the export holds titles, windows, confirmed marks and the student's own answers, never the right answers, and erase removes the attempts", async () => {
     const { t, teacher, a1, s } = await world();
     const id = await teacher.as.mutation(api.papers.create, { title: "Term test", questions: [mcq, long] });
     await teacher.as.mutation(api.papers.send, { paperId: id, target: { kind: "class", classId: a1 }, ...window });
     const page = await t.run((ctx) => examRoom.exporter(ctx, s.memberId, null, 10));
     expect(page.rows).toHaveLength(1);
-    expect(Object.keys(page.rows[0] as object).sort()).toEqual(["dueAt", "opensAt", "paper", "remarks", "status", "total"]);
+    expect(Object.keys(page.rows[0] as object).sort()).toEqual(["answers", "dueAt", "opensAt", "paper", "remarks", "status", "total"]);
     expect(JSON.stringify(page.rows)).not.toContain("rightOption");
     await t.run((ctx) => examRoom.eraser(ctx, s.memberId, 10));
     expect(await s.as.query(api.papers.mine, {})).toEqual([]);

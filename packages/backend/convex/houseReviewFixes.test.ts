@@ -301,3 +301,39 @@ describe("row 2 review: the invite cap and the pending invite", () => {
     expect(person.memberId).toBeTruthy();
   });
 });
+
+// The fresh model review of group A, 2026-10-26 (docs/launch/PROGRESS.md).
+describe("review of 2026-10-26: the platform", () => {
+  test("a removed student cannot be reinstated into a class that was archived meanwhile; moved to an open class, they can", async () => {
+    const w = await world();
+    await w.A.admin.as.mutation(api.members.remove, { memberId: w.adult.memberId });
+    await w.A.admin.as.mutation(api.classes.archive, { classId: w.a1 });
+    expect(await refusal(w.A.admin.as.mutation(api.members.reinstate, { memberId: w.adult.memberId }))).toBe("class_archived");
+    await w.A.admin.as.mutation(api.members.setClass, { memberId: w.adult.memberId, classId: w.a2 });
+    expect(await w.A.admin.as.mutation(api.members.reinstate, { memberId: w.adult.memberId })).toEqual({ status: "active" });
+  });
+
+  test("a parent's erase request matches a student whose under 18 flag is missing, as the gate treats them", async () => {
+    const w = await world();
+    await w.t.run((ctx) => ctx.db.patch(w.adult.memberId, { under18: undefined }));
+    const ask = { email: "adult@alpha.test", school: "Alpha School", class: "Class 10 A" };
+    expect(await w.t.mutation(internal.dataRights.adminExport, ask)).toMatchObject({ ok: true });
+    await w.t.run((ctx) => ctx.db.patch(w.adult.memberId, { under18: false }));
+    expect(await w.t.mutation(internal.dataRights.adminExport, ask)).toEqual({ ok: false, code: "no_match" });
+  });
+
+  test("one class list confirms at most a day of taken addresses: the rows after them are not looked up", async () => {
+    const w = await world();
+    const rows = [];
+    for (let i = 0; i < 51; i++) {
+      const email = `taken${i}@alpha.test`;
+      await w.A.admin.as.mutation(api.invites.create, { role: "student", email, name: `Taken ${i}`, classId: w.a1, under18: false });
+      rows.push({ name: `Again ${i}`, email, class: "10A", under18: false });
+    }
+    rows.push({ name: "Fresh", email: "fresh@alpha.test", class: "10A", under18: false });
+    const r = (await w.A.admin.as.mutation(api.invites.createBatch, { rows })) as { ok: false; code: string; badRows: { row: number; reason: string }[] };
+    expect(r.code).toBe("bad_rows");
+    expect(r.badRows.filter((b) => b.reason === "email_in_use")).toHaveLength(50);
+    expect(r.badRows.slice(50).map((b) => b.reason)).toEqual(["not_checked", "not_checked"]);
+  });
+});

@@ -31,7 +31,8 @@ export const search = query({
     if (mc.role !== "student") fail("forbidden");
     if (args.text.length > 80) fail("bad_query");
     const catalog = await ctx.db.query("foods").withIndex("by_status", (q) => q.eq("status", "catalog")).take(500);
-    const mine = await ctx.db.query("foods").withIndex("by_ownerMemberId", (q) => q.eq("ownerMemberId", mc.member._id)).take(200);
+    // The student's newest 200 dishes; a dish DHI published is found as its catalog copy, so the student's own row of it is left out.
+    const mine = (await ctx.db.query("foods").withIndex("by_ownerMemberId", (q) => q.eq("ownerMemberId", mc.member._id)).order("desc").take(200)).filter((f) => f.status === "custom");
     const hit = (f: Doc<"foods">) => matches(f.nameEn, args.text) || matches(f.nameHi ?? "", args.text) || (f.aliases ?? []).some((a) => matches(a, args.text));
     return [...catalog, ...mine].filter(hit).slice(0, 20).map(foodView);
   },
@@ -55,8 +56,8 @@ export const addCustom = mutation({
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
-    const limit = await rateLimiter.limit(ctx, "foodAdd", { key: mc.member._id });
-    if (!limit.ok) fail("rate_limited");
+    // The checks come before the limit: a refusal throws, and a thrown mutation gives its limit token back, so a refused dish never counted anyway.
+    // The limit (10 an hour) is on dishes actually added.
     const nameEn = cleanName(args.nameEn, MAX_NAME);
     if (!nameEn) fail("bad_name");
     const serving = cleanName(args.serving, MAX_SERVING);
@@ -65,6 +66,8 @@ export const addCustom = mutation({
     const numbers = nutritionProblem(args);
     if (numbers) fail(numbers);
     const aliases = (args.aliases ?? []).map((a) => cleanName(a, MAX_NAME)).filter((a): a is string => a !== null).slice(0, MAX_ALIASES);
+    const limit = await rateLimiter.limit(ctx, "foodAdd", { key: mc.member._id });
+    if (!limit.ok) fail("rate_limited");
     return await ctx.db.insert("foods", {
       status: "custom",
       nameEn,
@@ -96,7 +99,8 @@ export const unpublished = query({
   },
 });
 
-// DHI admin publishes a custom dish: a copy goes into the catalog with the source "DHI checked", and the owner is dropped from the copy.
+// DHI admin publishes a custom dish: a copy goes into the catalog with the source "DHI checked", and the owner is dropped from the copy. The student's
+// own row becomes "published", so it leaves the waiting list, cannot be published twice, and the student finds the dish once (as the catalog copy).
 export const publish = mutation({
   args: { foodId: v.id("foods") },
   returns: v.id("foods"),
@@ -104,7 +108,7 @@ export const publish = mutation({
     const mc = await requireDhiAdmin(ctx);
     const food = await ctx.db.get(args.foodId);
     if (!food || food.status !== "custom") fail("not_found");
-    return await ctx.db.insert("foods", {
+    const copy = await ctx.db.insert("foods", {
       status: "catalog",
       nameEn: food.nameEn,
       nameHi: food.nameHi,
@@ -121,6 +125,8 @@ export const publish = mutation({
       publishedBy: mc.member._id,
       createdAt: Date.now(),
     });
+    await ctx.db.patch(food._id, { status: "published" });
+    return copy;
   },
 });
 

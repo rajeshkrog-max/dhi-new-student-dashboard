@@ -38,8 +38,9 @@ export function ExamsRoom({ onSitting }: { onSitting?: (locked: boolean) => void
   const [sittingOpen, setSittingOpen] = useState(false);
   const [note, setNote] = useState("");
 
-  // The rest of the house stays locked while a sitting is open on screen, until the student submits, the window closes, or they step back to the
-  // list ("Leave for now"; a window can last days, so the lock does not follow them there). The server never depends on this lock.
+  // While a sitting is open on screen the frame closes the rooms that could help with a paper (the desk, blog, study hour and films). The server
+  // holds the same lock from Start until the student hands in or the window closes, also after "Leave for now" or a reload (examLock.ts, owner
+  // 2026-10-26), so this flag only makes the screen say so at once.
   useEffect(() => {
     onSitting?.(sittingOpen);
   }, [sittingOpen, onSitting]);

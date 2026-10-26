@@ -66,6 +66,7 @@ import type * as eventTypes_modules from "../eventTypes/modules.js";
 import type * as eventTypes_mood from "../eventTypes/mood.js";
 import type * as eventTypes_sleep from "../eventTypes/sleep.js";
 import type * as eventTypes_test from "../eventTypes/test.js";
+import type * as examLock from "../examLock.js";
 import type * as exams from "../exams.js";
 import type * as feedback from "../feedback.js";
 import type * as feedbackRules from "../feedbackRules.js";
@@ -219,6 +220,7 @@ declare const fullApi: ApiFromModules<{
   "eventTypes/mood": typeof eventTypes_mood;
   "eventTypes/sleep": typeof eventTypes_sleep;
   "eventTypes/test": typeof eventTypes_test;
+  examLock: typeof examLock;
   exams: typeof exams;
   feedback: typeof feedback;
   feedbackRules: typeof feedbackRules;

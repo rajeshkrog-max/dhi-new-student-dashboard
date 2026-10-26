@@ -1,10 +1,11 @@
 // The meals room (spec house/0010, house/0009). A student logs a plate: a food from the catalog or their own custom dish, a count, the meal and the
 // time eaten. The day shows how many items came from each food group, never a calorie total or a target. A student can add a custom dish with
 // the numbers they know (per serving). Removing a plate voids it. The week shows the group counts of the last seven days.
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { GenericId } from "convex/values";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
+import { dayBounds, todayOf } from "@dhi/backend/dayRules";
 import { FOOD_GROUPS, MEALS, PROCESSING } from "@dhi/backend/foodRules";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
@@ -37,8 +38,14 @@ const timeInput = (ms: number) => {
 };
 
 export function MealsRoom() {
-  const today = useQuery(api.meals.day, {});
-  const week = useQuery(api.meals.week, {});
+  // The screen's own house day, moved on at 04:00, so the day and the week are asked for again when the day turns.
+  const [day, setDay] = useState(() => todayOf(Date.now()));
+  useEffect(() => {
+    const t = window.setTimeout(() => setDay(todayOf(Date.now())), Math.max(1000, dayBounds(day).end - Date.now()) + 50);
+    return () => window.clearTimeout(t);
+  }, [day]);
+  const today = useQuery(api.meals.day, { today: day });
+  const week = useQuery(api.meals.week, { today: day });
   return (
     <div className="space-y-4" data-testid="meals-room">
       <LogPlate />
@@ -54,6 +61,17 @@ export function MealsRoom() {
             ))}
           </ul>
           {today.plates.length === 0 && <p className="text-sm text-mute">Nothing logged today yet.</p>}
+        </Card>
+      )}
+      {today && today.yesterday.length > 0 && (
+        <Card className="space-y-3">
+          <h2 className="text-sm font-semibold">Yesterday</h2>
+          <p className="text-xs text-mute">A plate logged for yesterday can still be removed here.</p>
+          <ul className="space-y-2" data-testid="meal-plates-yesterday">
+            {today.yesterday.map((p) => (
+              <PlateRow key={p.plateId} plate={p} />
+            ))}
+          </ul>
         </Card>
       )}
       {week && (
@@ -132,6 +150,8 @@ function LogPlate() {
         setText("");
         setFoodId("");
         setCount(1);
+        // The next plate starts at the time now, so a form left open never sends a time more than a day old.
+        setEatenAt(timeInput(Date.now()));
       }
     } catch (err) {
       setError(wordFor(err));
