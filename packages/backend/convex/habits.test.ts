@@ -290,7 +290,7 @@ describe("ids, gate and privacy (AC-8, AC-9)", () => {
 
   test("covers AC-9: no source touches the habit tables except the room's own files, the schema and the data map", () => {
     const files = import.meta.glob("./*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-    const allowed = ["./habits.ts", "./habitRoom.ts", "./schema.ts", "./dataMap.ts", "./habitProof.ts"]; // habitProof.ts: dev only, test sign in guarded
+    const allowed = ["./habits.ts", "./habitRoom.ts", "./schema.ts", "./dataMap.ts", "./habitProof.ts", "./home.ts", "./brainDay.ts"]; // habitProof.ts: dev only, test sign in guarded. home.ts reads only the student's own tick days (checked in home.test.ts). brainDay.ts reads the plan windows to know how many habits were open on a day (house spec 0019)
     for (const [name, text] of Object.entries(files)) {
       if (name.endsWith(".test.ts")) continue;
       const code = text.split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");

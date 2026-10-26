@@ -236,7 +236,7 @@ describe("who may use the room (AC-5, AC-6)", () => {
 
   test("covers AC-6: no source reads the mood table except the room's own files, the schema and the data map", () => {
     const files = import.meta.glob("./*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-    const allowed = ["./moods.ts", "./moodRoom.ts", "./schema.ts", "./dataMap.ts", "./moodProof.ts"]; // moodProof.ts: dev only, test sign in guarded
+    const allowed = ["./moods.ts", "./moodRoom.ts", "./schema.ts", "./dataMap.ts", "./moodProof.ts", "./home.ts"]; // moodProof.ts: dev only, test sign in guarded. home.ts counts the student's own days with a mood, never the mood or the note (checked in home.test.ts)
     for (const [name, text] of Object.entries(files)) {
       if (name.endsWith(".test.ts")) continue;
       const code = text.split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
@@ -289,7 +289,7 @@ describe("export and erase (AC-9)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections).toEqual(["header", "events", "mood", "mood", "mood", "habits"]); // the habits room adds its own (empty here) section after
+    expect(sections).toEqual(["header", "events", "mood", "mood", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk"]); // the habits and sleep rooms add their own (empty here) sections after
     expect(rows).toHaveLength(230);
     expect(new Set(rows.map((r) => r.day)).size).toBe(230);
     expect(Object.keys(rows[0]).sort()).toEqual(["day", "mood", "note"]);
@@ -323,6 +323,6 @@ describe("the words and the map (AC-8)", () => {
     const { DATA_MAP } = await import("./dataMap");
     expect(DATA_MAP.moodDays.class).toBe("erased");
     const { eventDef } = await import("./eventRegistry");
-    expect(eventDef("mood", "mood.logged")?.version).toBe(1);
+    expect(eventDef("mood", "mood.logged")?.version).toBe(2);
   });
 });

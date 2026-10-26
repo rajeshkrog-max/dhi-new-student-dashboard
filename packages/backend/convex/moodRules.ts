@@ -25,6 +25,8 @@ export const GUNA_OF: Readonly<Record<MoodCode, Guna>> = {
 // The note: trimmed first, then measured in code points (an emoji counts once), at most 500. Newlines are allowed.
 export const MAX_NOTE = 500;
 export const noteLength = (note: string): number => [...note].length;
+// The number of words in a note, kept in the mood event for the Brain's note days. Only the count leaves `moodDays`.
+export const noteWords = (note: string): number => note.split(/\s+/).filter(Boolean).length;
 
 // A student may change the mood of one day at most this many times (the first save is not a change), so edits cannot use up the log's 500
 // events a day or hide the day from a class total.

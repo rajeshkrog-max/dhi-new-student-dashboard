@@ -8,7 +8,7 @@ import { currentFor, recordEvent } from "./eventLog";
 import { fail } from "./helpers";
 import { requireMember, type MemberContext } from "./houseAuth";
 import { rateLimiter } from "./limits";
-import { isMood, lineIxOf, MAX_MOOD_CHANGES, MAX_NOTE, MONTH_RE, noteLength, YEAR_RE } from "./moodRules";
+import { isMood, lineIxOf, MAX_MOOD_CHANGES, MAX_NOTE, MONTH_RE, noteLength, noteWords, YEAR_RE } from "./moodRules";
 
 const entry = v.object({ day: v.string(), mood: v.string(), note: v.string(), lineIx: v.number() });
 const saved = v.object({ ok: v.literal(true), day: v.string(), mood: v.string(), note: v.string(), lineIx: v.number(), changed: v.boolean() });
@@ -53,7 +53,7 @@ export async function saveFor(
         lineIx: lineIxOf(day),
         changes: 0,
       });
-      await recordEvent(ctx, { by: mc, memberId, room: "mood", type: "mood.logged", payload: { mood: args.mood }, occurredAt: now, eventKey: `mood:${id}-0`, about: `mood:${id}` });
+      await recordEvent(ctx, { by: mc, memberId, room: "mood", type: "mood.logged", payload: { mood: args.mood, noteWords: noteWords(note) }, occurredAt: now, eventKey: `mood:${id}-0`, about: `mood:${id}` });
       return { ok: true as const, day, mood: args.mood, note, lineIx: lineIxOf(day), changed: true };
     }
 
@@ -71,7 +71,7 @@ export async function saveFor(
         memberId,
         room: "mood",
         type: "mood.logged",
-        payload: { mood: args.mood },
+        payload: { mood: args.mood, noteWords: noteWords(note) },
         occurredAt: now,
         eventKey: `${about}-${row.changes + 1}`,
         about,
