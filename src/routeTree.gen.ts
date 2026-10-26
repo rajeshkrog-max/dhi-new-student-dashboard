@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EnterRouteImport } from './routes/enter'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as ParentRouteImport } from './routes/parent'
 import { Route as StaffRouteImport } from './routes/staff'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const JoinRoute = JoinRouteImport.update({
   path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParentRoute = ParentRouteImport.update({
+  id: '/parent',
+  path: '/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StaffRoute = StaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/enter': typeof EnterRoute
   '/home': typeof HomeRoute
   '/join': typeof JoinRoute
+  '/parent': typeof ParentRoute
   '/staff': typeof StaffRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/enter': typeof EnterRoute
   '/home': typeof HomeRoute
   '/join': typeof JoinRoute
+  '/parent': typeof ParentRoute
   '/staff': typeof StaffRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,24 @@ export interface FileRoutesById {
   '/enter': typeof EnterRoute
   '/home': typeof HomeRoute
   '/join': typeof JoinRoute
+  '/parent': typeof ParentRoute
   '/staff': typeof StaffRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/enter' | '/home' | '/join' | '/staff'
+  fullPaths:
+    '/' | '/dashboard' | '/enter' | '/home' | '/join' | '/parent' | '/staff'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/enter' | '/home' | '/join' | '/staff'
-  id: '__root__' | '/' | '/dashboard' | '/enter' | '/home' | '/join' | '/staff'
+  to: '/' | '/dashboard' | '/enter' | '/home' | '/join' | '/parent' | '/staff'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/enter'
+    | '/home'
+    | '/join'
+    | '/parent'
+    | '/staff'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -86,6 +104,7 @@ export interface RootRouteChildren {
   EnterRoute: typeof EnterRoute
   HomeRoute: typeof HomeRoute
   JoinRoute: typeof JoinRoute
+  ParentRoute: typeof ParentRoute
   StaffRoute: typeof StaffRoute
 }
 
@@ -126,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parent': {
+      id: '/parent'
+      path: '/parent'
+      fullPath: '/parent'
+      preLoaderRoute: typeof ParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/staff': {
       id: '/staff'
       path: '/staff'
@@ -142,6 +168,7 @@ const rootRouteChildren: RootRouteChildren = {
   EnterRoute: EnterRoute,
   HomeRoute: HomeRoute,
   JoinRoute: JoinRoute,
+  ParentRoute: ParentRoute,
   StaffRoute: StaffRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "accessibility-review": {
+      "source": "anthropics/knowledge-work-plugins",
+      "sourceType": "github",
+      "skillPath": "design/skills/accessibility-review/SKILL.md",
+      "computedHash": "80af1f666ac32630ecdfe223370b9006d4459f5459846c208872f9169600aa0d"
+    },
+    "design-system": {
+      "source": "anthropics/knowledge-work-plugins",
+      "sourceType": "github",
+      "skillPath": "design/skills/design-system/SKILL.md",
+      "computedHash": "12497053dd5456ed6a80e51826d17c584d422584a1d2f653b4038170e4a3348f"
+    }
+  }
+}

@@ -5,6 +5,7 @@
 // development backend with the demo institute seeded (`pnpm --filter @dhi/backend exec convex run demo:seed`) and the test sign in
 // (VITE_TEST_SIGNIN=true), so it stays manual like `enter:check`, and it refuses production.
 // Usage: pnpm responsive:sweep [--url http://localhost:8080] [--room mood,staff-people] [--width 360] [--shots dir] [-v]
+import { execSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
@@ -182,19 +183,21 @@ async function openMenuIfDrawer(page, width) {
 
 // Extra states of a room, reached after opening it. Each one is swept like a room.
 const SCENES = {
+  // The sitting needs a paper that is open now for the demo student: `prepare` makes one (papersProof:openDemoPaper).
   "papers-sit": { room: "papers", run: sitExam },
   "papers-hint": {
     room: "papers",
     run: async (page) => {
       await sitExam(page);
-      await page.getByRole("button", { name: /Ask DHI to open this question/ }).click();
+      await page.getByTestId("hint-button-0").click();
+      await page.getByTestId("hint-0").waitFor({ timeout: 20_000 });
     },
   },
-  "papers-submit": {
+  "papers-menu": {
     room: "papers",
-    run: async (page) => {
+    run: async (page, width) => {
       await sitExam(page);
-      await page.getByRole("button", { name: "Stop" }).click();
+      await openMenuIfDrawer(page, width);
     },
   },
   "mood-day": { room: "mood", run: (page, width) => openMoodDay(page, width) },
@@ -206,10 +209,10 @@ const SCENES = {
       await page.getByRole("button", { name: /Yes, write to them/ }).click();
     },
   },
-  "meals-log": {
+  "meals-custom": {
     room: "day",
     run: async (page) => {
-      await page.getByRole("button", { name: /Log a plate/ }).click();
+      await page.getByRole("button", { name: /Add a dish that is not listed/ }).click();
     },
   },
   "habits-new": {
@@ -241,64 +244,40 @@ const SCENES = {
       await page.getByRole("button", { name: "month", exact: true }).click();
     },
   },
-  "blog-write": {
-    room: "blog",
+  // The study hour needs an hour that is open now: `prepare` opens one (hourProof:openNow). Sitting in each mode shows the seat, the list and the chat.
+  "hour-live": { room: "hour", run: (page) => sitInMode(page, "live") },
+  "hour-dnd": { room: "hour", run: (page) => sitInMode(page, "dnd") },
+  "hour-away": { room: "hour", run: (page) => sitInMode(page, "away") },
+  // The Progress page with a heavy fortnight stored for the demo student (`prepare`): a pattern, the days behind it, the expression note and the
+  // support message. The room itself is swept too, with the same days.
+  "progress-days": {
+    room: "progress",
     run: async (page) => {
-      await page.getByRole("button", { name: "Write", exact: true }).click();
+      await page.getByTestId("pattern").first().waitFor({ timeout: 30_000 });
+      await page.getByText("See the days").first().click();
     },
   },
-  "blog-read": {
-    room: "blog",
+  "progress-hinglish": {
+    room: "progress",
     run: async (page) => {
-      await page.locator("button:has(img)").first().click();
-    },
-  },
-  "hour-all": {
-    room: "hour",
-    run: async (page) => {
-      await page.getByRole("button", { name: /View all/ }).click();
-    },
-  },
-  "hour-chat": {
-    room: "hour",
-    run: async (page) => {
-      await page.getByRole("button", { name: "Chat", exact: true }).click();
-    },
-  },
-  "hour-dnd": {
-    room: "hour",
-    run: async (page) => {
-      await page.getByRole("button", { name: "dnd", exact: true }).click();
-    },
-  },
-  "hour-away": {
-    room: "hour",
-    run: async (page) => {
-      await page.getByRole("button", { name: "away", exact: true }).click();
-    },
-  },
-  // From 1024 the Sittings rail and the drawing pane are part of the page, so there is nothing to open.
-  "dhi-sittings": {
-    room: "dhi",
-    run: async (page, width) => {
-      if (isTouchWidth(width))
-        await page.getByRole("button", { name: "Sittings", exact: true }).click();
-    },
-  },
-  "dhi-drawing": {
-    room: "dhi",
-    run: async (page, width) => {
-      if (isTouchWidth(width)) await page.getByRole("button", { name: /Open drawing/ }).click();
-    },
-  },
-  "papers-menu": {
-    room: "papers",
-    run: async (page, width) => {
-      await sitExam(page);
-      await openMenuIfDrawer(page, width);
+      await page.getByTestId("lang-hi").click();
+      await page.getByTestId("pattern").first().waitFor({ timeout: 30_000 });
+      await page.getByText("Din dekhein").first().click();
     },
   },
 };
+
+// Data the scenes above need, made once before the sweep with the development helpers (the sweep refuses production, and so do they).
+function prepare(selected) {
+  const run = (command) => execSync(`npx convex run ${command}`, { cwd: "packages/backend", stdio: "pipe" });
+  const wants = (prefix) => selected.some((name) => name === prefix || name.startsWith(`${prefix}-`));
+  if (wants("papers")) {
+    run("papersProof:assignDemoTeacher");
+    run("papersProof:openDemoPaper");
+  }
+  if (wants("hour")) run(`hourProof:openNow "${JSON.stringify({ minutes: 120 }).replace(/"/g, '\\"')}"`);
+  if (wants("progress")) run(`brainProof:seed "${JSON.stringify({ email: PEOPLE.student.email, scenario: "heavy" }).replace(/"/g, '\\"')}"`);
+}
 
 // The room is real now (spec house/0006): its days come from the server. Make sure today has a colour, then open the month that holds it: by its
 // row on touch, by the strip on desktop. The day rule is the house's: 04:00 to 04:00 India time.
@@ -320,12 +299,17 @@ async function openMoodDay(page, width) {
   }
 }
 
+// Sits in the study hour in a mode: the first press is "enter", and once the student sits the same modes are "mode" buttons, so either is clicked.
+async function sitInMode(page, mode) {
+  await page.locator(`[data-testid="enter-${mode}"], [data-testid="mode-${mode}"]`).first().click();
+  await page.getByTestId("my-seat").waitFor({ timeout: 20_000 });
+}
+
 async function sitExam(page) {
-  await page
-    .locator("article", { hasText: "Biology" })
-    .getByRole("button", { name: "Open sitting" })
-    .click();
-  await page.getByRole("button", { name: "Start sitting" }).first().click();
+  const paper = page.getByTestId("exam-row").filter({ hasText: "Sweep paper" });
+  await paper.waitFor({ timeout: 30_000 });
+  await paper.getByRole("button", { name: /Start paper|Continue paper/ }).click();
+  await page.getByTestId("sitting").waitFor({ timeout: 20_000 });
 }
 
 // The screens that are not rooms. `auth` says who is signed in; `hold` stalls the sign in calls so the loading screen stays up; `wait` is how long
@@ -484,6 +468,7 @@ async function main() {
   const everything = [...ROOMS, ...Object.keys(SCENES), ...Object.keys(SCREENS)];
   const rooms = args.room ? args.room.split(",") : everything;
   const widths = args.width ? [args.width] : WIDTHS;
+  prepare(rooms);
   if (args.shots) mkdirSync(args.shots, { recursive: true });
 
   const browser = await chromium.launch();

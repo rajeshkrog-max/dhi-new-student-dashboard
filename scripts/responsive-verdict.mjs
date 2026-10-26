@@ -17,6 +17,7 @@ export const ROOMS = [
   "day",
   "mood",
   "habits",
+  "sleep",
   "modules",
   "dhi",
   "hour",
