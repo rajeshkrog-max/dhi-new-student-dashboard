@@ -14,9 +14,9 @@ Turns events into the numbers the Brain reads: one value per student, per measur
 **Done when:** each measure has a hand made fixture week with its expected value, rerunning a day never counts twice, a not logged day stays not logged, the nightly check matches the events or alerts the team, and reading a day or a week needs no calculation.
 - [x] Design it (spec): `/architect daily values from room events`
 - [x] Build it: `/develop daily values from room events`
-- [ ] Verify it: `/check verify daily values from room events`
-- [ ] Test it: `/test daily values from room events`
-- [ ] Review it (fresh model): `/check review daily values from room events`
+- [x] Verify it: `/check verify daily values from room events` (2026-10-26: `brain:check` 8 of 8, `parent:check` 6 of 6)
+- [x] Test it: `/test daily values from room events` (2026-10-26: `brainWall.test.ts`, `brainSittingDay.test.ts`)
+- [x] Review it (fresh model): `/check review daily values from room events` (2026-10-26; review in `docs/reviews/2026-10-26-group-e-brain.md`)
 - [ ] Document it: `/document daily values from room events`
 Spec [0019](../../specs/house/0019-brain-daily-values.md) · code in `packages/backend/convex/{metricRules,brainDay,brainRollup,brainRoom,brainProof}.ts`, `packages/backend/convex/eventTypes/{exams,blog}.ts`. Reads the events of rows 3, 5, 6, 7, 9, 11, 12, 13, 14 and 16.
 
@@ -26,9 +26,9 @@ A fixed rules engine. A chain fires only when it appears in the student's own ro
 **Done when:** the chain fires on a hand made fixture and stays silent on one that only just misses, its evidence lists the days and rows, the spec holds each threshold and its source, and the wording passes the copy rules.
 - [x] Design it (spec): `/architect pattern engine and the first chain`
 - [x] Build it: `/develop pattern engine and the first chain`
-- [ ] Verify it: `/check verify pattern engine and the first chain`
-- [ ] Test it: `/test pattern engine and the first chain`
-- [ ] Review it (fresh model): `/check review pattern engine and the first chain`
+- [x] Verify it: `/check verify pattern engine and the first chain` (2026-10-26: `brain:check` 8 of 8, `parent:check` 6 of 6)
+- [x] Test it: `/test pattern engine and the first chain` (2026-10-26: `brainWall.test.ts`, `brainSittingDay.test.ts`)
+- [x] Review it (fresh model): `/check review pattern engine and the first chain` (2026-10-26; review in `docs/reviews/2026-10-26-group-e-brain.md`)
 - [ ] Document it: `/document pattern engine and the first chain`
 Spec [0020](../../specs/house/0020-brain-patterns-lamps-and-report/index.md) · sources in `sources.md` there · code in `packages/backend/convex/{brainRules,brainCodes,brainFixtures}.ts`.
 
@@ -38,9 +38,9 @@ Two more chains on the same engine. Supporting: regular study hour attendance wi
 **Done when:** both chains fire on fixtures and stay silent when one day short of the minimum, evidence rows are shown, supporting and dragging patterns stay separate, and no wording judges food.
 - [x] Design it (spec): `/architect chains for study hours, meals and papers`
 - [x] Build it: `/develop chains for study hours, meals and papers`
-- [ ] Verify it: `/check verify chains for study hours, meals and papers`
-- [ ] Test it: `/test chains for study hours, meals and papers`
-- [ ] Review it (fresh model): `/check review chains for study hours, meals and papers`
+- [x] Verify it: `/check verify chains for study hours, meals and papers` (2026-10-26: `brain:check` 8 of 8, `parent:check` 6 of 6)
+- [x] Test it: `/test chains for study hours, meals and papers` (2026-10-26: `brainWall.test.ts`, `brainSittingDay.test.ts`)
+- [x] Review it (fresh model): `/check review chains for study hours, meals and papers` (2026-10-26; review in `docs/reviews/2026-10-26-group-e-brain.md`)
 - [ ] Document it: `/document chains for study hours, meals and papers`
 Spec [0020](../../specs/house/0020-brain-patterns-lamps-and-report/index.md) · code in `packages/backend/convex/brainRules.ts`.
 
@@ -50,9 +50,9 @@ Two light chains. When a student writes after a run of low mood days, the Brain 
 **Done when:** the expression note appears after a low mood run followed by a post and never nudges, the support flag fires on its fixture and shows only to the student, and it creates no booking and no record visible to staff.
 - [x] Design it (spec): `/architect expression note and the support availability flag`
 - [x] Build it: `/develop expression note and the support availability flag`
-- [ ] Verify it: `/check verify expression note and the support availability flag`
-- [ ] Test it: `/test expression note and the support availability flag`
-- [ ] Review it (fresh model): `/check review expression note and the support availability flag`
+- [x] Verify it: `/check verify expression note and the support availability flag` (2026-10-26: `brain:check` 8 of 8, `parent:check` 6 of 6)
+- [x] Test it: `/test expression note and the support availability flag` (2026-10-26: `brainWall.test.ts`, `brainSittingDay.test.ts`)
+- [x] Review it (fresh model): `/check review expression note and the support availability flag` (2026-10-26; review in `docs/reviews/2026-10-26-group-e-brain.md`)
 - [ ] Document it: `/document expression note and the support availability flag`
 Spec [0020](../../specs/house/0020-brain-patterns-lamps-and-report/index.md) · code in `packages/backend/convex/{brainRules,brain}.ts`, `src/lib/dhi/brain-words.ts`.
 
@@ -62,9 +62,9 @@ Three growth lamps worked out only from the measured signals. What each lamp sta
 **Done when:** each lamp is a stated formula over named signals with a fixture, the student view shows movement over 7 to 14 days in plain words, nothing compares two students, and the spec records every signal behind each lamp.
 - [x] Design it (spec): `/architect growth lamps`
 - [x] Build it: `/develop growth lamps`
-- [ ] Verify it: `/check verify growth lamps`
-- [ ] Test it: `/test growth lamps`
-- [ ] Review it (fresh model): `/check review growth lamps`
+- [x] Verify it: `/check verify growth lamps` (2026-10-26: `brain:check` 8 of 8, `parent:check` 6 of 6)
+- [x] Test it: `/test growth lamps` (2026-10-26: `brainWall.test.ts`, `brainSittingDay.test.ts`)
+- [x] Review it (fresh model): `/check review growth lamps` (2026-10-26; review in `docs/reviews/2026-10-26-group-e-brain.md`)
 - [ ] Document it: `/document growth lamps`
 Spec [0020](../../specs/house/0020-brain-patterns-lamps-and-report/index.md) · code in `packages/backend/convex/{brainRules,home}.ts`.
 
@@ -74,9 +74,9 @@ One page: active supporting patterns with their evidence, active dragging patter
 **Done when:** the page loads from stored values only, every statement links to the days and rows behind it, no pattern, lamp or sentence ranks or labels a student, an empty state explains what to log, and each action opens the right room.
 - [x] Design it (spec): `/architect brain report for the student`
 - [x] Build it: `/develop brain report for the student`
-- [ ] Verify it: `/check verify brain report for the student`
-- [ ] Test it: `/test brain report for the student`
-- [ ] Review it (fresh model): `/check review brain report for the student`
+- [x] Verify it: `/check verify brain report for the student` (2026-10-26: `brain:check` 8 of 8, `parent:check` 6 of 6)
+- [x] Test it: `/test brain report for the student` (2026-10-26: `brainWall.test.ts`, `brainSittingDay.test.ts`)
+- [x] Review it (fresh model): `/check review brain report for the student` (2026-10-26; review in `docs/reviews/2026-10-26-group-e-brain.md`)
 - [ ] Document it: `/document brain report for the student`
 Spec [0020](../../specs/house/0020-brain-patterns-lamps-and-report/index.md) · code in `packages/backend/convex/brain.ts`, `src/components/dhi/brain/brain-report.tsx`, `src/lib/dhi/brain-words.ts`, `scripts/brain-check.mjs`.
 

@@ -39,6 +39,9 @@ pnpm test            # house node:test (scripts/ and a few src/lib tests), then 
 pnpm deploy:house     # builds with the production backend address and deploys the house Worker `dhirise-house` (routes in wrangler.jsonc); asks Cloudflare, so log wrangler in to the account that owns dhirise first
 pnpm enter:check     # real browser proof of the front door, dev server on 8080 and the funnel built (development backend only)
 pnpm consent:check   # real browser proof of the consent flow, Your data and erase (dev server on 8080, development backend only)
+pnpm desk:check      # real browser proof of the desk: every kind and its coins, clarify, care text, the stored answer (calls the real model on development, about seven calls)
+pnpm parent:check    # real browser proof of the weekly parent page and the connections on Progress (pauses and resumes the demo class)
+pnpm platform:check  # real browser proof of the funnel link and that only a DHI admin is offered the staff move (dev server on 8080, the funnel built)
 pnpm mood:check      # real browser proof of the mood room (dev server on 8080, development backend only)
 pnpm habit:check     # real browser proof of the habits room (dev server on 8080, development backend only)
 pnpm sleep:check     # the same for the sleep room

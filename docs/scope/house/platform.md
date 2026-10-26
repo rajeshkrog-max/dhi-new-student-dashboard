@@ -14,7 +14,7 @@ Real accounts for the house: institutes, the five roles (student, teacher, insti
    - [x] Invites and class list upload, with the daily cap (AC-4, AC-5, AC-6, AC-11, AC-17, AC-19)
    - [x] Removal, last admin guards and the clean up change (AC-9, AC-10, AC-11, AC-15)
    - [x] Retire the demo gate, seeded demo institute and the proof matrix (AC-7, AC-8, AC-13, AC-14)
-- [ ] Verify it: `/check verify people, roles, invites and institutes`
+- [x] Verify it: `/check verify people, roles, invites and institutes` (2026-10-26: `enter:check` 27 of 27, new `platform:check` 6 of 6 for the funnel link and move staff; the DHI admin's move itself runs only in `memberMove.test.ts`, because a test inbox can never be a DHI admin)
 - [x] Test it: `/test people, roles, invites and institutes`
 - [x] Review it (fresh model): `/check review people, roles, invites and institutes`
 - [x] Document it: `/document people, roles, invites and institutes`
@@ -46,7 +46,7 @@ Before any real student logs a mood or a meal: recorded parent consent for stude
    - [x] Who sees what: the access rule, the logged staff read, class totals and the access record (AC-7 to AC-11, AC-16, AC-23, AC-24)
    - [x] Export, erase in pages, the data map and the 30 day block (AC-12, AC-13, AC-14, AC-19)
    - [x] Retention, demo consent, limits and the proof (AC-15, AC-21, AC-22)
-- [ ] Verify it: `/check verify consent, privacy and access record for minors' house data`
+- [x] Verify it: `/check verify consent, privacy and access record for minors' house data` (2026-10-26: `consent:check` 12 of 12 after a fix; review in `docs/reviews/2026-10-26-group-a-platform.md`)
 - [x] Test it: `/test consent, privacy and access record for minors' house data`
 - [x] Review it (fresh model): `/check review consent, privacy and access record for minors' house data`
 - [x] Document it: `/document consent, privacy and access record for minors' house data`

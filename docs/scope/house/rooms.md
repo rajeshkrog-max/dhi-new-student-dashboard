@@ -82,9 +82,9 @@ A new two tap entry for bedtime and wake time, prefilled from yesterday. Sleep i
    - [x] Export, erase and the data map (AC-6, AC-9)
    - [x] The words and the screen on the server (AC-8, AC-11)
    - [x] The proof (AC-1 to AC-12): the live race, the browser proof `pnpm sleep:check` (11 of 11) and the sweep at four widths passed
-- [ ] Verify it: `/check verify sleep log`
-- [ ] Test it: `/test sleep log`
-- [ ] Review it (fresh model): `/check review sleep log`
+- [x] Verify it: `/check verify sleep log` (2026-10-26: `sleep:check` 11 of 11)
+- [x] Test it: `/test sleep log` (2026-10-26: `healthAccess.test.ts` adds every role, gate and institute refusal)
+- [x] Review it (fresh model): `/check review sleep log` (2026-10-26, production run group B; review in `docs/reviews/2026-10-26-group-b-health.md`)
 - [ ] Document it: `/document sleep log`
 Spec [0008](../../specs/house/0008-sleep-room-real/index.md) · code in `packages/backend/convex/{sleep,sleepRules,sleepRoom,sleepProof,sleep.test}.ts`, `packages/backend/convex/eventTypes/sleep.ts`, `src/components/dhi/sleep-tracker.tsx`, `src/lib/dhi/sleep-words.ts`, `src/lib/dhi/sleep-words.test.ts`. Builds on rows 3 and 4 and follows the Mood and Habits rooms (rows 5 and 6). The words are drafts until the owner approves them.
 
@@ -93,7 +93,7 @@ Built without catalog items (the catalog loads after the licence checks): search
 A trusted food list for the Meals room: Indian dishes and common packaged items, each with energy, carbs, protein and fat per serving, a food group (grain, dal or protein, vegetable, dairy, fruit) and a neutral processing tag (home cooked, packaged, fried). The source, its licence, how custom dishes get their numbers and who approves them are the decisions. Numbers are stored, but students see plate balance and food groups, never calorie totals or targets. (your call, 2026-10-18)
 **Done when:** a spec names the source and its licence, search by dish name works with English and Hindi spellings, every item has a food group and a processing tag, and a custom dish is accepted with the student's own numbers, counts for its group at once, and DHI can publish it to everyone's list (owner's answer, 2026-10-20).
 - [x] Design it (spec): `/architect food table and the Indian plate catalog`
-Spec [0009](../../specs/house/0009-food-table-indian-plate-catalog.md) · the build follows once you accept the spec.
+Spec [0009](../../specs/house/0009-food-table-indian-plate-catalog.md) · built in `foods.ts`; reviewed with the meals room (2026-10-26, production run group B; review in `docs/reviews/2026-10-26-group-b-health.md`): a published dish now leaves the waiting list and is found once.
 
 ### 9. Meals room, real · in-progress (designed)
 Built: logging, day and week group counts, removal, export and erase, and the screen, covered by 15 tests and `pnpm meals:check`. Open: the owner's wording check.
@@ -101,9 +101,9 @@ Spec [0010](../../specs/house/0010-meals-room-real.md) · code in `packages/back
 Plates saved on the server: item, count (for example rotis), meal (breakfast, lunch, dinner, snack) and time, with custom dishes allowed. The day resets; the week does not. The room shows balance and food groups only, and no food is called good or bad.
 **Done when:** a student logs a plate and sees it after a reload, a meal at 01:00 lands on the day before, no screen shows calorie totals or targets, and nothing in the wording suggests that eating less or skipping a meal helps.
 - [x] Build it: `/develop meals room, real` (follows the specs of rows 3 and 8)
-- [ ] Verify it: `/check verify meals room, real`
-- [ ] Test it: `/test meals room, real`
-- [ ] Review it (fresh model): `/check review meals room, real`
+- [x] Verify it: `/check verify meals room, real` (2026-10-26: `meals:check` 6 of 6)
+- [x] Test it: `/test meals room, real` (2026-10-26: `healthAccess.test.ts`, yesterday's plate, publish once)
+- [x] Review it (fresh model): `/check review meals room, real` (2026-10-26, production run group B; review in `docs/reviews/2026-10-26-group-b-health.md`)
 - [ ] Document it: `/document meals room, real`
 
 ## Slice 4: study and work rooms
@@ -114,9 +114,9 @@ The staff side of exams, and the first staff screens in the house. A teacher bui
 - [x] Design it (spec): `/architect papers: teachers build, send and mark`
 Built: the paper builder with a hint for each question, sending to a class, the teacher's look at named results through the staff read (a record the student can see), marking by hand with remarks and confirming, and the institute admin's results preview. 18 tests and `pnpm exams:check`. Suggested marks are held by the owner's answer.
 - [x] Build it: `/develop papers: teachers build, send and mark`
-- [ ] Verify it: `/check verify papers: teachers build, send and mark`
-- [ ] Test it: `/test papers: teachers build, send and mark`
-- [ ] Review it (fresh model): `/check review papers: teachers build, send and mark`
+- [x] Verify it: `/check verify papers: teachers build, send and mark` (2026-10-26: `exams:check` 13 of 13)
+- [x] Test it: `/test papers: teachers build, send and mark` (2026-10-26: `studyAccess.test.ts`)
+- [x] Review it (fresh model): `/check review papers: teachers build, send and mark` (2026-10-26; review in `docs/reviews/2026-10-26-group-c-study.md`)
 - [ ] Document it: `/document papers: teachers build, send and mark`
 Spec [0011](../../specs/house/0011-papers-teachers-build-send-mark.md) · code in `packages/backend/convex/{papers,papersRules,paperRoom}.ts`, `src/components/dhi/staff/{papers-section,results-section}.tsx`.
 
@@ -126,9 +126,9 @@ The student side: open papers, sitting one (starting locks the other menus), the
 **Done when:** a paper opens only inside its window, a hint response never contains the answer, a closed window with no submit stores one miss, a submitted attempt cannot be changed, and accepted feedback is recorded.
 - [x] Design it (spec): `/architect exams room, real`
 - [x] Build it: `/develop exams room, real`
-- [ ] Verify it: `/check verify exams room, real`
-- [ ] Test it: `/test exams room, real`
-- [ ] Review it (fresh model): `/check review exams room, real`
+- [x] Verify it: `/check verify exams room, real` (2026-10-26: `exams:check` 13 of 13, server exam lock)
+- [x] Test it: `/test exams room, real` (2026-10-26: `studyAccess.test.ts`)
+- [x] Review it (fresh model): `/check review exams room, real` (2026-10-26; review in `docs/reviews/2026-10-26-group-c-study.md`)
 - [ ] Document it: `/document exams room, real`
 Spec [0012](../../specs/house/0012-exams-room-real.md) · code in `packages/backend/convex/{exams,papers}.ts`, `src/components/dhi/exams/exams-room.tsx`.
 
@@ -138,9 +138,9 @@ Films are uploaded by DHI admin only, so a student cannot add one. Students watc
 **Done when:** an admin uploads a film with its category and score value, a student's progress survives a reload and a change of device, the score is written once at the end and never on a replay, a jump forward is refused by the server's own record and not only by the screen, and a student has no upload control.
 - [x] Design it (spec): `/architect modules: DHI uploads, students watch and keep`
 - [x] Build it: `/develop modules: DHI uploads, students watch and keep` (on a stand-in host)
-- [ ] Verify it: `/check verify modules: DHI uploads, students watch and keep`
-- [ ] Test it: `/test modules: DHI uploads, students watch and keep`
-- [ ] Review it (fresh model): `/check review modules: DHI uploads, students watch and keep`
+- [x] Verify it: `/check verify modules: DHI uploads, students watch and keep` (2026-10-26: `modules:check` 5 of 5)
+- [x] Test it: `/test modules: DHI uploads, students watch and keep` (2026-10-26: `studyAccess.test.ts`)
+- [x] Review it (fresh model): `/check review modules: DHI uploads, students watch and keep` (2026-10-26; review in `docs/reviews/2026-10-26-group-c-study.md`)
 - [ ] Document it: `/document modules: DHI uploads, students watch and keep`
 Spec [0013](../../specs/house/0013-modules-dhi-uploads.md) · code in `packages/backend/convex/{films,moduleRules,filmRoom,filmsProof}.ts`, `src/components/dhi/modules/`, `src/components/dhi/staff/films-section.tsx`.
 
@@ -150,9 +150,9 @@ Students write posts with a title, a tag, one photo and a body (bold, italic and
 **Done when:** a post with disallowed markup is cleaned on the server, an unapproved post is visible to its author and teachers only, a teacher can approve, hide and remove, a post never leaves its institute, and the photo is stored once with only its path kept.
 - [x] Design it (spec): `/architect blog room, real, with teacher review`
 - [x] Build it: `/develop blog room, real, with teacher review`
-- [ ] Verify it: `/check verify blog room, real, with teacher review`
-- [ ] Test it: `/test blog room, real, with teacher review`
-- [ ] Review it (fresh model): `/check review blog room, real, with teacher review`
+- [x] Verify it: `/check verify blog room, real, with teacher review` (2026-10-26: `exams:check` 13 of 13 (the blog steps))
+- [x] Test it: `/test blog room, real, with teacher review` (2026-10-26: `studyAccess.test.ts`)
+- [x] Review it (fresh model): `/check review blog room, real, with teacher review` (2026-10-26; review in `docs/reviews/2026-10-26-group-c-study.md`)
 - [ ] Document it: `/document blog room, real, with teacher review`
 Spec [0014](../../specs/house/0014-blog-room-with-teacher-review.md) · code in `packages/backend/convex/{blog,blogRules,blogRoom}.ts`, `src/components/dhi/blog/blog-real.tsx`, `src/components/dhi/staff/papers-section.tsx`.
 
@@ -162,9 +162,9 @@ DHI admin sets the hours. A student can enter only inside the window, and leavin
 **Done when:** entry before the hour opens or after it closes is refused, seats update live for everyone in the hour, leaving or the end drops the seat on the server, Do not disturb hides the student and the chat from others, and minutes present reach the event log.
 - [x] Design it (spec): `/architect study hour: admin clock, live seats and chat`
 - [x] Build it: `/develop study hour: admin clock, live seats and chat`
-- [ ] Verify it: `/check verify study hour: admin clock, live seats and chat`
-- [ ] Test it: `/test study hour: admin clock, live seats and chat`
-- [ ] Review it (fresh model): `/check review study hour: admin clock, live seats and chat`
+- [x] Verify it: `/check verify study hour: admin clock, live seats and chat` (2026-10-26: `hour:check` 7 of 7)
+- [x] Test it: `/test study hour: admin clock, live seats and chat` (2026-10-26: `studyAccess.test.ts`)
+- [x] Review it (fresh model): `/check review study hour: admin clock, live seats and chat` (2026-10-26; review in `docs/reviews/2026-10-26-group-c-study.md`)
 - [ ] Document it: `/document study hour: admin clock, live seats and chat`
 Spec [0015](../../specs/house/0015-study-hour-admin-clock-seats.md) · code in `packages/backend/convex/{studyHour,hourRules,hourRoom,hourProof}.ts`, `src/components/dhi/study/study-hour-real.tsx`, `src/components/dhi/staff/hour-section.tsx`.
 
@@ -174,9 +174,9 @@ The study helper with a coin wallet (chat 1, write 2, paper 2, mock 4, story 5, 
 **Done when:** a student asks, spends the right coins and sees the thread after a reload, a repeated question returns the stored answer for 0 coins with no model call, a student with no coins is refused by the server, DHI admin sets the allotment and an institute admin cannot, and no counselor recording can be stored.
 - [x] Design it (spec): `/architect DHI desk: real model, coins and answer cache`
 - [x] Build it: `/develop DHI desk: real model, coins and answer cache` (chat and clarify)
-- [ ] Verify it: `/check verify DHI desk: real model, coins and answer cache`
-- [ ] Test it: `/test DHI desk: real model, coins and answer cache`
-- [ ] Review it (fresh model): `/check review DHI desk: real model, coins and answer cache`
+- [x] Verify it: `/check verify DHI desk: real model, coins and answer cache` (2026-10-26: new `desk:check` 11 of 11, every kind)
+- [x] Test it: `/test DHI desk: real model, coins and answer cache` (2026-10-26: access matrix, daily cap, per student share, hashed cache)
+- [x] Review it (fresh model): `/check review DHI desk: real model, coins and answer cache` (2026-10-26; review in `docs/reviews/2026-10-26-group-d-desk.md`)
 - [ ] Document it: `/document DHI desk: real model, coins and answer cache`
 Spec [0016](../../specs/house/0016-dhi-desk-model-coins-cache.md) · code in `packages/backend/convex/{desk,deskAsk,deskRules,deskRoom}.ts`, `src/components/dhi/desk/desk-real.tsx`, `src/lib/dhi/desk-words.ts`.
 
@@ -185,9 +185,9 @@ Built for the study hour (spec [0018](../../specs/house/0018-after-session-feeli
 When a desk sitting of 10 minutes or more, or a study hour stay of 20 minutes or more, ends, the student may tap how they felt (energised, okay, drained) and rate their focus from 1 to 5. It can be skipped, and a skip is stored as a skip. It feeds the felt okay and focus measures.
 **Done when:** the card appears only at those lengths, a skip is stored as skipped and changes no value, and answers reach the event log with their subject.
 - [x] Build it: `/develop after session feeling card` (the study hour and the desk)
-- [ ] Verify it: `/check verify after session feeling card`
-- [ ] Test it: `/test after session feeling card`
-- [ ] Review it (fresh model): `/check review after session feeling card`
+- [x] Verify it: `/check verify after session feeling card` (2026-10-26: `hour:check` 7 of 7 (the study hour card))
+- [x] Test it: `/test after session feeling card` (2026-10-26: `studyAccess.test.ts`)
+- [x] Review it (fresh model): `/check review after session feeling card` (2026-10-26; review in `docs/reviews/2026-10-26-group-c-study.md`)
 - [ ] Document it: `/document after session feeling card`
 
 ## Slice 6: home
@@ -198,8 +198,8 @@ The home screen on real data: greeting, open exams, quick tiles and the DHI scor
 - [x] Design it (spec): `/architect home and DHI score, real`
 Built: Home on real data only. The sample data note and every demo tile are gone; the greeting, the DHI score card (the Brain's three lamps, with their inputs), open exams, recent exams with confirmed marks, and quick access remain. Presence only for mood and meals. Row 21 is the same lamps, so the score and the Progress page cannot disagree. The bell at the top lists an open paper, a mark ready to read and a feeling card, read when the student looks and stored nowhere. 8 tests, plus the bell tests.
 - [x] Build it: `/develop home and DHI score, real`
-- [ ] Verify it: `/check verify home and DHI score, real`
-- [ ] Test it: `/test home and DHI score, real`
-- [ ] Review it (fresh model): `/check review home and DHI score, real`
+- [x] Verify it: `/check verify home and DHI score, real` (2026-10-26: `brain:check` home steps; the home layout shift fixed)
+- [x] Test it: `/test home and DHI score, real` (2026-10-26: `brainWall.test.ts` home summary refusals)
+- [x] Review it (fresh model): `/check review home and DHI score, real` (2026-10-26; review in `docs/reviews/2026-10-26-group-f-home-staff.md`)
 - [ ] Document it: `/document home and DHI score, real`
 Spec [0017](../../specs/house/0017-home-and-dhi-score-real.md) · code in `packages/backend/convex/{home,homeRules}.ts`, `src/components/dhi/home-score.tsx`, `src/routes/home.tsx`.
