@@ -205,6 +205,14 @@ Build approach: Tracer Bullet (from the house scope). The thin thread first: the
 - Spec 0004's follow up ("row 4 decides who may read events and how they are erased") is settled here: nobody reads events, and export and erase are the only ways they leave.
 - A parent viewer is a reserved place in the rule only; a parent report is a later feature.
 
+## Notice house-v2 (2026-10-22)
+
+The first draft (`house-v1`) said that only the student could see their writing and chats and that the DHI team could not read what they write. The rooms are built now and that was no longer true: a teacher reads each blog post, photo and comment before the class does, classmates read approved posts, and the study hour chat is read by the others in the hour and by teachers and the DHI team to keep it safe (and deleted after 30 days). The notice has to say what really happens, so it is a new version, `house-v2` in `consentText.ts`.
+
+- `house-v1` stays in `CONSENT_TEXTS` exactly as written, because consent records made while the house was built point at it, but it is no longer accepted.
+- Everyone who agreed to `house-v1` must agree again to enter a room. Only made up people hold a `house-v1` record, so on the development deployment run `npx convex run demo:seed` after the push; it gives the fixed demo students their `house-v2` agreement.
+- The words are still drafts (`HOUSE_WORDS_APPROVED` is false). The owner approves `house-v2`, not `house-v1`.
+
 ## Follow-up
 
 - [ ] Owner: approve the exact words of the house notice and the parent wording (both are drafts in `consentText.ts`), including where the data is stored (the production Convex region must be confirmed and named; Convex has no India region).

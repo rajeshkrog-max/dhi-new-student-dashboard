@@ -13,10 +13,14 @@ The screens of the student house: one component per room, plus the shared frame 
 | `notification-bell.tsx` | The bell and its dot. One component, shown in the top bar below 1024 px and in the page header from 1024 px |
 | `room-actions.tsx` | Slot for a room's header actions (`ROOM_ACTIONS_ID`) |
 | `enter-screen.tsx` | The Enter screen (Google, the dev only test form, the demo link), used by `/` and the front door `/enter` (spec 0008) |
+| `notification-bell.tsx` | The bell in the top bar and the wide screen header (it is drawn twice, so a browser proof must use `:visible`). It lists what `waiting.mine` returns, each with a button into its room (house spec 0017) |
 | `convex-session.tsx` | The one place the Convex client and the shared sign in provider are joined, plus the neutral waiting screen |
 | `house-screens.tsx`, `house-session.tsx`, `join-page.tsx`, `staff/` | The people screens (house spec 0002): not in a house, paused, the Join step, and the staff area with its sections (`parent-consent-section.tsx` is the school's parent consent screen, house spec 0005) |
+| `funnel-link-card.tsx` | The card on Your data that links the student's DhiRise check to the house, or unlinks it. Link and download only: the card says erasing here does not erase the check |
 | `consent-screen.tsx`, `your-data.tsx` | What a student sees before they enter (the notice, I agree locked until the end is read, waiting for the school) and Your data (consent, parent sharing, who has looked, download, erase). `/dashboard` shows `LockedHouse` for `consentNeeded` and `withdrawn`; Your data is also a menu item (house spec 0005) |
-| one folder or file per room | `mood-tracker.tsx`, `meal-tracker.tsx`, `papers-desk.tsx`, `habits/`, `modules/`, `blog/`, `study/`, `desk/` |
+| `parent-page.tsx` | The weekly parent page at `/parent#<code>` (house spec 0022): no sign in, no Convex session, one call to `parentReport.open` through `ConvexHttpClient`, English and Hinglish. It shows only what comes back. A Worker route `dhirise.com/parent*` carries it |
+| one folder or file per room | `sleep-tracker.tsx`, `mood-tracker.tsx`, `habits/`, `meals/meals-real.tsx`, `exams/exams-room.tsx`, `modules/modules-real.tsx`, `blog/blog-real.tsx`, `study/study-hour-real.tsx` (with the after session card), `brain/brain-report.tsx` (the Progress page), `home-score.tsx` (the score card on Home). `desk/desk-real.tsx` (the DHI desk: coins, saved talks, ask, feedback on the student's own writing, practice questions on a topic (five, or a longer set of ten), a study story, a checked diagram, ask about the answer, the care words; house spec 0016). Counseling shows `ui/coming-soon.tsx` |
+| `staff/` sections | `papers-section.tsx` (build, send, mark, review posts and hours), `results-section.tsx` (the institute admin's marks), `foods-section.tsx`, `films-section.tsx`, `hour-section.tsx`, `desk-section.tsx` (the DHI admin's monthly coins for the desk), and the class pause on `classes-section.tsx` |
 
 ## Conventions
 

@@ -13,8 +13,8 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 | Epic | File | Rows | Rollup |
 |---|---|---|---|
 | Platform and safety | [platform.md](platform.md) | 2 to 4 | 0 of 3 done, 3 in progress (rows 2, 3 and 4, designed) |
-| The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23, 25 | 1 of 15 done (row 1), 1 in progress (row 25, designed), 13 planned, plus 1 existing for context |
-| The Brain | [brain.md](brain.md) | 17 to 22, 24 | 0 of 7 done, 7 planned |
+| The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23, 25 | 4 of 15 done (rows 1, 5, 6, 25), 11 in progress (rows 7 to 16 and row 23, built or designed), 0 planned, plus 1 existing for context |
+| The Brain | [brain.md](brain.md) | 17 to 22, 24 | 0 of 7 done, 7 in progress (rows 17 to 22 built, row 24 started) |
 
 Row numbers run across all three files, so a row keeps one number wherever it lives.
 
@@ -27,27 +27,27 @@ Row numbers run across all three files, so a row keeps one number wherever it li
 | 2 | People, roles, invites and institutes | Foundation | in-progress |
 | 3 | Room event log and day rules | Foundation | in-progress |
 | 4 | Consent, privacy and access record for minors' house data | Foundation | in-progress |
-| 25 | One professional look for every page, the menu and loading screens | Look and feel | in-progress |
-| 5 | Mood room, real, with the Vedic lens | Slice 2 | in-progress |
-| 6 | Habits room, real | Slice 3 | in-progress |
-| 7 | Sleep log | Slice 3 | planned |
-| 8 | Food table and the Indian plate catalog | Slice 3 | planned |
-| 9 | Meals room, real | Slice 3 | planned |
-| 10 | Papers: teachers build, send and mark | Slice 4 | planned |
-| 11 | Exams room, real | Slice 4 | planned |
-| 12 | Modules: DHI uploads, students watch and keep | Slice 4 | planned |
-| 13 | Blog room, real, with teacher review | Slice 4 | planned |
-| 14 | Study hour: admin clock, live seats and chat | Slice 4 | planned |
-| 15 | DHI desk: real model, coins and answer cache | Slice 4 | planned |
-| 16 | After session feeling card | Slice 4 | planned |
-| 17 | Daily values from room events | Slice 5 | planned |
-| 18 | Pattern engine and the first chain: low mood and missed habits | Slice 5 | planned |
-| 19 | Chains for study hours, meals and papers | Slice 5 | planned |
-| 20 | Expression note and the support availability flag | Slice 5 | planned |
-| 21 | Growth lamps: Sadhana, Niyam, Viveka | Slice 5 | planned |
-| 22 | Brain report for the student | Slice 5 | planned |
-| 23 | Home and DHI score, real | Slice 6 | planned |
-| 24 | First class pilot | Go live | planned |
+| 25 | One professional look for every page, the menu and loading screens | Look and feel | done |
+| 5 | Mood room, real, with the Vedic lens | Slice 2 | done |
+| 6 | Habits room, real | Slice 3 | done |
+| 7 | Sleep log | Slice 3 | in-progress |
+| 8 | Food table and the Indian plate catalog | Slice 3 | in-progress (built, catalog empty) |
+| 9 | Meals room, real | Slice 3 | in-progress (built) |
+| 10 | Papers: teachers build, send and mark | Slice 4 | in-progress (built) |
+| 11 | Exams room, real | Slice 4 | in-progress (built) |
+| 12 | Modules: DHI uploads, students watch and keep | Slice 4 | in-progress (built, stand-in host) |
+| 13 | Blog room, real, with teacher review | Slice 4 | in-progress (built, with photo) |
+| 14 | Study hour: admin clock, live seats and chat | Slice 4 | in-progress (built) |
+| 15 | DHI desk: real model, coins and answer cache | Slice 4 | in-progress (built for chat and clarify) |
+| 16 | After session feeling card | Slice 4 | in-progress |
+| 17 | Daily values from room events | Slice 5 | in-progress (built) |
+| 18 | Pattern engine and the first chain: low mood and missed habits | Slice 5 | in-progress (built) |
+| 19 | Chains for study hours, meals and papers | Slice 5 | in-progress (built, meals chain off) |
+| 20 | Expression note and the support availability flag | Slice 5 | in-progress (built) |
+| 21 | Growth lamps: Sadhana, Niyam, Viveka | Slice 5 | in-progress (built) |
+| 22 | Brain report for the student | Slice 5 | in-progress (built) |
+| 23 | Home and DHI score, real | Slice 6 | in-progress (built) |
+| 24 | First class pilot | Go live | in-progress (pause built, checklist open) |
 
 Build order is the row order within each phase. Rows 2 to 4 come first, then row 25 (the look) so later rooms start on the finished look. Rows 6 to 16 can go in the order that suits you once row 5 has proven the thread, but 17 onward need the rooms they read.
 
@@ -56,12 +56,12 @@ Build order is the row order within each phase. Rows 2 to 4 come first, then row
 Out of scope for this pass.
 
 - **Counseling and calls**: booking a counselor, the counselor roster and view, the care rules, the mood help button's booking, and any calls. Left out on purpose; the counselor role and the dormant support flag (row 20) are placed so this can be added without a rebuild · needs a decision · GA (your call, 2026-10-18)
-- **Teacher and parent views of the Brain report**: parent sharing default, class totals of 10 or more, and the weekly parent report · needs a decision · GA
+- **Teacher view of the Brain report**: closed. A parent's weekly page is built (spec [0022](../../specs/house/0022-parent-sharing-and-weekly-page.md), the owner's answers of 2026-10-24: off by default, days logged and the three lamp values, a private link the student shares; no email and no parent account). Class totals of Brain measures are closed (the owner's answer, 2026-10-24): the Brain stays the student's alone, `brain` stays a private kind and `classTotal` keeps serving only the wellbeing rooms
 - **Study hour voice and video**: needs a decision
 - **Sign in for students without a Google account**: spec 0003 says Google only, and an invite matches a Google email · needs a decision · from spec 0002
-- **Move a person between institutes**: roles and institutes never change after an account is made; a DHI admin only function would be added if needed · from spec 0002
-- **Link a funnel profile to a house member**: by `authUserId` only, after the student's own tap and guardian consent, decided with row 4 · needs a decision · from spec 0002
-- **Statistical connections (Master Spec pairs P1 to P6)**: needs 14 or more days in each group before it can show anything · needs a decision
+- **Move a person between institutes**: built for teachers and institute admins only (owner, 2026-10-24): `members.moveStaff`, DHI admin only, ends their class links and logs `member.move` for both institutes. A student is never moved: one who changes school is paused at the old school and invited as a new student at the new one with fresh consent, so a student's rows never cross institutes · from spec 0002
+- **Link a funnel profile to a house member**: built (owner, 2026-10-26): the student's own tap on Your data (`funnelLink.link`) records the link by the same Google account; the download then holds their answers to the check. Link and download only: erasing in the house leaves the check, because the funnel never deletes results or consents, and the card says so · from spec 0002
+- **Statistical connections (Master Spec pairs P1 to P6)**: four of six built (spec [0023](../../specs/house/0023-statistical-connections.md)): bedtime and papers, breakfast and focus, bedtime and mood, late study room and the next day's feeling. P4 and P6 wait for topic and subject tags
 - **School report, academic support list and teacher actions (CR1 to CR4)**: needs a decision
 - **Rest of the Master Spec's 51 metrics**: added without a rebuild after row 17
 - **Parts of the Desk Design not taken by row 15**: knowledge map, question bank, learning modes and uploads, whichever the row 15 spec leaves out

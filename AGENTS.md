@@ -39,6 +39,16 @@ pnpm test            # house node:test (scripts/ and a few src/lib tests), then 
 pnpm deploy:house     # builds with the production backend address and deploys the house Worker `dhirise-house` (routes in wrangler.jsonc); asks Cloudflare, so log wrangler in to the account that owns dhirise first
 pnpm enter:check     # real browser proof of the front door, dev server on 8080 and the funnel built (development backend only)
 pnpm consent:check   # real browser proof of the consent flow, Your data and erase (dev server on 8080, development backend only)
+pnpm mood:check      # real browser proof of the mood room (dev server on 8080, development backend only)
+pnpm habit:check     # real browser proof of the habits room (dev server on 8080, development backend only)
+pnpm sleep:check     # the same for the sleep room
+pnpm exams:check     # papers, exams and the blog: a teacher builds, sends and marks, a student sits it, the institute admin sees the mark
+pnpm meals:check     # the food table, custom dishes, the meals room and the home score card
+pnpm modules:check   # the films: upload, approval, watching and keeping (a stand-in video host)
+pnpm hour:check      # the study hour: seats in three modes, chat, and the after session feeling card
+pnpm brain:check     # the Progress page (the Brain report) on the hand made days of brainFixtures.ts
+pnpm responsive:sweep  # every room and screen at 360, 768, 1024 and 1280 px (needs the dev server and the demo institute)
+pnpm look:check      # fails on a new hand typed colour or free corner size in src/ (baseline in scripts/look-check.baseline.json)
 ```
 
 The `:house` variants (`typecheck:house`, `lint:house`, `test:house`) run the house alone. `test:e2e` and `enter:check` are not in CI. CI (`.github/workflows/ci.yml`) runs a frozen install, `typecheck`, `lint`, `test` and `build:all` on Node 22.19.0 and 24. `deploy:*` has no root alias: run `pnpm --filter dhirise deploy:pages` by name.
@@ -59,6 +69,8 @@ Stored in `docs/specs/<part>/`: `_root` for repo wide decisions (the platform mo
 - Do not label a student weak, average or bright. Scores are growth marks, not ranks.
 - A student reaches no room until they agree to the house notice and, if under 18 (or the flag is missing), the school has recorded a parent's consent (house spec 0005). Staff see named student data only through `staffRead`, and a DHI admin or counselor never sees room content. The consent words are drafts until the owner approves them: use only made up people.
 - The room rules in `BACKEND.md` ("Rooms in this repo" and "Do not") are product rules. Keep them when changing a room.
+- Every room and the Brain run on the server now; no screen shows sample data. The words of the rooms and the Brain are drafts until the owner approves them (`HOUSE_WORDS_APPROVED`, `MOOD_WORDS_APPROVED`, `HABIT_WORDS_APPROVED`, `SLEEP_WORDS_APPROVED`, `BRAIN_WORDS_APPROVED`, `PARENT_WORDS_APPROVED`, `DESK_WORDS_APPROVED`, and for the Brain `PATTERN_SOURCES_CONFIRMED` and `FOOD_PATTERN_ON`). All are false: use only made up students and say so before any real one is invited.
+- The Brain (house specs 0019 and 0020) is the student's alone: no teacher, institute admin, DHI admin or counselor function reads a daily value, a pattern or a lamp, and no look at it is recorded. Never add a staff view of it without the owner's yes. The one opening is the weekly parent page (house spec 0022): with the student's sharing on and their own private link, `parentReport.open` gives days logged in each room for 7 days and the three lamp values, built only by `weekOf` in `parentRules.ts`, never a mood value, note, pattern, movement or the support flag. A look through it is recorded in the student's own "Who has looked".
 
 ## Agent skills
 

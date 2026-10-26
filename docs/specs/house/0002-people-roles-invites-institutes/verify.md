@@ -5,19 +5,19 @@ Setup: `pnpm dev` (port 8080), the development backend with the demo institute s
 ## UI / manual
 - [ ] Run `npx convex run bootstrap:dhiAdmin '{"email":"<your Google email>","name":"<your name>"}'` in `packages/backend`, sign in at `/enter` with that Google account → you see "You are invited" with role DHI admin and no institute, press Join, land in the staff area with Institutes, Classes, People, Invites and Class list → AC-1
 - [ ] As that DHI admin add an institute, press Open, then under Invites invite a first institute admin with a second Google email, who signs in and presses Join → they land in the staff area for that institute only (no Institutes screen) → AC-2
-- [ ] Sign in with a Google account that has no invite and no membership, then open `/dashboard` → "You are not in a house yet", nothing created, and the funnel interview still opens for that account → AC-3
-- [ ] Sign in with an invited address and look before pressing Join → the institute name and role show, and the People list of the institute does not yet list the person → AC-3
-- [ ] Upload a class list with one bad row (for example a wrong email) → nobody is invited and the bad row is named in plain words; fix it and send again → every student is invited → AC-4
+- [x] Sign in with a Google account that has no invite and no membership, then open `/dashboard` → "You are not in a house yet", nothing created, and the funnel interview still opens for that account → AC-3
+- [x] Sign in with an invited address and look before pressing Join → the institute name and role show, and the People list of the institute does not yet list the person → AC-3
+- [x] Upload a class list with one bad row (for example a wrong email) → nobody is invited and the bad row is named in plain words; fix it and send again → every student is invited → AC-4
 - [ ] A student presses Join → they land in the dashboard under the name and class from the list, and their funnel account is unchanged (a funnel student who is invited keeps their saved check) → AC-5
-- [ ] Try to claim with an unverified Google email, an expired invite (Extend then wait is not needed: use the test steps below), a cleared invite and a different email → each is refused in plain words → AC-6
-- [ ] As an institute admin try to open another institute's classes, people and invites by changing nothing but the institute shown (you cannot, the screens only show your own) → AC-7
-- [ ] A teacher signs in → they see only My classes, My students and Invites for their own classes, and no Institutes or admin screens → AC-7, AC-8
-- [ ] An institute admin Pauses a student, then the student reloads → "Your access is paused"; Bring back restores the dashboard → AC-9
-- [ ] Pause the only DHI admin or the only admin of an active institute → refused with "This is the last admin" → AC-10
+- [x] Try to claim with an unverified Google email, an expired invite (Extend then wait is not needed: use the test steps below), a cleared invite and a different email → each is refused in plain words → AC-6
+- [x] As an institute admin try to open another institute's classes, people and invites by changing nothing but the institute shown (you cannot, the screens only show your own) → AC-7
+- [x] A teacher signs in → they see only My classes, My students and Invites for their own classes, and no Institutes or admin screens → AC-7, AC-8
+- [x] An institute admin Pauses a student, then the student reloads → "Your access is paused"; Bring back restores the dashboard → AC-9
+- [x] Pause the only DHI admin or the only admin of an active institute → refused with "This is the last admin" → AC-10
 - [ ] As a DHI admin change a student's under 18 flag from People → it changes; an institute admin and a teacher have no such button → AC-11
 - [ ] Pause an institute from Institutes → its admin, teachers and students all see "Your institute is paused" on their next load; Resume restores them → AC-16
-- [ ] Open the staff screens and the Join page at 360, 768, 1024 and 1280 px → no sideways scroll, tap targets at least 44 px on touch, lists show 25 and a Show more button → AC-18
-- [ ] Open `/dashboard`, `/staff` and `/join` signed out → each goes to the front door → AC-13
+- [x] Open the staff screens and the Join page at 360, 768, 1024 and 1280 px → no sideways scroll, tap targets at least 44 px on touch, lists show 25 and a Show more button → AC-18
+- [x] Open `/dashboard`, `/staff` and `/join` signed out → each goes to the front door → AC-13
 
 ## Commands
 - [x] `pnpm --filter @dhi/backend test` → all pass, including `houseAccess.test.ts` (the role by function matrix), `houseInvites.test.ts`, `houseEntry.test.ts` and `houseCore.test.ts` → AC-4 to AC-12, AC-15 to AC-19
@@ -30,17 +30,19 @@ Setup: `pnpm dev` (port 8080), the development backend with the demo institute s
 - [x] Read a few `accessLog` rows in the Convex dashboard → ids and a code only, no name, email or note → AC-12
 
 ## Value sourcing (one step per row of the spec's table)
-- [ ] Who is acting: call any staff function after signing out → refused, and no function takes a member id or email as the caller → AC-7
+- [x] Who is acting: call any staff function after signing out → refused, and no function takes a member id or email as the caller → AC-7
 - [ ] Role, institute, class and entry state: change a teacher's classes (give, then take away) and reload their People screen → it follows at once → AC-7
-- [ ] Claim: the email matched is the session's Google email → an invite typed with different capital letters still matches; another address does not → AC-6
-- [ ] Claim: name, class and under 18 come from the invite → the dashboard shows the invite's name and class, not the Google name → AC-5, AC-11
-- [ ] Create invite: `expiresAt` is 14 days out → Extend moves it 14 days from now → AC-6
-- [ ] Batch: the row limit is 300 → a list of 301 rows is refused with "up to 300 rows" → AC-4
+- [x] Claim: the email matched is the session's Google email → an invite typed with different capital letters still matches; another address does not → AC-6
+- [x] Claim: name, class and under 18 come from the invite → the dashboard shows the invite's name and class, not the Google name → AC-5, AC-11
+- [x] Create invite: `expiresAt` is 14 days out → Extend moves it 14 days from now → AC-6
+- [x] Batch: the row limit is 300 → a list of 301 rows is refused with "up to 300 rows" → AC-4
 - [ ] Every list: 25 a page → People, Invites, Classes and Institutes each show 25 then Show more → AC-18
-- [ ] Rate limits: pressing Join with no invite 11 times in an hour → the 11th says "too many tries for now"; the 51st refused invite for one institute in a day does the same → AC-17, AC-19
+- [x] Rate limits: pressing Join with no invite 11 times in an hour → the 11th says "too many tries for now"; the 51st refused invite for one institute in a day does the same → AC-17, AC-19
 
 ## Acceptance-criteria coverage
 - AC-1 bootstrap and DHI admin · AC-2 institute and first admin · AC-3 not in a house, pending invite · AC-4 class list · AC-5 Join makes a member only · AC-6 claim rules · AC-7 and AC-8 matrix and walls · AC-9 pause and bring back · AC-10 last admin · AC-11 under 18 · AC-12 access log · AC-13 demo gate gone, seed refuses outside test sign in · AC-14 funnel untouched · AC-15 purge · AC-16 paused institute and archived class · AC-17 and AC-19 limits · AC-18 screens and 25 a page
 - Not exercisable with a test sign in (a verified Google account is needed): the DHI admin screens (Institutes) and a DHI admin or counselor invite. The backend tests cover them, and the owner steps at the top cover them by hand.
 
 _2026-10-19: the Commands section was run and passes (backend 824 tests, `pnpm test`, `enter:check` 27 of 27, the sweep at four widths, the seed, the gate search, an empty funnel diff, access log rows with ids and a code only). The UI / manual steps and the value sourcing steps were not run one by one: the owner steps need a real Google account (a DHI admin, an unverified email). The test sign in cases they describe are covered by `enter:check` and the backend suites._
+
+_2026-10-20: the UI steps that can run with the test sign in were run. A scripted browser run (9 of 9) covered the front door redirects, a sign in with no invite, the pending invite before Join (institute and role shown, the person not yet in People), an invite typed with capitals claimed by the lower case address under the invite's own name and class, no under 18 button for an institute admin, an institute admin who sees only their own institute, the teacher's screens, and a DHI admin invite refused with "Google has not verified this email address yet". `pnpm enter:check` passes 27 of 27 (class list bad row, Pause and Bring back), `pnpm --filter @dhi/backend test` passes 873 (expired, cleared and different address, the last admin, 14 day Extend, 301 rows, the Join and invite limits), `pnpm responsive:sweep` is ok at 360, 768, 1024 and 1280 (52 screens each). Still for the owner, each needs a real Google account as a DHI admin: the bootstrap sign in, adding an institute and its first admin, a DHI admin changing the under 18 flag, and pausing an institute. Also not run by hand: the funnel student who keeps their saved check after Join, the cleared invite claim (backend test only), a teacher's classes changing in People, and 25 a page with Show more on Invites, Classes and Institutes._

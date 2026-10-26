@@ -1,10 +1,12 @@
 # DHI student house — backend brief
 
-This repository is the **student dashboard UI**. It is a working demo for one seat, **Suzzy Glass**. Almost every number the screen shows is **local demo data** (`localStorage` or a file under `src/lib/dhi`). There is no production API yet.
+> **Status, 2026-10-22.** This brief was written for a demo that ran on local data. The backend it asks for now exists (`packages/backend`, a shared Convex deployment, with Better Auth sign in and invite only entry), and every room except the DHI desk and Counseling runs on it; the tables below are the original plan, and the real ones are in `packages/backend/convex/schema.ts` and the specs in `docs/specs/house/`. The room rules in this file are still the product rules. The "Demo data" column names the old demo files, most of which have been removed.
 
-Your job is to replace that demo store with a real backend. Do not redesign the rooms. The screens already decide the rules.
+This repository is the **student dashboard UI**, with a shared backend.
 
-Demo login: any email opens the house. Session key is `dhi-session-v1`. That is a placeholder. Real entry is **invite only**.
+Do not redesign the rooms. The screens already decide the rules.
+
+Entry is **invite only**: a person is invited by Google email and presses Join (house spec 0002).
 
 ## What this product is
 
@@ -38,15 +40,15 @@ Menu is `src/routes/home.tsx`. Each room is a component under `src/components/dh
 
 | Room | UI | Demo data | Rule the API must keep |
 |---|---|---|---|
-| Home | `src/routes/home.tsx` | `src/lib/dhi/home-demo.ts` | Greeting, DHI score, open exams, quick tiles |
-| Exams | `papers-desk.tsx` | `papers-demo.ts` | Window has `opens_at` / `due_at`. After due, the tile leaves and the miss is stored. Starting locks the other menus. MCQ hint is a slider and must **not** reveal the answer. Submit goes to the teacher. Student accepts feedback |
-| Meals | `meal-tracker.tsx` | `meals-demo.ts` | Indian plate: item, count (rotis), meal (breakfast, lunch, dinner, snack), time. Custom dishes are allowed. Macros may arrive later. Day resets; the week does not |
-| Mood | `mood-tracker.tsx` | `mood-demo.ts` | One colour a day, their own words, DHI line. Help request creates a counselor booking, not a chat with the model |
-| Habits | `habits/` | `habits/schema.ts`, `store.ts` | At most 5. Own label, start, end, daily tick, streak. Misses stay visible |
-| Modules | `modules/` | `modules/catalog.ts` | **House upload only.** Student cannot add a film. Score is written once, when playback reaches the end. Seek past the watched point stays closed until then |
-| Blog | `blog/` | `blog/posts.ts` | Student posts. One photo, title, tag, body. Marks allowed: bold, italic, numbered list. Comments are plain text |
-| DHI desk | `desk/` | `desk/schema.ts` | Coins. Clarify is free. A cache hit costs 0 and must not call the model again |
-| Study hour | `study/` | `study/schema.ts`, `hours.ts` | Opens only inside `[opens_at, closes_at]` set by DHI admin. Leave or clock-end drops the seat. Live = self large, others beside. Away = profile only. DND = no people, no chat |
+| Home | `src/routes/home.tsx` | none (real, house spec 0017) | Greeting, DHI score, open exams, recent exams, quick access |
+| Exams | `exams/exams-room.tsx` | none (real, house specs 0011, 0012) | Window has `opens_at` / `due_at`. After due, the tile leaves and the miss is stored. Starting locks the other menus. MCQ hint is a slider and must **not** reveal the answer. Submit goes to the teacher. Student accepts feedback |
+| Meals | `meals/meals-real.tsx` | none (real, house specs 0009, 0010) | Indian plate: item, count (rotis), meal (breakfast, lunch, dinner, snack), time. Custom dishes are allowed. Macros may arrive later. Day resets; the week does not |
+| Mood | `mood-tracker.tsx` | none (real, house spec 0006; `mood-demo.ts` keeps the colours) | One colour a day, their own words, DHI line. Help request creates a counselor booking, not a chat with the model |
+| Habits | `habits/` | none (real, house spec 0007) | At most 5. Own label, start, end, daily tick, streak. Misses stay visible |
+| Modules | `modules/modules-real.tsx` | none (real on a stand-in video host, house spec 0013) | **House upload only.** Student cannot add a film. Score is written once, when playback reaches the end. Seek past the watched point stays closed until then |
+| Blog | `blog/blog-real.tsx` | none (real, house spec 0014) | Student posts. One photo, title, tag, body. Marks allowed: bold, italic, numbered list. Comments are plain text |
+| DHI desk | `ui/coming-soon.tsx` | on hold (house spec 0016); the demo files are removed | Coins. Clarify is free. A cache hit costs 0 and must not call the model again |
+| Study hour | `study/study-hour-real.tsx` | none (real, house spec 0015) | Opens only inside `[opens_at, closes_at]` set by DHI admin. Leave or clock-end drops the seat. Live = self large, others beside. Away = profile only. DND = no people, no chat |
 
 Coin costs in `src/lib/dhi/desk/schema.ts`: chat 1, write 2, paper 2, mock 4, story 5, draw 8. Admin sets the month’s allotment. A later purchase only adds `bonus`.
 
