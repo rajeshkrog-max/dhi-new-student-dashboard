@@ -50,6 +50,11 @@ const app = defineApp({
     // same name the funnel's erase spec uses, so one secret can serve both. A different value on development and production. Unset means the
     // house erase refuses with `erase_not_configured`.
     ERASURE_HASH_SECRET: v.optional(v.string()),
+    // The DHI desk (house spec 0016). The model key is a secret set per deployment (never in code or git); unset means the desk answers `model_not_chosen`.
+    // `DESK_MODEL` names the model (default `gpt-4o-mini`). `DESK_LIVE` must be `true` (also `1`, `yes`, `on`) for the desk to call the model at all.
+    OPENAI_API_KEY: v.optional(v.string()),
+    DESK_MODEL: v.optional(v.string()),
+    DESK_LIVE: v.optional(v.string()),
   },
 });
 app.use(betterAuth);

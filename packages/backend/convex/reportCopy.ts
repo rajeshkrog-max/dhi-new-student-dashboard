@@ -9,7 +9,7 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
-import { pictureFor } from "./avatarState";
+import { isHeldByPicture, pictureFor } from "./avatarState";
 import { getSignedInUser, requireStudent } from "./helpers";
 import { rateLimiter } from "./limits";
 import { FRESH_ROUND_AFTER_MS, LEASE_MS, UNATTACHED_FILE_MS, afterCountedFailure } from "./reportCore";
@@ -287,7 +287,8 @@ export const hasWork = internalQuery({
 });
 
 // The daily clean up: a stored file that no row holds, older than a day, is deleted (AC-11). A page at a time; it continues itself.
-// (Convex storage is used only by report copies today. If another feature stores files, give them a way to be told apart first.)
+// Other features keep files in storage too, and the sweep leaves what they hold alone: the profile picture (spec 0011, asked of avatarState) and a blog
+// post's photo (house spec 0014). A new feature that stores files adds its check here first.
 export const sweep = internalMutation({
   args: { cursor: v.optional(v.union(v.string(), v.null())) },
   returns: v.null(),
@@ -299,6 +300,9 @@ export const sweep = internalMutation({
       if (file._creationTime >= cutoff) continue;
       const held = await ctx.db.query("reportFiles").withIndex("by_storageId", (q) => q.eq("storageId", file._id as Id<"_storage">)).first();
       if (held) continue;
+      const id = file._id as Id<"_storage">;
+      if (await isHeldByPicture(ctx, id)) continue;
+      if (await ctx.db.query("blogPosts").withIndex("by_photoId", (q) => q.eq("photoId", id)).first()) continue;
       await ctx.storage.delete(file._id);
       deleted += 1;
     }

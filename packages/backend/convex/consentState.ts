@@ -19,6 +19,18 @@ async function hasAccepted(ctx: Reader, member: Doc<"members">, kind: "self" | "
   return rows.some((r) => accepted.includes(r.textVersion));
 }
 
+// Whether a student is in good standing for anyone but themselves: active, not erased, their institute not paused, and through the consent gate (not
+// withdrawn and not waiting for consent). Anyone else is invisible to teachers and classmates (spec house/0005, AC-7), so a screen of theirs never
+// shows such a student, and never tells a teacher that a student withdrew.
+export async function inGoodStanding(ctx: Reader, member: Doc<"members">): Promise<boolean> {
+  if (member.erasedAt !== undefined || member.status !== "active") return false;
+  if (member.instituteId) {
+    const institute = await ctx.db.get(member.instituteId);
+    if (!institute || institute.status === "suspended") return false;
+  }
+  return (await gateOf(ctx, member)).state === "ok";
+}
+
 // Whether a side is withdrawn: its latest `withdrawn` or `restored` record, in creation order, is `withdrawn`.
 export async function sideWithdrawn(ctx: Reader, member: Doc<"members">, side: Side): Promise<boolean> {
   const latest = await ctx.db

@@ -15,6 +15,7 @@ export const ROLE_SHOWN: Readonly<Record<string, string>> = {
   dhi_admin: "DHI team",
   team: "DHI team",
   student: "You",
+  parent: "Parent",
 };
 
 export const mine = query({

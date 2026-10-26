@@ -5,6 +5,11 @@ import { PEOPLE, signIn, signInMember } from "./test-student.mjs";
 // A fresh made up student for each run (invited by the demo institute admin, joined, and agreed), so the room's limit of 10 mood changes a day
 // never carries over from an earlier run.
 export async function freshStudent(browser, base) {
+  return (await freshStudentWithEmail(browser, base)).state;
+}
+
+// The same, and the student's email too, for a proof that needs to ask a development helper about this student.
+export async function freshStudentWithEmail(browser, base) {
   const unique = `room${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   const person = { email: `${unique}@example.test`, name: `Room Proof ${unique.slice(-4)}` };
   const adminState = await signInMember(browser, base, PEOPLE.admin);
@@ -34,6 +39,6 @@ export async function freshStudent(browser, base) {
   await page.locator('[data-room="mood"]:visible').waitFor({ timeout: 30_000 });
   const state = await context.storageState();
   await context.close();
-  return state;
+  return { state, email: person.email };
 }
 

@@ -36,11 +36,14 @@ type Env = {
   readonly CHALLENGE_LIVE: string | undefined;
   readonly CLOUDFLARE_ACCOUNT_ID: string | undefined;
   readonly CLOUDFLARE_API_TOKEN: string | undefined;
+  readonly DESK_LIVE: string | undefined;
+  readonly DESK_MODEL: string | undefined;
   readonly ERASURE_HASH_SECRET: string | undefined;
   readonly GOOGLE_CLIENT_ID: string | undefined;
   readonly GOOGLE_CLIENT_SECRET: string | undefined;
   readonly GOOGLE_SERVICE_ACCOUNT_KEY: string | undefined;
   readonly LEADERBOARD_PICTURES_ENABLED: string | undefined;
+  readonly OPENAI_API_KEY: string | undefined;
   readonly PICTURE_CONSENT_REQUIRED: string | undefined;
   readonly PROFILE_PICTURE_ENABLED: string | undefined;
   readonly PUBLIC_SHARE_ENABLED: string | undefined;

@@ -109,9 +109,11 @@ describe("limits and codes", () => {
     expect([...ACCESS_CODES].sort()).toEqual(
       [
         "invite.create", "invite.claim", "invite.revoke", "invite.extend", "invite.update", "member.remove", "member.reinstate", "member.class",
-        "member.under18", "class.create", "class.archive", "class.assign", "class.unassign", "inst.create", "inst.suspend", "inst.reinstate",
+        "member.under18", "member.move", "class.create", "class.archive", "class.pause", "class.resume", "class.assign", "class.unassign", "inst.create", "inst.suspend", "inst.reinstate",
         // Added by house spec 0005.
         "consent.parent", "consent.parentWithdrawn", "consent.parentRestored", "sharing.set", "data.erase", "totals.read",
+        // Added by house spec 0022.
+        "sharing.link", "sharing.unlink",
       ].sort(),
     );
   });

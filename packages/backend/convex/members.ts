@@ -8,7 +8,7 @@ import { env, mutation, query, type QueryCtx } from "./_generated/server";
 import { fail, getSignedInUser, requireSignedIn } from "./helpers";
 import { gateOf } from "./consentState";
 import { recordDemoConsent } from "./demo";
-import { logAccess, memberOfUser, requireMember } from "./houseAuth";
+import { logAccess, memberOfUser, requireDhiAdmin, requireMember } from "./houseAuth";
 import { isExpired, mayClaimUnverified, memberShapeProblem, PAGE_SIZE } from "./houseCore";
 import { pendingInviteFor } from "./inviteCore";
 import { rateLimiter } from "./limits";
@@ -48,10 +48,13 @@ export const me = query({
       if (member.status !== "active") return { state: "removed" as const };
       const institute = member.instituteId ? await ctx.db.get(member.instituteId) : null;
       if (institute?.status === "suspended") return { state: "suspended" as const, role: member.role, instituteName: institute.name };
+      const cls = member.classId ? await ctx.db.get(member.classId) : null;
+      // A class whose logins are paused shows its students the same screen as a paused person (spec house/0021), before any consent step, because the
+      // actions of that step are refused for them too.
+      if (member.role === "student" && cls?.pausedAt !== undefined) return { state: "removed" as const };
       const gate = await gateOf(ctx, member);
       if (gate.state === "withdrawn") return { state: "withdrawn" as const, by: gate.by };
       if (gate.state === "consentNeeded") return { state: "consentNeeded" as const, missing: gate.missing };
-      const cls = member.classId ? await ctx.db.get(member.classId) : null;
       return {
         state: "active" as const,
         memberId: member._id,
@@ -241,6 +244,32 @@ export const remove = mutation({
     await ctx.db.patch(target._id, { status: "removed", removedAt: Date.now() });
     await logAccess(ctx, { actor: mc.member._id, action: "member.remove", instituteId: target.instituteId, targetMemberId: target._id });
     return { status: "removed" as const };
+  },
+});
+
+// Moves a teacher or an institute admin to another institute (owner, 2026-10-24: staff only, DHI admin only). Their class links in the old institute end, and
+// they carry no student data. A student is never moved: one who changes school is paused at the old school and invited as a new student at the new one,
+// with fresh consent, so a student's rows never cross institutes. The last active admin of an institute cannot be moved out of it.
+export const moveStaff = mutation({
+  args: { memberId: v.id("members"), instituteId: v.id("institutes") },
+  returns: v.object({ ok: v.literal(true) }),
+  handler: async (ctx, args) => {
+    const mc = await requireDhiAdmin(ctx);
+    const target = await ctx.db.get(args.memberId);
+    if (!target || target.erasedAt !== undefined) fail("not_found");
+    if (target.role !== "teacher" && target.role !== "institute_admin") fail("not_staff");
+    if (target.status !== "active") fail("not_found");
+    if (target.instituteId === args.instituteId) fail("same_institute");
+    const to = await ctx.db.get(args.instituteId);
+    if (!to || to.status !== "active") fail("institute_not_found");
+    if (await isLastAdmin(ctx, target)) fail("last_admin");
+    const links = await ctx.db.query("teacherClasses").withIndex("by_memberId", (q) => q.eq("memberId", target._id)).take(200);
+    for (const link of links) await ctx.db.delete(link._id);
+    const from = target.instituteId;
+    await ctx.db.patch(target._id, { instituteId: args.instituteId });
+    await logAccess(ctx, { actor: mc.member._id, action: "member.move", instituteId: args.instituteId, targetMemberId: target._id });
+    if (from) await logAccess(ctx, { actor: mc.member._id, action: "member.move", instituteId: from, targetMemberId: target._id });
+    return { ok: true as const };
   },
 });
 

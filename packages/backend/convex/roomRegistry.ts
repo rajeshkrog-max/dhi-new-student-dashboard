@@ -9,6 +9,14 @@ import type { Id } from "./_generated/dataModel";
 import type { DataKind } from "./accessRules";
 import { habitRoom } from "./habitRoom";
 import { moodRoom } from "./moodRoom";
+import { examRoom } from "./paperRoom";
+import { blogRoom } from "./blogRoom";
+import { mealsRoom } from "./mealsRoom";
+import { filmRoom } from "./filmRoom";
+import { hourRoom } from "./hourRoom";
+import { sleepRoom } from "./sleepRoom";
+import { brainRoom } from "./brainRoom";
+import { deskRoom } from "./deskRoom";
 
 export type ExportPage = { rows: unknown[]; next: string | null };
 export type ErasePage = { deleted: number; done: boolean };
@@ -24,7 +32,7 @@ export type RoomEntry = {
 };
 
 // Each room row adds its entry when the room moves to the backend. The mood room (house spec 0006) is the first; the rest still run on demo data.
-export const ROOM_ENTRIES: readonly RoomEntry[] = [moodRoom, habitRoom];
+export const ROOM_ENTRIES: readonly RoomEntry[] = [moodRoom, habitRoom, sleepRoom, examRoom, blogRoom, mealsRoom, filmRoom, hourRoom, brainRoom, deskRoom];
 
 export const EXPORT_PAGE = 100;
 export const ERASE_PAGE = 100;

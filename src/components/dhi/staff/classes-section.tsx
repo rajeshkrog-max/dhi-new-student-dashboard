@@ -19,6 +19,8 @@ export function ClassesSection() {
   const { results, status, loadMore } = usePaginatedQuery(api.classes.list, args, { initialNumItems: 25 });
   const create = useMutation(api.classes.create);
   const archive = useMutation(api.classes.archive);
+  const pause = useMutation(api.classes.pause);
+  const resume = useMutation(api.classes.resume);
   const [grade, setGrade] = useState<Grade>("Class 10");
   const [section, setSection] = useState("");
   const [error, setError] = useState("");
@@ -45,6 +47,17 @@ export function ClassesSection() {
     setDone("");
     try {
       await archive({ classId });
+    } catch (err) {
+      setError(refusalWords(codeOf(err)));
+    }
+  }
+
+  async function setPaused(classId: ClassId, paused: boolean) {
+    setError("");
+    setDone("");
+    try {
+      if (paused) await pause({ classId });
+      else await resume({ classId });
     } catch (err) {
       setError(refusalWords(codeOf(err)));
     }
@@ -100,8 +113,14 @@ export function ClassesSection() {
                     {c.grade} {c.section}
                   </p>
                   {c.archived && <Chip tone="gold">Closed</Chip>}
+                  {c.paused && <Chip tone="gold">Logins paused</Chip>}
                   {isAdmin && (
                     <div className="flex gap-2">
+                      {!c.archived && (
+                        <Button variant="quiet" onClick={() => setPaused(c._id, !c.paused)} data-testid={`class-pause-${c._id}`} aria-label={`${c.paused ? "Resume" : "Pause"} logins of ${c.grade} ${c.section}`}>
+                          {c.paused ? "Resume logins" : "Pause logins"}
+                        </Button>
+                      )}
                       <Button variant="quiet" aria-expanded={openTeachers === c._id} onClick={() => setOpenTeachers(openTeachers === c._id ? null : c._id)}>
                         Teachers
                       </Button>

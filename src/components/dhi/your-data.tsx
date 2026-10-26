@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { Download, ShieldCheck, Trash2 } from "lucide-react";
+import { Copy, Download, ShieldCheck, Trash2 } from "lucide-react";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "@dhi/backend/api";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Chip } from "@/components/dhi/ui/chip";
+import { FunnelLinkCard } from "@/components/dhi/funnel-link-card";
 import { Notice } from "@/components/dhi/ui/notice";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
+import { LINK_COPY } from "@/lib/dhi/parent-words";
 import { dayLabel, joinExport, type ExportSection } from "@/lib/dhi/your-data";
 
 // Your data (spec house/0005, AC-6, AC-9, AC-11, AC-12, AC-13): what the student agreed to, withdrawing and bringing consent back, the parent
-// sharing switch, who has looked at their data, a download, and erase. A student who is locked, paused or in a paused institute can still open
+// sharing switch and the private weekly link (house spec 0022), who has looked at their data, a download, and erase. A student who is locked, paused or in a paused institute can still open
 // this page, because these are their rights over their own data. It shows no other person's name.
 type ExportResult = FunctionReturnType<typeof api.dataRights.exportMine>;
 
@@ -30,12 +32,16 @@ export function YourData({
   const withdraw = useMutation(api.consent.withdraw);
   const restore = useMutation(api.consent.restore);
   const setSharing = useMutation(api.sharing.set);
+  const makeLink = useMutation(api.parentLink.make);
+  const removeLink = useMutation(api.parentLink.remove);
   const exportPage = useMutation(api.dataRights.exportMine);
   const erase = useMutation(api.dataRights.eraseMine);
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  // The link's code is shown once, here, and never read back from the server.
+  const [newLink, setNewLink] = useState("");
 
   async function run(call: () => Promise<{ ok: boolean; code?: string } | unknown>, ok: string) {
     setError("");
@@ -110,6 +116,32 @@ export function YourData({
   }
 
   const gate = state?.gate;
+  // The link functions need a student who is through consent, so a locked student never asks (it would be refused).
+  const sharingOn = sharing?.parentLevel === "summary";
+  const link = useQuery(api.parentLink.mine, !reduced && gate?.state === "ok" && sharingOn ? {} : "skip");
+
+  async function makeParentLink() {
+    setError("");
+    setDone("");
+    setBusy(true);
+    try {
+      const r = await makeLink({});
+      if (!r.ok) setError(refusalWords(r.code));
+      else setNewLink(`${window.location.origin}/parent#${r.code}`);
+    } catch (e) {
+      setError(refusalWords(codeOf(e)));
+    }
+    setBusy(false);
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(newLink);
+      setDone(LINK_COPY.copied);
+    } catch {
+      setError("Your browser did not let us copy it. Select the link and copy it by hand.");
+    }
+  }
   const myWithdrawal = gate?.state === "withdrawn" && gate.by.includes("self");
   const schoolWithdrawal = gate?.state === "withdrawn" && gate.by.includes("school");
 
@@ -190,7 +222,7 @@ export function YourData({
         <Card>
           <h2 className="text-sm font-semibold">Sharing with your parent</h2>
           <p className="mt-2 text-sm text-mute touch:text-base">
-            Off until you turn it on. Only you can change it. No parent screen exists yet.
+            {LINK_COPY.sharingText}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Chip
@@ -213,13 +245,57 @@ export function YourData({
                       parentLevel: sharing?.parentLevel === "summary" ? "none" : "summary",
                     }),
                   "Saved.",
-                )
+                ).then(() => setNewLink(""))
               }
               data-testid="toggle-sharing"
             >
               {sharing?.parentLevel === "summary" ? "Turn sharing off" : "Turn sharing on"}
             </Button>
           </div>
+          {sharingOn && gate?.state === "ok" && (
+            <div className="mt-4 border-t border-home/10 pt-3" data-testid="parent-link-box">
+              <p className="text-sm text-mute touch:text-base">
+                {link === undefined
+                  ? "\u00a0"
+                  : link
+                    ? LINK_COPY.live(new Date(link.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }))
+                    : LINK_COPY.none}
+              </p>
+              {newLink && (
+                <div className="mt-3 rounded-control bg-mint/40 p-3" data-testid="parent-link-new">
+                  <p className="text-xs text-ink touch:text-sm">{LINK_COPY.shownOnce}</p>
+                  <input
+                    readOnly
+                    value={newLink}
+                    aria-label="Link for your parent"
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="mt-2 h-10 w-full rounded-control border border-home/15 bg-white px-3 text-sm touch:h-11"
+                    data-testid="parent-link-url"
+                  />
+                  <div className="mt-2">
+                    <Button variant="quiet" onClick={copyLink} data-testid="parent-link-copy">
+                      <Copy className="size-4" aria-hidden /> {LINK_COPY.copy}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="quiet" disabled={busy || link === undefined} onClick={makeParentLink} data-testid="parent-link-make">
+                  {link ? LINK_COPY.renew : LINK_COPY.make}
+                </Button>
+                {link && (
+                  <Button
+                    variant="quiet"
+                    disabled={busy}
+                    onClick={() => run(() => removeLink({}), "The link has ended.").then(() => setNewLink(""))}
+                    data-testid="parent-link-remove"
+                  >
+                    {LINK_COPY.remove}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
@@ -227,8 +303,8 @@ export function YourData({
         <Card>
           <h2 className="text-sm font-semibold">Who has looked at your data</h2>
           <p className="mt-2 text-sm text-mute touch:text-base">
-            Each time a teacher or your institute looked at your named results. It shows the role
-            and the date, never a name.
+            Each time a teacher or your institute looked at your named results, and each time your
+            parent opened their weekly page. It shows the role and the date, never a name.
           </p>
           {record.status === "LoadingFirstPage" ? (
             <p className="mt-3 rounded-control bg-white/60 px-4 py-4 text-center text-sm text-mute">
@@ -267,6 +343,8 @@ export function YourData({
           )}
         </Card>
       )}
+
+      {!reduced && <FunnelLinkCard />}
 
       <Card>
         <h2 className="text-sm font-semibold">Download or erase</h2>

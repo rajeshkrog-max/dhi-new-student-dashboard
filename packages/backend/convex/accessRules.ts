@@ -4,7 +4,7 @@
 
 // The kinds of data a student has. `profile` is the roster (name, email, class, under 18): staff run access with it, it is not "viewed" through
 // the wrapper, and `canView` gives staff nothing for it. The others are room data.
-export const DATA_KINDS = ["profile", "academic", "mood", "meals", "habits", "sleep", "writing", "desk", "hour", "modules"] as const;
+export const DATA_KINDS = ["profile", "academic", "mood", "meals", "habits", "sleep", "writing", "desk", "hour", "modules", "brain"] as const;
 export type DataKind = (typeof DATA_KINDS)[number];
 
 // What each kind is. `academic` is exam results (named to a teacher and the institute). `wellbeing` is a feeling or a habit, which the institute
@@ -21,6 +21,8 @@ export const KIND_CLASS: Readonly<Record<DataKind, KindClass>> = {
   modules: "wellbeing",
   writing: "private",
   desk: "private",
+  // The Brain's daily values and the patterns read from them (spec house/0019): worked out from every other room, and shown to the student alone.
+  brain: "private",
 };
 
 // Each room registers the kind codes its data uses (AC-8). This is the code to room table: a test fails if a room is missing or a kind has no room.
@@ -35,6 +37,7 @@ export const ROOM_KINDS: Readonly<Record<string, readonly DataKind[]>> = {
   blog: ["writing"],
   desk: ["desk"],
   hour: ["hour"],
+  brain: ["brain"],
   test: [],
 };
 
@@ -61,10 +64,15 @@ export type ViewTarget = { standing: Standing; parentLevel?: "none" | "summary" 
 //   institute admin, same institute     named      totals                                  none
 //   DHI admin                           none       none                                    none
 //   counselor                           none       none                                    none
-//   parent (reserved, a later row)      named      summary if sharing is on                none
+//   parent, through the student's own link: nothing unless the student turned sharing on, and then a summary of the Brain only (spec house/0022)
+//     (no academic, mood, meals, habits, sleep, hour, modules, writing or desk)
 export function canView(viewer: Viewer, relation: Relation, kind: DataKind, target: ViewTarget): Reach {
   if (viewer === "student") return relation === "self" ? "full" : "none";
   if (target.standing !== "ok") return "none";
+  // The weekly parent page (spec house/0022): only the Brain's summary (days logged and the three lamp values), and only when the student turned
+  // sharing on. A parent has no relation to check: they hold the student's own secret link, which `parentReport.open` resolves to the student. This
+  // comes before the private kinds check below on purpose: the Brain is private to every other viewer, and this is the one summary the student opens.
+  if (viewer === "parent") return kind === "brain" && target.parentLevel === "summary" ? "summary" : "none";
   const cls = KIND_CLASS[kind];
   if (cls === "profile" || cls === "private") return "none";
   switch (viewer) {
@@ -73,10 +81,6 @@ export function canView(viewer: Viewer, relation: Relation, kind: DataKind, targ
     case "institute_admin":
       if (relation !== "same_institute") return "none";
       return cls === "academic" ? "named" : "totals";
-    case "parent":
-      // Reserved for a later parent report: no function, screen or test uses this branch yet.
-      if (cls === "academic") return "named";
-      return target.parentLevel === "summary" ? "summary" : "none";
     case "dhi_admin":
     case "counselor":
       return "none";

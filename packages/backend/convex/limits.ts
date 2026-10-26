@@ -64,10 +64,48 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   sharingChange: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
   // Saving the mood (spec house/0006, AC-10): 30 an hour for each student (key = the member id), taken for every attempt, so a refused save still counts.
   moodSave: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  // Saving the night (spec house/0008, AC-10): 30 an hour for each student (key = the member id), taken for every attempt, so a refused save still counts.
+  sleepSave: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  // Adding a custom dish (spec house/0009): 10 an hour for each student. Logging a plate (spec house/0010): 60 an hour.
+  foodAdd: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  // The film calls (spec house/0013): the play link, the progress reports and the finish, 900 an hour for each student. A film reported every
+  // five seconds is 720 an hour, so a long film fits.
+  filmCall: { kind: "token bucket", rate: 900, period: HOUR, capacity: 900 },
+  // The study hour (spec house/0015): entering or changing a seat, 60 an hour; chat, 20 a minute; the heartbeat, 300 an hour (one every 20 seconds
+  // is 180 an hour).
+  hourSeat: { kind: "token bucket", rate: 60, period: HOUR, capacity: 60 },
+  hourChat: { kind: "token bucket", rate: 20, period: MINUTE, capacity: 20 },
+  hourBeat: { kind: "token bucket", rate: 300, period: HOUR, capacity: 300 },
+  mealLog: { kind: "token bucket", rate: 60, period: HOUR, capacity: 60 },
+  // The exams sitting (spec house/0012): starting, keeping an answer, opening a hint, submitting and accepting the feedback, 1200 an hour for each
+  // student (key = the member id). A long answer is kept every few seconds while the student types, so a whole sitting fits many times over.
+  examWrite: { kind: "token bucket", rate: 1200, period: HOUR, capacity: 300 },
+  // A teacher opening a paper's marking page (spec house/0011): each open writes one look record for every student on the page, so it is held to 120
+  // an hour for each teacher (key = the member id).
+  staffOpen: { kind: "token bucket", rate: 120, period: HOUR, capacity: 60 },
+  // The Brain (spec house/0020): hiding or showing a pattern, 30 an hour for each student (key = the member id).
+  brainHide: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  // The blog (spec house/0014): 6 new posts an hour and 30 comments an hour for each student (key = the member id).
+  blogPost: { kind: "token bucket", rate: 6, period: HOUR, capacity: 6 },
+  blogComment: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  // Asking for a place to upload a post's photo: 12 an hour for each student (key = the member id).
+  blogPhoto: { kind: "token bucket", rate: 12, period: HOUR, capacity: 12 },
   // The habits room (spec house/0007, AC-11): adding, ticking, undoing and removing together 60 an hour for each student (key = the member id), and
   // 10 new habits a day (a window that begins at 04:00 India time, the house day), so cycles of add and remove cannot fill the log's 500 events a day. The write limit is taken for every attempt; the daily one only for a habit that would really be made.
   habitWrite: { kind: "token bucket", rate: 60, period: HOUR, capacity: 60 },
   habitAddDay: { kind: "fixed window", rate: 10, period: DAY, start: Date.parse("2026-01-01T04:00:00+05:30") },
+  // The weekly parent page (spec house/0022). Making or renewing the link: 10 an hour for each student (key = the member id), taken for every attempt.
+  // Opening: 60 a minute for each link (key = the link id, only after the code matched). Bad codes together: one bucket of 120 a minute (key "bad") in 4
+  // shards with `start: 0` (see the note on shareRead), so a flood of made up codes never creates a key per code.
+  parentMake: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  parentOpen: { kind: "fixed window", rate: 60, period: MINUTE },
+  parentBad: { kind: "fixed window", rate: 120, period: MINUTE, shards: 4, start: 0 },
+  // The DHI desk (spec house/0016): questions that may reach the model, 30 an hour for each student (key = the member id), taken for every attempt. Clarify,
+  // which is free, has its own 20 an hour so it cannot be used to run the model up.
+  // Linking the DhiRise check to the house account (the student's own tap): 10 tries an hour for each student.
+  funnelLink: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  deskAsk: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  deskClarify: { kind: "token bucket", rate: 20, period: HOUR, capacity: 20 },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },
   shareBad: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_BAD_SHARDS, start: 0 },

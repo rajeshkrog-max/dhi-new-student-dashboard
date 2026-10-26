@@ -44,6 +44,8 @@ async function loadMember(ctx: Reader, opts: { tolerant: boolean; inactive: bool
   const institute = member.instituteId ? await ctx.db.get(member.instituteId) : null;
   if (member.instituteId && !institute) fail("not_a_member");
   if (institute && institute.status === "suspended" && !opts.inactive) fail("institute_suspended");
+  // A class whose logins are paused (spec house/0021): its students are refused as if removed, until the class is resumed.
+  if (member.role === "student" && member.classId && !opts.inactive && (await ctx.db.get(member.classId))?.pausedAt !== undefined) fail("removed");
   const gate = await gateOf(ctx, member);
   if (!opts.tolerant) {
     if (gate.state === "withdrawn") fail("consent_withdrawn");

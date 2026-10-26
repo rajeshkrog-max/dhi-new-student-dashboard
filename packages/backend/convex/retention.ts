@@ -11,6 +11,8 @@ const DAY = 24 * 60 * 60 * 1000;
 export const VIEW_LOG_KEEP_MS = 3 * 365 * DAY;
 export const LEAVER_KEEP_MS = 365 * DAY;
 export const SWEEP_PAGE = 50;
+// The study hour chat is kept so a teacher can review it, and then deleted (house spec 0015). 30 days is the builder's default for the owner to confirm.
+export const CHAT_KEEP_MS = 30 * DAY;
 // Erasing a member is heavier than deleting a row (it ends sessions and clears invites), so fewer in one run.
 export const ERASE_PER_RUN = 10;
 
@@ -31,7 +33,17 @@ export const sweep = internalMutation({
     for (const row of blocks) await ctx.db.delete("houseErasedEmails", row._id);
     if (blocks.length === SWEEP_PAGE) more = true;
 
-    // 3. Members removed for 12 months and not reinstated, a page of ${ERASE_PER_RUN} at a time with a cursor that moves on, so rows that are
+    // 3. Study hour chat past its 30 days.
+    const oldChat = await ctx.db.query("chatMessages").withIndex("by_creation_time", (q) => q.lt("_creationTime", now - CHAT_KEEP_MS)).take(SWEEP_PAGE);
+    for (const row of oldChat) await ctx.db.delete("chatMessages", row._id);
+    if (oldChat.length === SWEEP_PAGE) more = true;
+
+    // 3b. Parent links past their 90 days (house spec 0022). An expired link already refuses; this removes the row.
+    const oldLinks = await ctx.db.query("parentLinks").withIndex("by_expiresAt", (q) => q.lt("expiresAt", now)).take(SWEEP_PAGE);
+    for (const row of oldLinks) await ctx.db.delete("parentLinks", row._id);
+    if (oldLinks.length === SWEEP_PAGE) more = true;
+
+    // 4. Members removed for 12 months and not reinstated, a page of ${ERASE_PER_RUN} at a time with a cursor that moves on, so rows that are
     // skipped (a suspended institute's members) can never hold up the rest. A reinstated member has status `active`, so the index never offers them,
     // and an erased member (a tombstone) has no `removedAt`.
     const leavers = await ctx.db
@@ -50,7 +62,7 @@ export const sweep = internalMutation({
     }
     if (!leavers.isDone) more = true;
 
-    console.log(`retention.sweep: ${oldViews.length} view record(s), ${blocks.length} block(s), ${erased} member(s) erased, ${skipped} skipped`);
+    console.log(`retention.sweep: ${oldViews.length} view record(s), ${blocks.length} block(s), ${oldChat.length} chat message(s), ${oldLinks.length} parent link(s), ${erased} member(s) erased, ${skipped} skipped`);
     if (more) await ctx.scheduler.runAfter(0, internal.retention.sweep, { now: args.now, cursor: leavers.isDone ? null : leavers.continueCursor });
     return null;
   },

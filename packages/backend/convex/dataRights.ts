@@ -9,6 +9,7 @@ import { env, internalMutation, mutation } from "./_generated/server";
 import { EXPORT_SCHEMA } from "./dataMap";
 import { countEvents, eraseEventsPage, exportEventsPage } from "./eventData";
 import { beginErase } from "./eraseCore";
+import { funnelExport } from "./funnelLink";
 import { fail } from "./helpers";
 import { requireMemberAllowLocked } from "./houseAuth";
 import { rateLimiter } from "./limits";
@@ -62,6 +63,7 @@ export const exportMine = mutation({
       const cls = mc.member.classId ? await ctx.db.get(mc.member.classId) : null;
       const consent = await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", memberId)).take(200);
       const sharing = await ctx.db.query("sharingSettings").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).first();
+      const link = await ctx.db.query("parentLinks").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).first();
       const header = {
         profile: {
           name: mc.member.name,
@@ -73,7 +75,10 @@ export const exportMine = mutation({
           joinedAt: mc.member.joinedAt,
         },
         consent: consent.map((r) => ({ kind: r.kind, by: r.by, textVersion: r.textVersion, at: r._creationTime })),
-        sharing: { parentLevel: sharing?.parentLevel ?? "none" },
+        // The link's dates only: the code was never stored, so it is not in the download.
+        sharing: { parentLevel: sharing?.parentLevel ?? "none", link: link ? { createdAt: link.createdAt, expiresAt: link.expiresAt } : null },
+        // The student's own DhiRise answers, only if they linked the check (never a result or a flag).
+        funnel: await funnelExport(ctx, mc.member),
       };
       return { ok: true as const, schema: EXPORT_SCHEMA, exportedAt, section: "header", rows: [header], next: encode({ s: 0, c: null }) };
     }

@@ -6,7 +6,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { env, internalMutation, type MutationCtx } from "./_generated/server";
 import { fail } from "./helpers";
 import { ensureConsentText } from "./consentState";
-import { HOUSE_NOTICE_VERSION, HOUSE_PARENT_VERSION } from "./consentText";
+import { HOUSE_ACCEPTED_VERSIONS, HOUSE_NOTICE_VERSION, HOUSE_PARENT_VERSION } from "./consentText";
 import { emailTaken, insertInvite } from "./inviteCore";
 
 export const DEMO_INSTITUTE = "Demo Institute";
@@ -33,7 +33,9 @@ export async function recordDemoConsent(ctx: MutationCtx, member: Doc<"members">
   await ensureConsentText(ctx, HOUSE_NOTICE_VERSION, "house");
   const has = async (kind: "self" | "parent") =>
     (await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", member._id).eq("kind", kind)).first()) !== null;
-  if (!(await has("self"))) {
+  // A student who agreed to an older draft of the notice agrees again to the current one.
+  const agreed = await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", member._id).eq("kind", "self")).take(10);
+  if (!agreed.some((r) => HOUSE_ACCEPTED_VERSIONS.includes(r.textVersion))) {
     await ctx.db.insert("consentRecords", { memberId: member._id, instituteId: member.instituteId, kind: "self", by: "self", byMemberId: member._id, textVersion: HOUSE_NOTICE_VERSION, under18AtTime: member.under18 !== false });
   }
   if (member.under18 !== false && !(await has("parent"))) {

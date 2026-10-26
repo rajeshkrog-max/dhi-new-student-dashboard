@@ -12,6 +12,8 @@ import {
   CONSENT_TEXTS,
   HOUSE_ACCEPTED_VERSIONS,
   HOUSE_NOTICE_LINES,
+  HOUSE_NOTICE_V1,
+  HOUSE_NOTICE_V1_LINES,
   HOUSE_NOTICE_VERSION,
   HOUSE_PARENT_ACCEPTED_VERSIONS,
   HOUSE_PARENT_VERSION,
@@ -434,7 +436,7 @@ describe("withdrawal (AC-5, AC-6)", () => {
 describe("who sees what (AC-7, AC-8, AC-23, AC-24)", () => {
   const OK = { standing: "ok" } as const;
   const WELL: DataKind[] = ["mood", "meals", "habits", "sleep", "hour", "modules"];
-  const WRITTEN: DataKind[] = ["writing", "desk"];
+  const WRITTEN: DataKind[] = ["writing", "desk", "brain"];
 
   test("covers AC-7: every viewer against every kind returns exactly the table", () => {
     const expected = (viewer: Viewer, relation: Relation, kind: DataKind) => {
@@ -443,7 +445,7 @@ describe("who sees what (AC-7, AC-8, AC-23, AC-24)", () => {
       if (WRITTEN.includes(kind)) return viewer === "parent" ? "none" : "none";
       if (viewer === "teacher") return relation === "assigned_class" && kind === "academic" ? "named" : "none";
       if (viewer === "institute_admin") return relation === "same_institute" ? (kind === "academic" ? "named" : "totals") : "none";
-      if (viewer === "parent") return kind === "academic" ? "named" : "none";
+      // A parent has no standing view (spec house/0022): without the student's sharing setting they get nothing, whatever the kind.
       return "none";
     };
     const relations: Relation[] = ["self", "assigned_class", "same_institute", "none"];
@@ -451,12 +453,15 @@ describe("who sees what (AC-7, AC-8, AC-23, AC-24)", () => {
     for (const v of viewers) for (const r of relations) for (const k of DATA_KINDS) {
       expect(canView(v, r, k, OK), `${v} ${r} ${k}`).toBe(expected(v, r, k));
     }
-    // The reserved parent row: summary only when the student turned sharing on.
-    for (const k of WELL) {
-      expect(canView("parent", "none", k, { standing: "ok", parentLevel: "summary" })).toBe("summary");
-      expect(canView("parent", "none", k, { standing: "ok", parentLevel: "none" })).toBe("none");
+    // The parent row (spec house/0022): a summary of the Brain only, and only when the student turned sharing on. Nothing else, ever.
+    for (const k of DATA_KINDS) {
+      for (const relation of ["self", "assigned_class", "same_institute", "none"] as Relation[]) {
+        expect(canView("parent", relation, k, { standing: "ok", parentLevel: "summary" }), `summary ${relation} ${k}`).toBe(k === "brain" ? "summary" : "none");
+        expect(canView("parent", relation, k, { standing: "ok", parentLevel: "none" }), `none ${relation} ${k}`).toBe("none");
+        expect(canView("parent", relation, k, { standing: "ok" }), `unset ${relation} ${k}`).toBe("none");
+        for (const standing of ["locked", "removed", "erased"] as const) expect(canView("parent", relation, k, { standing, parentLevel: "summary" })).toBe("none");
+      }
     }
-    for (const k of WRITTEN) expect(canView("parent", "none", k, { standing: "ok", parentLevel: "summary" })).toBe("none");
   });
 
   test("covers AC-7, AC-8: a DHI admin and a counselor never get room content; writing and desk chats are the student's alone", () => {
@@ -686,11 +691,11 @@ describe("export (AC-12, AC-16)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections.map((s) => s.section).filter((x) => x !== "events")).toEqual(["header", "mood", "habits"]); // each room adds its own (empty here) section after the events
+    expect(sections.map((s) => s.section).filter((x) => x !== "events")).toEqual(["header", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk"]); // each room adds its own (empty here) section after the events
     expect(sections.filter((s) => s.section === "events")).toHaveLength(3);
     const header = sections[0].rows[0] as { profile: Record<string, unknown>; consent: unknown[]; sharing: unknown };
     expect(header.profile).toMatchObject({ name: "Asha Rao", email: "adult@alpha.test", role: "student", institute: "Alpha School", class: "Class 10 A", under18: false });
-    expect(header.sharing).toEqual({ parentLevel: "summary" });
+    expect(header.sharing).toEqual({ parentLevel: "summary", link: null });
     expect(header.consent).toEqual([{ kind: "self", by: "self", textVersion: HOUSE_NOTICE_VERSION, at: expect.any(Number) }]);
     const events = sections.filter((s) => s.section === "events").flatMap((s) => s.rows) as { type: string; day: string; id: string }[];
     expect(events).toHaveLength(230);
@@ -952,17 +957,18 @@ describe("source scans (AC-6, AC-10, AC-13, AC-19)", () => {
   const code = (text: string) => text.split("\n").filter((l) => !l.trim().startsWith("//")).join("\n");
   const FILES = ["./consent.ts", "./consentState.ts", "./consentRules.ts", "./accessRules.ts", "./dataRights.ts", "./eraseCore.ts", "./retention.ts", "./staffRead.ts", "./sharing.ts", "./access.ts", "./eventData.ts", "./roomRegistry.ts", "./dataMap.ts"];
 
-  test("covers AC-10: only the staff read wrapper writes the view record, and only the sweep deletes one", () => {
+  // `parentReport.ts` (house spec 0022) is the one other writer: a look through a student's own link, role `parent`, never a staff look.
+  test("covers AC-10: only the staff read wrapper and the parent page write the view record, and only the sweep deletes one", () => {
     for (const [name, text] of app) {
       const c = code(text);
-      if (name !== "./staffRead.ts") expect(c, `${name} writes viewLog`).not.toMatch(/insert\(\s*["']viewLog["']/);
+      if (name !== "./staffRead.ts") if (name !== "./parentReport.ts") expect(c, `${name} writes viewLog`).not.toMatch(/insert\(\s*["']viewLog["']/);
       if (name !== "./retention.ts") expect(c, `${name} deletes viewLog`).not.toMatch(/delete\(\s*["']viewLog["']/);
       expect(c, `${name} changes viewLog`).not.toMatch(/(patch|replace)\(\s*["']viewLog["']/);
     }
   });
 
   test("covers AC-3: consent records are appended only by the files that own them, and never changed or deleted by app code", () => {
-    const writers = ["./consent.ts", "./demo.ts", "./eventProof.ts", "./moodProof.ts"]; // eventProof.ts gives its made up proof student the adult's agreement
+    const writers = ["./consent.ts", "./demo.ts", "./eventProof.ts", "./moodProof.ts", "./sleepProof.ts"]; // eventProof.ts gives its made up proof student the adult's agreement
     for (const [name, text] of app) {
       const c = code(text);
       if (!writers.includes(name)) expect(c, `${name} writes consentRecords`).not.toMatch(/insert\(\s*["']consentRecords["']/);
@@ -991,7 +997,7 @@ describe("source scans (AC-6, AC-10, AC-13, AC-19)", () => {
 
   test("covers AC-13: the 30 day block stores a hash and never the address; every access code of the spec is in the list", () => {
     expect(code(files["./eraseCore.ts"])).not.toMatch(/insert\(\s*["']houseErasedEmails["']\s*,\s*\{[^}]*email/);
-    for (const c of ["consent.parent", "consent.parentWithdrawn", "consent.parentRestored", "sharing.set", "data.erase", "totals.read"]) expect(ACCESS_CODES as readonly string[]).toContain(c);
+    for (const c of ["consent.parent", "consent.parentWithdrawn", "consent.parentRestored", "sharing.set", "sharing.link", "sharing.unlink", "data.erase", "totals.read"]) expect(ACCESS_CODES as readonly string[]).toContain(c);
   });
 
   test("covers AC-6: the new public functions are exactly the ones the design lists", async () => {
@@ -1010,5 +1016,33 @@ describe("source scans (AC-6, AC-10, AC-13, AC-19)", () => {
         "consent.recordParentWithdrawn", "consent.restore", "consent.state", "consent.withdraw", "dataRights.eraseMine", "dataRights.exportMine", "sharing.get", "sharing.set",
       ].sort(),
     );
+  });
+});
+
+
+describe("the house notice versions (spec house/0005, AC-2 and AC-18)", () => {
+  test("covers AC-2: the first draft is kept as written and is no longer accepted, so a student who agreed to it is at the gate again", async () => {
+    expect(CONSENT_TEXTS[HOUSE_NOTICE_V1]).toBe(HOUSE_NOTICE_V1_LINES.join("\n\n"));
+    expect(CONSENT_KINDS[HOUSE_NOTICE_V1]).toBe("house");
+    expect(HOUSE_ACCEPTED_VERSIONS).not.toContain(HOUSE_NOTICE_V1);
+    expect(HOUSE_NOTICE_VERSION).not.toBe(HOUSE_NOTICE_V1);
+    const w = await world();
+    await w.t.run(async (ctx) => {
+      const member = await ctx.db.get(w.adult.memberId);
+      for (const row of await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", w.adult.memberId).eq("kind", "self")).collect()) await ctx.db.delete(row._id);
+      await ctx.db.insert("consentRecords", { memberId: w.adult.memberId, instituteId: member!.instituteId, kind: "self", by: "self", byMemberId: w.adult.memberId, textVersion: HOUSE_NOTICE_V1, under18AtTime: false });
+    });
+    expect((await me(w.adult)).state).toBe("consentNeeded");
+  });
+
+  test("covers AC-18: the notice says what the rooms really do: teachers read blog posts, classmates read approved ones, the study hour chat is read and kept 30 days", () => {
+    const text = HOUSE_NOTICE_LINES.join(" ");
+    expect(text).toMatch(/teacher of your class[^.]*reads each blog post/);
+    expect(text).toMatch(/classmates in the same institute can read a blog post/);
+    expect(text).toMatch(/Teachers and the DHI team can read the chat/);
+    expect(text).toMatch(/deleted after 30 days/);
+    // The first draft's promises that are no longer true are gone.
+    expect(text).not.toMatch(/cannot read what you write in any room/);
+    expect(text).not.toMatch(/Only you can see[^.]*writing/);
   });
 });

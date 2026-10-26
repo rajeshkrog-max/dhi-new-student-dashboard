@@ -48,6 +48,7 @@ const MATRIX: [string, Call, [string, string, string, string, string]][] = [
   ["classes.teachers", (w, p) => p.as.query(api.classes.teachers, { classId: w.a1, paginationOpts: page }), ["ok", "ok", "forbidden", "forbidden", "forbidden"]],
   ["members.list (a class)", (w, p) => p.as.query(api.members.list, { paginationOpts: page, classId: w.a1 }), ["ok", "ok", "ok", "forbidden", "forbidden"]],
   ["members.remove", (w, p) => p.as.mutation(api.members.remove, { memberId: w.student.memberId }), ["ok", "ok", "forbidden", "forbidden", "forbidden"]],
+  ["members.moveStaff", (w, p) => p.as.mutation(api.members.moveStaff, { memberId: w.teacher.memberId, instituteId: w.B.instituteId }), ["ok", "forbidden", "forbidden", "forbidden", "forbidden"]],
   ["members.reinstate", (w, p) => p.as.mutation(api.members.reinstate, { memberId: w.student.memberId }), ["ok", "ok", "forbidden", "forbidden", "forbidden"]],
   ["members.setClass", (w, p) => p.as.mutation(api.members.setClass, { memberId: w.student.memberId, classId: w.a2 }), ["ok", "ok", "forbidden", "forbidden", "forbidden"]],
   ["members.setUnder18", (w, p) => p.as.mutation(api.members.setUnder18, { memberId: w.student.memberId, under18: true }), ["ok", "forbidden", "forbidden", "forbidden", "forbidden"]],

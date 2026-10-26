@@ -4,7 +4,7 @@ import { api } from "@dhi/backend/api";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Chip } from "@/components/dhi/ui/chip";
-import { ChooseInstitute, Label, ListEmpty, Outcome, Pager, SelectInput, useScope, type ClassId, type MemberId } from "@/components/dhi/staff/staff-parts";
+import { ChooseInstitute, Label, ListEmpty, Outcome, Pager, SelectInput, useScope, type ClassId, type InstituteId, type MemberId } from "@/components/dhi/staff/staff-parts";
 import { ROLE_LABEL, codeOf, refusalWords } from "@/lib/dhi/house-words";
 import type { HouseRole } from "@/lib/entry";
 
@@ -26,6 +26,8 @@ export function PeopleSection() {
   const reinstate = useMutation(api.members.reinstate);
   const setClass = useMutation(api.members.setClass);
   const setUnder18 = useMutation(api.members.setUnder18);
+  const moveStaff = useMutation(api.members.moveStaff);
+  const institutes = usePaginatedQuery(api.institutes.list, isDhi ? {} : "skip", { initialNumItems: 50 });
 
   // A teacher always has a class chosen: the first of theirs, until they pick another.
   const effectiveClass = classId || (scope.role === "teacher" ? (classes.results[0]?._id ?? "") : "");
@@ -130,6 +132,26 @@ export function PeopleSection() {
                           .map((c) => (
                             <option key={c._id} value={c._id}>
                               {c.grade} {c.section}
+                            </option>
+                          ))}
+                      </SelectInput>
+                    )}
+                    {isDhi && m.status === "active" && (m.role === "teacher" || m.role === "institute_admin") && (
+                      <SelectInput
+                        aria-label={`Move ${m.name} to another institute`}
+                        className="w-auto max-w-48"
+                        value=""
+                        onChange={(e) =>
+                          e.target.value &&
+                          run(() => moveStaff({ memberId: m._id, instituteId: e.target.value as InstituteId }), `${m.name} moved. Their classes here were cleared.`)
+                        }
+                      >
+                        <option value="">Move to institute…</option>
+                        {institutes.results
+                          .filter((i) => i.status === "active")
+                          .map((i) => (
+                            <option key={i._id} value={i._id}>
+                              {i.name}
                             </option>
                           ))}
                       </SelectInput>

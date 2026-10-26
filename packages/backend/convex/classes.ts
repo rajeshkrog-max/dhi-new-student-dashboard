@@ -16,8 +16,9 @@ const classRow = v.object({
   grade: classValidator,
   section: v.string(),
   archived: v.boolean(),
+  paused: v.boolean(),
 });
-const toRow = (c: Doc<"classes">) => ({ _id: c._id, instituteId: c.instituteId, grade: c.grade, section: c.section, archived: c.archivedAt !== undefined });
+const toRow = (c: Doc<"classes">) => ({ _id: c._id, instituteId: c.instituteId, grade: c.grade, section: c.section, archived: c.archivedAt !== undefined, paused: c.pausedAt !== undefined });
 
 // The institute an institute admin or DHI admin works in. A DHI admin names it; an institute admin cannot name another.
 async function workingInstitute(ctx: QueryCtx, mc: MemberContext, named: Id<"institutes"> | undefined): Promise<Id<"institutes">> {
@@ -76,6 +77,46 @@ export const archive = mutation({
     await ctx.db.patch(cls._id, { archivedAt: Date.now() });
     await logAccess(ctx, { actor: mc.member._id, action: "class.archive", instituteId: cls.instituteId });
     return { archived: true as const };
+  },
+});
+
+// Pauses the logins of every student of a class at once (spec house/0021, the first class pilot): the next call of each of them is refused as if they
+// were paused, and nothing they own is touched. A teacher and the other classes are not affected. Pausing again changes nothing. Institute admins
+// and DHI admins only, and each pause and resume is a line in the access log.
+export const pause = mutation({
+  args: { classId: v.id("classes") },
+  returns: v.object({ paused: v.literal(true) }),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "institute_admin" && mc.role !== "dhi_admin") fail("forbidden");
+    const cls = await classInScope(ctx, mc, args.classId);
+    if (cls.pausedAt === undefined) {
+      const now = Date.now();
+      await ctx.db.patch(cls._id, { pausedAt: now });
+      await ctx.db.insert("classPauses", { classId: cls._id, instituteId: cls.instituteId, startedAt: now });
+      await logAccess(ctx, { actor: mc.member._id, action: "class.pause", instituteId: cls.instituteId });
+    }
+    return { paused: true as const };
+  },
+});
+
+export const resume = mutation({
+  args: { classId: v.id("classes") },
+  returns: v.object({ paused: v.literal(false) }),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "institute_admin" && mc.role !== "dhi_admin") fail("forbidden");
+    const cls = await classInScope(ctx, mc, args.classId);
+    if (cls.pausedAt !== undefined) {
+      const now = Date.now();
+      await ctx.db.patch(cls._id, { pausedAt: undefined });
+      const open = (await ctx.db.query("classPauses").withIndex("by_classId_and_startedAt", (q) => q.eq("classId", cls._id)).order("desc").take(5)).find((p) => p.endedAt === undefined);
+      // A class paused before the history existed has no open row, so one is written for the pause that is ending.
+      if (open) await ctx.db.patch(open._id, { endedAt: now });
+      else await ctx.db.insert("classPauses", { classId: cls._id, instituteId: cls.instituteId, startedAt: cls.pausedAt, endedAt: now });
+      await logAccess(ctx, { actor: mc.member._id, action: "class.resume", instituteId: cls.instituteId });
+    }
+    return { paused: false as const };
   },
 });
 

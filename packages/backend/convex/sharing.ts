@@ -1,10 +1,11 @@
 // What a student's parent may see (spec house/0005, AC-9). Only the student changes it, and the default is `none`: no row means none. Each change
-// writes one access log row. This row builds the setting and its record only: no parent account, screen or report exists yet, so nothing reads
-// the value for anyone but the student.
+// writes one access log row. A parent has no account: the weekly page (spec house/0022) is read through the student's own private link
+// (parentLink.ts, parentReport.ts), and turning the setting to `none` deletes that link.
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { fail } from "./helpers";
 import { logAccess, requireMemberAllowLocked } from "./houseAuth";
+import { dropLinks } from "./parentLinkCore";
 import { rateLimiter } from "./limits";
 
 const level = v.union(v.literal("none"), v.literal("summary"));
@@ -35,6 +36,8 @@ export const set = mutation({
       if (row) await ctx.db.patch(row._id, { parentLevel: args.parentLevel, at: Date.now() });
       else await ctx.db.insert("sharingSettings", { memberId: mc.member._id, parentLevel: args.parentLevel, at: Date.now() });
       await logAccess(ctx, { actor: mc.member._id, action: "sharing.set", instituteId: mc.member.instituteId, targetMemberId: mc.member._id });
+      // Turning sharing off ends the parent's link at once (spec house/0022).
+      if (args.parentLevel === "none") await dropLinks(ctx, mc.member);
     }
     return { parentLevel: args.parentLevel };
   },

@@ -30,7 +30,10 @@ const WORDS: Record<string, string> = {
   forbidden: "You cannot do that.",
   not_found: "We could not find that.",
   not_a_teacher: "Only a teacher can be given a class.",
-  last_admin: "This is the last admin, so they cannot be removed.",
+  last_admin: "This is the last admin, so they cannot be removed or moved.",
+  not_staff: "Only a teacher or an institute admin can be moved. A student who changes school is paused here and invited again at the new school.",
+  same_institute: "That person is already in this institute.",
+  no_profile: "We could not find a DhiRise check for this Google account.",
   name_taken: "An institute with that name already exists.",
   invite_not_pending: "This invite has already been used or cleared.",
   too_many_rows: "A class list can have up to 300 rows.",
@@ -50,6 +53,17 @@ const WORDS: Record<string, string> = {
   bad_cursor: "That download could not continue. Please start again.",
   erase_not_configured: "Erasing is not switched on yet. Please write to privacy@dhirise.com.",
   erase_failed: "We could not erase your data just now. Please try again.",
+  // Papers, exams and the blog (spec house/0011, house/0012, house/0014)
+  slow_down: "That was a lot in a short time. Please wait a little and try again.",
+  bad_title: "Please write a title, up to 120 characters.",
+  bad_question: "Each question needs a subject, a topic and its text. A multiple choice question needs 2 to 6 options with one right option.",
+  bad_hint: "A hint must be 300 characters or fewer, and it must not give the answer away.",
+  bad_window: "A paper must open before it is due, at least a minute apart, not more than 14 days, and its due time must still be ahead.",
+  class_paused: "This class is paused for now, so a paper cannot be sent to it.",
+  bad_mark: "A mark is a whole number from 0 up to the question's maximum.",
+  bad_remarks: "Remarks can be up to 1000 characters.",
+  not_submitted: "That paper has not been submitted yet.",
+  not_marked: "Save the marks first, then confirm them.",
 };
 
 export function refusalWords(code: string | undefined): string {

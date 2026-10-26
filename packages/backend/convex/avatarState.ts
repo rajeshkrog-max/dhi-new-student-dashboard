@@ -113,3 +113,11 @@ export async function pictureFor(ctx: Reader, studentId: Id<"students">): Promis
 export async function leaderboardPictureFor(ctx: Reader, studentId: Id<"students">): Promise<string | null> {
   return leaderboardPicturesEnabled() ? await pictureFor(ctx, studentId) : null;
 }
+
+/**
+ * Whether a stored file is a student's profile picture. The storage clean up (reportCopy.sweep) asks this before it deletes a file nobody else holds,
+ * so it never needs to know how the pictures are kept.
+ */
+export async function isHeldByPicture(ctx: Reader, id: Id<"_storage">): Promise<boolean> {
+  return (await ctx.db.query("avatars").withIndex("by_storageId", (q) => q.eq("storageId", id)).first()) !== null;
+}

@@ -499,7 +499,8 @@ describe("what the code can and cannot do", () => {
 
   test("covers AC-4: there is no upload route, and the only code that stores a file is the job that has Browser Run's reply (and, spec 0011, the profile picture sync, which stores what Google returned)", () => {
     const storing = sources.filter(([, text]) => /storage\.store\(|generateUploadUrl|storage\.generate/.test(text)).map(([name]) => name);
-    expect(storing).toEqual(["./avatars.ts", "./reportMakeCore.ts"]);
+    // (and, house spec 0014, the address a student's blog photo is uploaded to, which a teacher sees before classmates do)
+    expect(storing).toEqual(["./avatars.ts", "./blog.ts", "./reportMakeCore.ts"]);
     const http = sources.find(([name]) => name === "./http.ts")![1];
     const routes = [...http.matchAll(/path:\s*"([^"]+)",\s*method:\s*"([A-Z]+)"/g)].map((m) => `${m[2]} ${m[1]}`);
     // every route is a GET; the two /api/team routes are the team link to the saved report (spec 0008), which stores and uploads nothing

@@ -717,10 +717,10 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
 
   // The files that may call the log's helpers or read the table. A room adds its file here when it is built (AC-12). Everything not on this
   // list that imports the log fails the scan.
-  const LOG_IMPORTERS = ["./eventLog.ts", "./eventProof.ts", "./moods.ts", "./habits.ts"];
+  const LOG_IMPORTERS = ["./eventLog.ts", "./eventProof.ts", "./moods.ts", "./habits.ts", "./sleep.ts", "./meals.ts", "./films.ts", "./studyHour.ts", "./sessionFeedback.ts", "./deskSitting.ts", "./exams.ts", "./blog.ts", "./brainDay.ts"];
   // eventProof.ts is the development proof of the retry rule (AC-4); it needs the read helper to count what a race stored.
   // staffRead.ts counts, for a class total, which students have data of a kind in a month (house spec 0005, AC-23).
-  const READ_HELPER_IMPORTERS: string[] = ["./eventProof.ts", "./staffRead.ts", "./moods.ts", "./habits.ts"]; // moods.ts reads the current event to replace it (house spec 0006)
+  const READ_HELPER_IMPORTERS: string[] = ["./eventProof.ts", "./staffRead.ts", "./moods.ts", "./habits.ts", "./sleep.ts", "./meals.ts", "./brainDay.ts"]; // moods.ts and sleep.ts read the current event to replace it (house specs 0006 and 0008)
   const RECORD_ONLY_IMPORTERS: string[] = [];
 
   test("covers AC-10: no app code updates or deletes an event, and only the log inserts one", () => {
@@ -739,7 +739,8 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
   test("covers AC-10, AC-12: no other file reads the events table, and no file outside the allowlist imports the log", () => {
     for (const [name, text] of app) {
       // eventData.ts is the person's own export and erase (house spec 0005): the one other place that reads or deletes events.
-      if (name === "./eventLog.ts" || name === "./eventData.ts" || name === "./moodProof.ts" || name === "./habitProof.ts") continue; // moodProof.ts and habitProof.ts are the dev only live race checks of the first two rooms // moodProof.ts is the dev only live race check of the mood room
+      // brainRollup.ts reads the table by creation time to find the days that changed (house spec 0019); it writes no event.
+      if (name === "./eventLog.ts" || name === "./eventData.ts" || name === "./brainRollup.ts" || name === "./moodProof.ts" || name === "./habitProof.ts" || name === "./sleepProof.ts") continue; // moodProof.ts and habitProof.ts are the dev only live race checks of the first two rooms // moodProof.ts is the dev only live race check of the mood room
       const c = code(text);
       expect(c, `${name} reads events`).not.toMatch(/query\s*\(\s*["']events["']/);
       expect(c, `${name} gets an event`).not.toMatch(/db\s*\.\s*get\s*\(\s*["']events["']/);
@@ -749,7 +750,9 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
       if (/\b(eventsForDay|currentFor|dayStatus|hasEventInRange)\b/.test(c)) {
         expect(READ_HELPER_IMPORTERS, `${name} uses a read helper`).toContain(name);
       }
-      if (/\brecordSystemEvent\b/.test(c)) expect(name, "the system wrapper is for internal jobs").toMatch(/^\.\/eventProof\.ts$/);
+      // eventProof.ts is the development proof; studyHour.ts writes presence minutes from its minute sweep when a seat is dropped (house spec 0015);
+      // exams.ts closes the sittings whose window ended from its minute sweep (house spec 0012).
+      if (/\brecordSystemEvent\b/.test(c)) expect(name, "the system wrapper is for internal jobs").toMatch(/^\.\/(eventProof|studyHour|exams|deskSitting)\.ts$/);
     }
   });
 

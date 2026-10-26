@@ -36,8 +36,11 @@ export const accessActionValidator = v.union(
   v.literal("member.reinstate"),
   v.literal("member.class"),
   v.literal("member.under18"),
+  v.literal("member.move"),
   v.literal("class.create"),
   v.literal("class.archive"),
+  v.literal("class.pause"),
+  v.literal("class.resume"),
   v.literal("class.assign"),
   v.literal("class.unassign"),
   v.literal("inst.create"),
@@ -48,6 +51,9 @@ export const accessActionValidator = v.union(
   v.literal("consent.parentWithdrawn"),
   v.literal("consent.parentRestored"),
   v.literal("sharing.set"),
+  // The private weekly page link for a parent (spec house/0022): made or renewed, and removed (by the student, or when sharing is turned off).
+  v.literal("sharing.link"),
+  v.literal("sharing.unlink"),
   v.literal("data.erase"),
   v.literal("totals.read"),
 );
@@ -250,7 +256,8 @@ export default defineSchema({
     lastError: v.optional(v.string()),
   })
     .index("by_studentId", ["studentId"])
-    .index("by_key", ["key"]),
+    .index("by_key", ["key"])
+    .index("by_storageId", ["storageId"]),
 
   // The private link to a student's report (spec 0010). One row per student, patched in place; the link code is made from `_id` and
   // `generation` and signed with SHARE_LINK_SECRET, so nothing secret is stored here. A new link is a new generation, and the old
@@ -330,9 +337,19 @@ export default defineSchema({
     grade: classValidator,
     section: v.string(),
     archivedAt: v.optional(v.number()),
+    pausedAt: v.optional(v.number()), // logins of the class's students are paused from this moment (spec house/0021); resume clears it
   })
     .index("by_instituteId", ["instituteId"])
     .index("by_instituteId_and_grade", ["instituteId", "grade"]),
+
+  // Each time a class's logins were paused (spec house/0021): when it began and, once resumed, when it ended. `classes.pausedAt` stays the answer to "is it
+  // paused now"; this is the answer to "was it paused then", for the Brain's real zeros and the exams' excused windows. No person in it.
+  classPauses: defineTable({
+    classId: v.id("classes"),
+    instituteId: v.id("institutes"),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+  }).index("by_classId_and_startedAt", ["classId", "startedAt"]),
 
   // One row per person in the house. Identity is always `authUserId`, never `email` (a snapshot only). Shape rules are checked in code on
   // every write: student, teacher and institute_admin have an instituteId; dhi_admin and counselor do not; only a student has classId and under18.
@@ -412,18 +429,41 @@ export default defineSchema({
     .index("by_memberId_and_kind", ["memberId", "kind"])
     .index("by_memberId_and_by", ["memberId", "by"]),
 
-  // The student's own choice of what a parent may see (spec house/0005, AC-9). Erase class `erased`. No row means `none`. No parent account exists yet.
+  // The student's own choice of what a parent may see (spec house/0005, AC-9). Erase class `erased`. No row means `none`. No parent account exists.
   sharingSettings: defineTable({
     memberId: v.id("members"),
     parentLevel: v.union(v.literal("none"), v.literal("summary")),
     at: v.number(),
   }).index("by_memberId", ["memberId"]),
 
+  // The one private link a student gives their parent (spec house/0022). Erase class `erased`. Holds a SHA 256 of the secret code, never the code,
+  // so the code is shown to the student once and cannot be read back. At most one row for a student: making a new link replaces the old one, turning
+  // sharing off or removing the link deletes it. `lastLoggedAt` keeps the student's "who has looked" record to one row an hour for a refreshing page.
+  // A student's own tap linking their house account to their DhiRise funnel check (spec house/0002 follow up). A date and nothing from the check. At most
+  // one row for a student; unlinking or erasing deletes it. The funnel's own rows are never touched.
+  funnelLinks: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.optional(v.id("institutes")),
+    linkedAt: v.number(),
+  }).index("by_memberId", ["memberId"]),
+
+  parentLinks: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.optional(v.id("institutes")),
+    codeHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    lastLoggedAt: v.optional(v.number()),
+  })
+    .index("by_memberId", ["memberId"])
+    .index("by_codeHash", ["codeHash"])
+    .index("by_expiresAt", ["expiresAt"]),
+
   // One row each time staff looked at a student's named personal data (spec house/0005, AC-10). Ids and codes only, never a name. Erase class
   // `kept` for 3 years, then deleted by the daily sweep. `viewerId` is absent for the DHI team. Never changed.
   viewLog: defineTable({
     viewerId: v.optional(v.id("members")),
-    viewerRole: v.union(roleValidator, v.literal("team")),
+    viewerRole: v.union(roleValidator, v.literal("team"), v.literal("parent")), // `parent` is a look through the student's own weekly link (spec house/0022)
     targetMemberId: v.id("members"),
     instituteId: v.optional(v.id("institutes")),
     kind: v.string(), // a data kind code (accessRules.ts)
@@ -461,6 +501,266 @@ export default defineSchema({
     changes: v.number(), // how many times the mood changed (the first save is 0)
   }).index("by_memberId_and_day", ["memberId", "day"]),
 
+  // The papers room (spec house/0011). A teacher's paper: its questions (the right answers and the wrong option tags stay here and never reach a
+  // student), its sends (a class or one student, with an open and a due time), and one attempt row a student has per paper, made at send time.
+  // Marks and remarks live on the attempt and show to the student only after the teacher confirms them.
+  papers: defineTable({
+    teacherMemberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    title: v.string(),
+    status: v.string(), // "draft" or "sent"
+    createdAt: v.number(),
+  }).index("by_teacherMemberId", ["teacherMemberId"]),
+
+  paperQuestions: defineTable({
+    paperId: v.id("papers"),
+    order: v.number(),
+    kind: v.string(), // "mcq" or "long"
+    subject: v.string(),
+    topic: v.string(),
+    text: v.string(),
+    options: v.optional(v.array(v.string())), // mcq only
+    rightOption: v.optional(v.number()), // mcq only, server only
+    tags: v.optional(v.array(v.union(v.string(), v.null()))), // mcq only: a wrong option's tag, null for the right one, server only
+    maxMarks: v.optional(v.number()), // long only
+    rubric: v.optional(v.string()), // long only
+    hint: v.optional(v.string()), // the teacher's hint, server only until a student opens it in a sitting (exams.hint)
+  }).index("by_paperId", ["paperId"]),
+
+  paperSends: defineTable({
+    paperId: v.id("papers"),
+    instituteId: v.id("institutes"),
+    target: v.string(), // "class" or "student"
+    classId: v.optional(v.id("classes")),
+    memberId: v.optional(v.id("members")),
+    opensAt: v.number(),
+    dueAt: v.number(),
+    sentAt: v.number(),
+  }).index("by_paperId", ["paperId"]),
+
+  // One row a student has for a paper, made when the paper is sent. Answers, marks and remarks belong to the student and are erased with them.
+  paperAttempts: defineTable({
+    paperId: v.id("papers"),
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    status: v.string(), // "assigned", "submitted", "marked" or "confirmed"
+    opensAt: v.number(),
+    dueAt: v.number(),
+    marks: v.optional(v.array(v.object({ question: v.number(), mark: v.number() }))),
+    answers: v.optional(v.array(v.object({ question: v.number(), choice: v.optional(v.number()), text: v.optional(v.string()) }))),
+    hintsOpened: v.optional(v.array(v.number())), // the questions whose hint the student opened (the Brain's hint count)
+    startedAt: v.optional(v.number()),
+    submittedAt: v.optional(v.number()),
+    autoSubmitted: v.optional(v.boolean()), // true when the window closed before the student pressed Submit
+    excused: v.optional(v.boolean()), // true when the window closed with nothing answered while the student's class had its logins paused: not a miss (spec house/0021)
+    missed: v.optional(v.boolean()), // true when the window closed with nothing submitted (owner's rule: counts as a miss)
+    mcqCorrect: v.optional(v.number()), // the multiple choice questions answered right, marked by the server at submission
+    remarks: v.optional(v.string()),
+    markedBy: v.optional(v.id("members")),
+    markedAt: v.optional(v.number()),
+    confirmedAt: v.optional(v.number()),
+    acceptedAt: v.optional(v.number()), // when the student accepted the teacher's feedback, set once (exams.acceptFeedback)
+  })
+    .index("by_memberId", ["memberId"])
+    .index("by_paperId_and_memberId", ["paperId", "memberId"])
+    .index("by_status_and_dueAt", ["status", "dueAt"]),
+
+  // The blog room (spec house/0014). A post is written by a student and stays pending until a teacher of the author's class approves it. Only an
+  // approved post is read by classmates in the institute; the author always sees their own. The body is cleaned on the server (blogRules.ts)
+  // before it is stored. Erase class `erased`: a post is the student's own writing.
+  blogPosts: defineTable({
+    authorMemberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    title: v.string(),
+    tag: v.string(), // a code from POST_TAGS (blogRules.ts)
+    body: v.string(), // cleaned markup, bold, italic and a numbered list only
+    photoId: v.optional(v.id("_storage")),
+    status: v.string(), // "pending", "approved", "hidden" or "removed"
+    reviewedBy: v.optional(v.id("members")),
+    publishedAt: v.optional(v.number()), // the first approval, set once: the moment the Brain counts the post as published
+    createdAt: v.number(),
+  })
+    .index("by_authorMemberId", ["authorMemberId"])
+    .index("by_instituteId", ["instituteId"])
+    .index("by_photoId", ["photoId"]),
+
+  blogComments: defineTable({
+    postId: v.id("blogPosts"),
+    authorMemberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    text: v.string(), // plain text, escaped; reviewed like a post
+    status: v.string(), // "pending", "approved", "hidden" or "removed"
+    reviewedBy: v.optional(v.id("members")),
+    createdAt: v.number(),
+    countedAt: v.optional(v.number()), // the first approval, set once: the moment the Brain counts the comment (written and received)
+  })
+    .index("by_postId", ["postId"])
+    .index("by_authorMemberId", ["authorMemberId"])
+    .index("by_instituteId_and_status", ["instituteId", "status"]),
+
+  // The Brain's daily values (spec house/0019). One row for each student and house day that has any value: `values` maps a measure id (metricRules.ts)
+  // to its top and bottom parts. A day with nothing to measure has no row, and a measure with nothing to measure is missing from `values`; neither is a
+  // zero. Worked out from the events by brainRollup.ts, the only writer; rebuilt when `version` is older than METRIC_VERSION. Erase class `erased`.
+  brainDays: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    day: v.string(), // YYYY-MM-DD, the 04:00 to 04:00 India day
+    values: v.record(v.string(), v.object({ num: v.number(), den: v.number() })),
+    version: v.number(),
+    computedAt: v.number(),
+  })
+    .index("by_memberId_and_day", ["memberId", "day"])
+    .index("by_version", ["version"]),
+
+  // A pattern a student marked "does not feel true" is hidden for a while (spec house/0020). One row for each student and pattern. Erase class `erased`.
+  brainHides: defineTable({
+    memberId: v.id("members"),
+    patternId: v.string(),
+    until: v.number(),
+  }).index("by_memberId_and_patternId", ["memberId", "patternId"]),
+
+  // The rollup's own place: the moment it has read the events up to, and the counts of the last nightly check. No person in it.
+  brainState: defineTable({
+    key: v.string(),
+    cursor: v.number(),
+    capped: v.optional(v.boolean()), // the last pass stopped early, so the next one reads strictly after the cursor
+    token: v.optional(v.string()), // where a paged job stopped (the rebuild of stale days), so rows it cannot rebuild do not hold up the rest
+    checked: v.optional(v.number()),
+    mismatches: v.optional(v.number()),
+    at: v.optional(v.number()),
+  }).index("by_key", ["key"]),
+
+  // The food table (spec house/0009). The catalog (status "catalog") is loaded only after its source licence is checked, so it starts empty. A
+  // student's own custom dish (status "custom") holds the numbers the student gave, and counts for them at once. DHI can publish a custom dish,
+  // which copies it into the catalog with the source "DHI checked". Numbers are per serving.
+  foods: defineTable({
+    status: v.string(), // "catalog" or "custom"
+    nameEn: v.string(),
+    nameHi: v.optional(v.string()),
+    aliases: v.optional(v.array(v.string())),
+    group: v.string(), // a code from FOOD_GROUPS (foodRules.ts)
+    processing: v.string(), // a code from PROCESSING
+    energyKcal: v.number(),
+    carbsG: v.number(),
+    proteinG: v.number(),
+    fatG: v.number(),
+    serving: v.string(),
+    source: v.string(),
+    licence: v.string(),
+    ownerMemberId: v.optional(v.id("members")), // custom dishes only
+    publishedBy: v.optional(v.id("members")),
+    createdAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_ownerMemberId", ["ownerMemberId"]),
+
+  // The meals room (spec house/0010). One row a plate a student logged: the food (catalog or the student's own dish), a count, the meal and the
+  // house day of the time it was eaten. The event holds the meal and the group only, never the dish name.
+  mealPlates: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    day: v.string(), // the house day of `eatenAt` (dayRules.ts)
+    meal: v.string(), // a code from MEALS
+    eatenAt: v.number(),
+    foodId: v.id("foods"),
+    group: v.string(),
+    count: v.number(),
+    removedAt: v.optional(v.number()),
+  })
+    .index("by_memberId_and_day", ["memberId", "day"])
+    .index("by_memberId", ["memberId"]),
+
+  // The modules room (spec house/0013). A film is uploaded and approved by DHI only; a student has no way to add one. `hostRef` is the video's
+  // reference at the host (a path in the house's own public folder until the video host account is ready). Academic films carry two check
+  // questions (`filmChecks`), whose right options stay on the server. Progress is written by the server only, and the score is written once.
+  films: defineTable({
+    title: v.string(),
+    category: v.string(), // a code from CATEGORIES (moduleRules.ts)
+    blurb: v.string(),
+    cover: v.string(), // a path in the house's public folder
+    hostRef: v.string(),
+    durationSec: v.number(),
+    scoreValue: v.number(),
+    status: v.string(), // "pending" or "approved"
+    uploadedBy: v.id("members"),
+    approvedBy: v.optional(v.id("members")),
+    createdAt: v.number(),
+  }).index("by_status", ["status"]),
+
+  filmChecks: defineTable({
+    filmId: v.id("films"),
+    order: v.number(),
+    question: v.string(),
+    options: v.array(v.string()),
+    rightOption: v.number(), // server only
+  }).index("by_filmId", ["filmId"]),
+
+  // One row a student has for a film they started. `furthestSec` is raised only by the server, a little faster than real time at most.
+  // `scored` is true once the score was written (at the end of the film); a replay writes nothing. Erase class `erased`.
+  filmProgress: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    filmId: v.id("films"),
+    furthestSec: v.number(),
+    lastAt: v.optional(v.number()),
+    scored: v.boolean(),
+    scoredAt: v.optional(v.number()),
+  })
+    .index("by_memberId_and_filmId", ["memberId", "filmId"])
+    .index("by_memberId", ["memberId"]),
+
+  // The study hour (spec house/0015). A DHI admin sets the hour. A seat is a student's place in it: they enter only while it is open, and a seat
+  // with no heartbeat for 60 seconds is dropped. Seats and chat belong to an institute, and a student sees only their own institute's. Presence
+  // minutes go to the event log as a number when a seat ends. Erase class `erased` for seats and chat (they are the student's own).
+  studyHours: defineTable({
+    opensAt: v.number(),
+    closesAt: v.number(),
+    setBy: v.id("members"),
+    createdAt: v.number(),
+  }).index("by_opensAt", ["opensAt"]),
+
+  seats: defineTable({
+    hourId: v.id("studyHours"),
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    mode: v.string(), // "live", "away" or "dnd"
+    enteredAt: v.number(),
+    lastBeatAt: v.number(),
+    leftAt: v.optional(v.number()),
+    // The after session card (spec house/0018): "pending" when a stay of 20 minutes or more ends, then "answered" or "skipped". A skip changes no value.
+    feedbackStatus: v.optional(v.string()),
+    feel: v.optional(v.string()), // a code from FEELS (sessionRules.ts), only when answered
+    focus: v.optional(v.number()), // 1 to 5, only when answered
+  })
+    .index("by_hourId_and_instituteId", ["hourId", "instituteId"])
+    .index("by_memberId_and_hourId", ["memberId", "hourId"])
+    .index("by_memberId", ["memberId"])
+    .index("by_leftAt", ["leftAt"]),
+
+  chatMessages: defineTable({
+    hourId: v.id("studyHours"),
+    instituteId: v.id("institutes"),
+    authorMemberId: v.id("members"),
+    text: v.string(),
+    createdAt: v.number(),
+    reported: v.boolean(),
+    status: v.string(), // "shown" or "hidden"
+  })
+    .index("by_hourId_and_instituteId", ["hourId", "instituteId"])
+    .index("by_authorMemberId", ["authorMemberId"]),
+
+  // The sleep room (spec house/0008). One row for each student and night, holding the bed time and the length of sleep, both as minutes on the
+  // noon shifted scale (sleepRules.ts). Erase class `erased`. Seen by the student alone: no function reads it for anyone else, and the event the room
+  // writes holds only the two numbers. Uniqueness of (memberId, day) holds only because `sleep.save` looks it up first.
+  sleepNights: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    day: v.string(), // YYYY-MM-DD, the house day on which the night was saved (dayRules.ts)
+    bedMin: v.number(), // 0 to 1439, a multiple of 15: minutes after 12:00 noon India time
+    lengthMin: v.number(), // 60 to 960, a multiple of 15
+    changes: v.number(), // how many times the night changed (the first save is 0)
+  }).index("by_memberId_and_day", ["memberId", "day"]),
+
   // The habits room (spec house/0007). A habit has a kind (a fixed code or `custom`), the student's own title, a colour and a window. Erase class
   // `erased`. Seen by the student alone: no function reads it for anyone else, and the event a tick writes holds only the kind. A removed habit
   // keeps its rows (`removedOn` is the day it ended). At most five are open for a student, checked by `habits.add`.
@@ -489,6 +789,82 @@ export default defineSchema({
   })
     .index("by_planId_and_day", ["planId", "day"])
     .index("by_memberId", ["memberId"]),
+
+  // The DHI desk (spec house/0016). One row: the coins DHI gives each student every month, set by a DHI admin only. Kept, no student in it.
+  deskSettings: defineTable({
+    monthlyCoins: v.number(),
+    setBy: v.id("members"),
+    updatedAt: v.number(),
+  }),
+
+  // A student's coins. One row, made at the first visit. `grantedMonth` is the India month (YYYY-MM) the allotment was last added for, so the month's
+  // coins are added once, the first time the student asks that month, and the balance rolls over. The balance never goes below zero: a question
+  // takes its coins in the same step that stores it. Erase class `erased`.
+  deskWallets: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    balance: v.number(),
+    grantedMonth: v.string(),
+  }).index("by_memberId", ["memberId"]),
+
+  // A student's saved talk. Erase class `erased`, seen by the student alone.
+  deskThreads: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    title: v.string(), // the first line of the first question, cut short
+    lastAt: v.number(),
+  }).index("by_memberId_and_lastAt", ["memberId", "lastAt"]),
+
+  // One question and its answer. `status` is `pending` (coins taken, the model not yet answered), `answered` or `failed` (the coins were returned).
+  // `cached` is true when the answer came from `deskCache` for 0 coins and no model call. The model name and the token counts are the cost ledger
+  // (Desk Design, model gateway). Erase class `erased`.
+  deskTurns: defineTable({
+    threadId: v.id("deskThreads"),
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    kind: v.string(), // a code from DESK_KINDS (deskRules.ts)
+    question: v.string(),
+    answer: v.optional(v.string()),
+    status: v.string(),
+    coinsSpent: v.number(),
+    cached: v.boolean(),
+    model: v.optional(v.string()),
+    tokensIn: v.optional(v.number()),
+    tokensOut: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_threadId", ["threadId"])
+    .index("by_memberId", ["memberId"])
+    .index("by_status_and_createdAt", ["status", "createdAt"]),
+
+  // Answers kept so a repeated question costs nothing and calls no model. Scoped to one institute and keyed by the kind and the cleaned question
+  // (`cacheKeyOf`). Holds no student: no member id, and a question with an email or a phone number is never stored. Kept; served for 90 days.
+  deskCache: defineTable({
+    instituteId: v.id("institutes"),
+    key: v.string(),
+    answer: v.string(),
+    hits: v.number(),
+    createdAt: v.number(),
+  }).index("by_instituteId_and_key", ["instituteId", "key"]),
+
+  // A desk sitting (spec house/0018, desk part): a run of questions with no gap over 15 minutes, kept so the after session card can be offered. `startedAt`
+  // is the first question, `lastAt` the latest. `feedbackStatus` is empty while the sitting is open, then `none` (under 10 minutes), `pending`, `answered` or
+  // `skipped`. The minute job in `deskSitting.closeSittings` sets it. Erase class `erased`; seen by the student alone.
+  deskSittings: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    startedAt: v.number(),
+    lastAt: v.number(),
+    feedbackStatus: v.optional(v.string()),
+    feel: v.optional(v.string()),
+    focus: v.optional(v.number()),
+    subject: v.optional(v.string()),
+    // Questions asked in the sitting, and how many of them were an active learning kind (write, paper or mock). Counts only, for the Brain's A10 and A12.
+    turns: v.optional(v.number()),
+    activeTurns: v.optional(v.number()),
+  })
+    .index("by_memberId_and_lastAt", ["memberId", "lastAt"])
+    .index("by_feedbackStatus_and_lastAt", ["feedbackStatus", "lastAt"]),
 
   // The room event log (spec house/0004). Append only: no app code updates or deletes a row (the only removal is the erase of spec house/0005).
   // Written only by `recordEvent` in eventLog.ts, inside a room's own mutation; no public function reads or writes it. Erase class `erased`:

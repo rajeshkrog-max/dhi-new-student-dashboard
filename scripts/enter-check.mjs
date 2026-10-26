@@ -97,7 +97,7 @@ async function runStudent(browser, { label, name, age, cls, minor }) {
     await page.getByRole("heading", { name: "You are not in a house yet" }).waitFor({ timeout: 20_000 });
     const text = await page.locator("body").innerText();
     expect(!text.includes(name) && !text.includes("Suzzy"), "a name is shown to a person who is not in a house");
-    expect((await page.getByTestId("sample-note").count()) === 0, "the house rooms are showing to a person who is not in a house");
+    expect((await page.locator("[data-room]").count()) === 0, "the house rooms are showing to a person who is not in a house");
   });
 
   await step("the root address and the old /home address both lead a finished student to the dashboard", async () => {
@@ -218,7 +218,9 @@ async function runHouse(browser) {
     await guestPage.getByTestId("agree").click();
     await guestPage.getByText(guest.name).first().waitFor({ timeout: 20_000 });
     await guestPage.getByText("Class 10 A").first().waitFor({ timeout: 10_000 });
-    expect(await guestPage.getByTestId("sample-note").isVisible(), "the sample data note is missing on the dashboard");
+    // The rooms hold the student's own data now (house specs 0006 to 0020), so there is no sample data note, and Home shows the real score card.
+    await guestPage.getByTestId("home-score").waitFor({ timeout: 20_000 });
+    expect((await guestPage.getByTestId("sample-note").count()) === 0, "a sample data note is still shown on the dashboard");
     // The greeting card must show all of its content: it once shrank to a strip and clipped its text in the scrolling column (found 2026-10-18).
     const clipped = await guestPage.evaluate(() => {
       const card = document.querySelector("section[aria-label=House] article");
@@ -240,6 +242,20 @@ async function runHouse(browser) {
     await admin.goto("/staff");
     await admin.locator('[data-room="people"]:visible').click();
     const row = admin.getByTestId("people-list").locator("li", { hasText: guest.email });
+    // The list is oldest first, 25 a page, and the demo institute grows with every proof run, so press Show more until the new person shows.
+    await admin.getByTestId("people-list").locator("li").first().waitFor({ timeout: 20_000 });
+    // The button is gone for a moment while a page loads, so it is waited for (up to 4 seconds) before the list is taken as complete.
+    for (let more = 0, idle = 0; more < 400 && (await row.count()) === 0; more += 1) {
+      const button = admin.getByRole("button", { name: "Show more" });
+      if ((await button.count()) === 0) {
+        if ((idle += 1) > 8) break;
+        await admin.waitForTimeout(500);
+        continue;
+      }
+      idle = 0;
+      await button.first().click();
+      await admin.waitForTimeout(600);
+    }
     await row.waitFor({ timeout: 20_000 });
     await row.getByRole("button", { name: /^Pause/ }).click();
     await row.getByRole("button", { name: /^Bring back/ }).waitFor({ timeout: 20_000 });

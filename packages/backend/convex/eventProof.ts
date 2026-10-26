@@ -8,7 +8,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { env, internalAction, internalMutation, internalQuery } from "./_generated/server";
-import { HOUSE_NOTICE_VERSION } from "./consentText";
+import { HOUSE_ACCEPTED_VERSIONS, HOUSE_NOTICE_VERSION } from "./consentText";
 import { dayOf } from "./dayRules";
 import { eventsForDay, recordSystemEvent } from "./eventLog";
 import { fail } from "./helpers";
@@ -36,8 +36,8 @@ export const seed = internalMutation({
     const existing = await ctx.db.query("members").withIndex("by_authUserId", (q) => q.eq("authUserId", authUserId)).unique();
     // The event log refuses a student who is not through consent, so the proof student agrees (an adult, so no parent record).
     const give = async (memberId: Id<"members">) => {
-      const has = await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", memberId).eq("kind", "self")).first();
-      if (!has) await ctx.db.insert("consentRecords", { memberId, instituteId, kind: "self", by: "self", byMemberId: memberId, textVersion: HOUSE_NOTICE_VERSION, under18AtTime: false });
+      const agreed = await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", memberId).eq("kind", "self")).take(10);
+      if (!agreed.some((r) => HOUSE_ACCEPTED_VERSIONS.includes(r.textVersion))) await ctx.db.insert("consentRecords", { memberId, instituteId, kind: "self", by: "self", byMemberId: memberId, textVersion: HOUSE_NOTICE_VERSION, under18AtTime: false });
     };
     if (existing) {
       await give(existing._id);

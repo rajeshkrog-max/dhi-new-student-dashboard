@@ -98,11 +98,17 @@ export const CHALLENGE_PARENT_TICK = "My parent or guardian agrees.";
 // the owner has not approved them, and the house stays on made up people until they do (spec house/0005, follow up). A change of wording after
 // the first use is a new version, because a consent record points at the exact text; a version dropped from HOUSE_ACCEPTED_VERSIONS needs a
 // fresh agreement. Versions are never compared by order. The kind `house` works only for the house gate: no funnel text can stand in for it.
-export const HOUSE_NOTICE_VERSION = "house-v1";
+export const HOUSE_NOTICE_V1 = "house-v1";
+// The second draft (2026-10-22). The first said that only the student could see their writing and chats, and that the DHI team could not read what
+// they write in any room. The rooms are built now, and a teacher reads each blog post before the class does, classmates read approved posts, and the
+// study hour chat is read by the others in the hour and kept for teachers and the DHI team to moderate. The notice has to say what really happens, so
+// it is a new version, and everyone who agreed to the first draft (made up people only) agrees again.
+export const HOUSE_NOTICE_VERSION = "house-v2";
 // False until the owner approves the exact words (AC-18). The screen shows the lines as written, with a draft mark while this is false.
 export const HOUSE_WORDS_APPROVED = false;
 
-export const HOUSE_NOTICE_LINES: readonly string[] = [
+// The first draft, kept as written because the consent records made while the house was built point at it. It is no longer accepted.
+export const HOUSE_NOTICE_V1_LINES: readonly string[] = [
   "DHI is your study house. When you use its rooms, DHI saves what you do there, such as your moods, meals, habits, sleep, study hours, writing, exam answers and chats with the desk.",
   "Only you can see your moods, meals, habits, sleep, study hours, writing and desk chats. Your teacher can see your exam results for your class. Your institute can see your exam results, and totals for a whole class (only when 10 or more students stand behind a total). The DHI team cannot read what you write in any room.",
   "Each time a teacher or your institute looks at your named results, DHI records their role and the date. You can see this record in Your data. It never holds a name.",
@@ -110,6 +116,20 @@ export const HOUSE_NOTICE_LINES: readonly string[] = [
   "If you are under 18, your school must hold your parent or guardian's written consent before you enter, and tells DHI that it does. DHI keeps only who recorded it, when, and which wording. It keeps nothing about your parent.",
   "You can withdraw your consent, download your data, or erase it at any time in Your data. Withdrawing pauses the house and keeps your data until you erase it. Erasing removes your data for good. A short record that you agreed stays, so the school and DHI can show what was agreed.",
   "Your data is kept until you erase it. If your institute removes you and does not bring you back within 12 months, DHI erases your data. Your data is stored with our database provider, Convex, on servers outside India. We will name the exact place here once it is confirmed.",
+  "Questions or complaints: privacy@dhirise.com. By tapping I agree, you confirm that you have read this notice.",
+];
+
+
+export const HOUSE_NOTICE_LINES: readonly string[] = [
+  "DHI is your study house. When you use its rooms, DHI saves what you do there, such as your moods and notes, meals, habits, sleep, study hours and chat, blog posts and photos, exam answers and marks, and the films you watch. DHI also works out numbers and patterns from your own days, and shows them to you.",
+  "Only you can see your moods and notes, meals, habits, sleep, and the numbers and patterns DHI works out for you.",
+  "A teacher of your class can see your exam answers, marks and remarks, and reads each blog post, photo and comment before your classmates can. Your institute can see your exam marks and remarks, and totals for a whole class (only when 10 or more students stand behind a total).",
+  "Your classmates in the same institute can read a blog post and its comments once a teacher approves them. In the study hour, the others in the hour with you can see your name beside your seat when you sit in Live mode, and what you write in its chat. Teachers and the DHI team can read the chat to keep it safe, and the chat is deleted after 30 days.",
+  "Each time a teacher or your institute looks at your named exam results, DHI records their role and the date. You can see this record in Your data. It never holds a name.",
+  "Your parent or guardian sees nothing about you unless you turn sharing on. It is off until you turn it on, and only you can change it.",
+  "If you are under 18, your school must hold your parent or guardian's written consent before you enter, and tells DHI that it does. DHI keeps only who recorded it, when, and which wording. It keeps nothing about your parent.",
+  "You can withdraw your consent, download your data, or erase it at any time in Your data. Withdrawing pauses the house and keeps your data until you erase it. Erasing removes your data for good. A short record that you agreed stays, so the school and DHI can show what was agreed.",
+  "Your data is kept until you erase it, except the study hour chat, which is deleted after 30 days. If your institute removes you and does not bring you back within 12 months, DHI erases your data. Your data is stored with our database provider, Convex, on servers outside India. We will name the exact place here once it is confirmed.",
   "Questions or complaints: privacy@dhirise.com. By tapping I agree, you confirm that you have read this notice.",
 ];
 
@@ -136,6 +156,7 @@ export const CONSENT_TEXTS: Readonly<Record<string, string>> = {
   [LEAD_CONSENT_VERSION]: LEAD_CONSENT_LINES.join("\n\n"),
   [SHARE_CONSENT_VERSION]: SHARE_CONSENT_LINES.join("\n\n"),
   [CHALLENGE_CONSENT_VERSION]: CHALLENGE_CONSENT_LINES.join("\n\n"),
+  [HOUSE_NOTICE_V1]: HOUSE_NOTICE_V1_LINES.join("\n\n"),
   [HOUSE_NOTICE_VERSION]: HOUSE_NOTICE_LINES.join("\n\n"),
   [HOUSE_PARENT_VERSION]: HOUSE_PARENT_LINES.join("\n\n"),
 };
@@ -149,6 +170,7 @@ export const CONSENT_KINDS: Readonly<Record<string, ConsentKind>> = {
   [LEAD_CONSENT_VERSION]: "lead",
   [SHARE_CONSENT_VERSION]: "share",
   [CHALLENGE_CONSENT_VERSION]: "challenge",
+  [HOUSE_NOTICE_V1]: "house",
   [HOUSE_NOTICE_VERSION]: "house",
   [HOUSE_PARENT_VERSION]: "house_parent",
 };

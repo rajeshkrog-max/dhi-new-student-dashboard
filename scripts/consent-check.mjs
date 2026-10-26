@@ -29,6 +29,24 @@ async function step(label, run) {
 function expect(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+// The staff lists are oldest first, 25 a page, and the demo institute grows with every proof run, so press Show more until the row shows (up to 400 pages, because every proof run adds students).
+async function showRow(admin, listId, row) {
+  await admin.getByTestId(listId).locator("li").first().waitFor({ timeout: 20_000 });
+  // The button is gone for a moment while a page loads, so it is waited for (up to 4 seconds) before the list is taken as complete.
+  for (let more = 0, idle = 0; more < 400 && (await row.count()) === 0; more += 1) {
+    const button = admin.getByRole("button", { name: "Show more" });
+    if ((await button.count()) === 0) {
+      if ((idle += 1) > 8) break;
+      await admin.waitForTimeout(500);
+      continue;
+    }
+    idle = 0;
+    await button.first().click();
+    await admin.waitForTimeout(600);
+  }
+  await row.waitFor({ timeout: 20_000 });
+}
 const waitForPath = (page, prefix, ms = 20_000) => page.waitForURL((url) => url.pathname.startsWith(prefix), { timeout: ms });
 
 const unique = `consent${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
@@ -94,7 +112,7 @@ try {
       throw new Error("the draft mark is missing on the school's screen");
     });
     const row = admin.getByTestId("parent-list").locator("li", { hasText: kid.name });
-    await row.waitFor({ timeout: 20_000 });
+    await showRow(admin, "parent-list", row);
     await row.getByRole("button", { name: /^Record consent/ }).click();
     await row.getByText("On file").waitFor({ timeout: 20_000 });
     await page.getByText(kid.name).first().waitFor({ timeout: 20_000 });
@@ -155,7 +173,7 @@ try {
     await admin.goto("/staff");
     await admin.locator('[data-room="people"]:visible').click();
     const row = admin.getByTestId("people-list").locator("li", { hasText: kid.email });
-    await row.waitFor({ timeout: 20_000 });
+    await showRow(admin, "people-list", row);
     await row.getByRole("button", { name: /^Pause/ }).click();
     await row.getByRole("button", { name: /^Bring back/ }).waitFor({ timeout: 20_000 });
     await page.reload();

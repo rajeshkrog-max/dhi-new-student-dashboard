@@ -6,6 +6,7 @@ import { components, internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { env, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { logAccess } from "./houseAuth";
+import { deleteLinks } from "./parentLinkCore";
 
 export const BLOCK_DAYS = 30;
 export const BLOCK_MS = BLOCK_DAYS * 24 * 60 * 60 * 1000;
@@ -77,6 +78,9 @@ export async function beginErase(ctx: MutationCtx, member: Doc<"members">, opts:
   }
   const setting = await ctx.db.query("sharingSettings").withIndex("by_memberId", (q) => q.eq("memberId", member._id)).first();
   if (setting) await ctx.db.delete("sharingSettings", setting._id);
+  await deleteLinks(ctx, member._id);
+  const funnel = await ctx.db.query("funnelLinks").withIndex("by_memberId", (q) => q.eq("memberId", member._id)).first();
+  if (funnel) await ctx.db.delete("funnelLinks", funnel._id);
   const classes = await ctx.db.query("teacherClasses").withIndex("by_memberId", (q) => q.eq("memberId", member._id)).take(200);
   for (const row of classes) await ctx.db.delete("teacherClasses", row._id);
 
