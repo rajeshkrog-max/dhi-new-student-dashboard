@@ -10,6 +10,7 @@ import {
   MONTHS,
   MOODS,
   daysInMonth,
+  inkOn,
   loadMood,
   moodOf,
   openSlots,
@@ -176,8 +177,9 @@ export function MoodTracker() {
                     setDirty(true);
                   }}
                   className={cn(
-                    "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-control border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:text-paper hover:shadow-md",
-                    on ? "border-transparent text-paper shadow-md" : "border-white/80 bg-white text-home",
+                    "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-control border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:shadow-md",
+                    inkOn(m.color).hover,
+                    on ? `border-transparent shadow-md ${inkOn(m.color).ink}` : "border-white/80 bg-white text-home",
                   )}
                   style={{ backgroundColor: on ? m.color : undefined }}
                   onMouseEnter={(e) => {
@@ -268,10 +270,12 @@ export function MoodTracker() {
             </div>
           </div>
           <div className="mt-6 flex flex-1 flex-col items-center justify-center">
-            <div className="h-48 w-48">
+            {/* The ring repeats the list below it, which a screen reader reads, so the drawing itself is hidden from it (WCAG 1.1.1). */}
+            <div className="h-48 w-48" aria-hidden="true">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart accessibilityLayer={false}>
                   <Pie
+                    rootTabIndex={-1}
                     data={pie.slices.length ? pie.slices : [{ key: "empty", value: 1, color: "var(--color-sand-deep)" }]}
                     dataKey="value"
                     innerRadius={58}
@@ -495,7 +499,7 @@ function MonthBoard({
                 "grid h-11 place-items-center rounded-control text-xs sm:aspect-square sm:h-auto",
                 isToday && "ring-2 ring-gold",
                 !cell && "bg-sand text-mute",
-                cell && "text-paper",
+                cell && inkOn(moodOf(cell.mood).color).ink,
               )}
               style={{ backgroundColor: cell ? moodOf(cell.mood).color : undefined }}
             >

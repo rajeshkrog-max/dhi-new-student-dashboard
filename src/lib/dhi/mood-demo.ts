@@ -25,7 +25,7 @@ export const MOODS: { key: MoodKey; label: string; color: string; glyph: string 
   { key: "tired", label: "Tired", color: "#c4b49a", glyph: "🌒" },
   { key: "stressed", label: "Stressed", color: "#c47a4a", glyph: "🌊" },
   { key: "anxious", label: "Anxious", color: "#d98980", glyph: "🌬️" },
-  { key: "sad", label: "Sad", color: "#6a7a78", glyph: "🌧️" },
+  { key: "sad", label: "Sad", color: "#677775", glyph: "🌧️" }, // two steps darker than #6a7a78, so white text on it reaches 4.5 to 1 (2026-10-26)
   { key: "heavy", label: "Heavy", color: "#3d4450", glyph: "🌑" },
 ];
 
@@ -178,4 +178,25 @@ export function sendHelp(store: MoodStore, message: string, slotId: string | nul
   };
   saveMood(next);
   return next;
+}
+
+// The text colour on a mood's own colour (WCAG 2.1 AA, 1.4.3; the accessibility scan of 2026-10-26): of the house's paper, its home colour, its dark
+// ink and white, the one that stands out most from that colour (every mood reaches 4.5 to 1). Full class names, so Tailwind keeps them.
+const INKS = [
+  { hex: "#f6f1e8", ink: "text-paper", hover: "hover:text-paper" }, // look-ok: the paper token's value, for the contrast math
+  { hex: "#2a2438", ink: "text-home", hover: "hover:text-home" }, // look-ok: the home token's value, for the contrast math
+  { hex: "#122018", ink: "text-ink", hover: "hover:text-ink" }, // look-ok: the ink token's value, for the contrast math
+  { hex: "#ffffff", ink: "text-white", hover: "hover:text-white" }, // look-ok: the white token's value, for the contrast math
+] as const;
+const lum = (hex: string): number => {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+export const contrast = (a: string, b: string): number => {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+export function inkOn(hex: string): { ink: string; hover: string } {
+  const best = [...INKS].sort((a, b) => contrast(hex, b.hex) - contrast(hex, a.hex))[0];
+  return { ink: best.ink, hover: best.hover };
 }

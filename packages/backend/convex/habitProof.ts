@@ -39,6 +39,7 @@ export const counts = internalQuery({
   args: { memberId: v.id("members") },
   returns: v.object({ checks: v.number(), events: v.number(), currentEvents: v.number() }),
   handler: async (ctx, args) => {
+    if (env.TEST_SIGNIN_ENABLED !== "true") fail("proof_disabled");
     const day = dayOf(Date.now());
     const checks = await ctx.db.query("habitChecks").withIndex("by_memberId", (q) => q.eq("memberId", args.memberId)).take(50);
     const events = await ctx.db.query("events").withIndex("by_memberId_and_loggedFor", (q) => q.eq("memberId", args.memberId).eq("loggedFor", day)).take(600);

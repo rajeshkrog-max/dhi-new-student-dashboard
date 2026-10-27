@@ -296,7 +296,7 @@ export const begin = internalMutation({
           cached: true,
           createdAt: now,
         });
-        await ctx.db.patch(hit._id, { hits: hit.hits + 1 });
+        // No count is written on a hit: every hit of a shared answer writing one row made many students' questions conflict (burst check of 2026-10-26).
         await touchSitting(ctx, member, now, kind);
         return { ok: true as const, mode: "cached" as const, threadId: threadId as string, turnId: turnId as string, answer: hit.answer, balance: wallet.balance };
       }

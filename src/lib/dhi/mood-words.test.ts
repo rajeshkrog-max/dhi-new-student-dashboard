@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GUNAS, MOOD_CODES } from "@dhi/backend/moodRules";
-import { MOODS, THOUGHTS } from "./mood-demo.ts";
+import { MOODS, THOUGHTS, contrast, inkOn } from "./mood-demo.ts";
 import { GUNA_WORDS, MOOD_WORDS_APPROVED, NEW_LINES, dhiLine, gunaOf, moodRefusal } from "./mood-words.ts";
 
 // Clinical words the room must not use, and labels it must not put on a student (spec house/0006, AC-8).
@@ -49,4 +49,13 @@ test("spec house/0006 AC-11: every refusal of a save has plain words, and an unk
   }
   assert.equal(moodRefusal("nothing_like_this"), "Something went wrong. Please try again.");
   assert.equal(moodRefusal({ data: { code: "rate_limited" } }), moodRefusal("rate_limited"));
+});
+
+// WCAG 2.1 AA 1.4.3 (the accessibility scan of 2026-10-26): the label on every mood's own colour reaches 4.5 to 1.
+test("every mood's label on its own colour reaches a contrast of 4.5 to 1", () => {
+  const hexOf: Record<string, string> = { "text-paper": "#f6f1e8", "text-home": "#2a2438", "text-ink": "#122018", "text-white": "#ffffff" }; // look-ok: token values
+  for (const m of MOODS) {
+    const { ink } = inkOn(m.color);
+    assert.ok(contrast(m.color, hexOf[ink]) >= 4.5, `${m.key} on ${m.color} with ${ink}`);
+  }
 });

@@ -79,6 +79,7 @@ export const storedWithKey = internalQuery({
   args: { memberId: v.id("members"), keyPrefix: v.string(), day: v.string() },
   returns: v.number(),
   handler: async (ctx, args) => {
+    if (env.TEST_SIGNIN_ENABLED !== "true") fail("proof_disabled");
     const rows = await eventsForDay(ctx, { memberId: args.memberId, day: args.day, includeVoided: true });
     return rows.filter((r) => r.eventKey.startsWith(args.keyPrefix)).length;
   },

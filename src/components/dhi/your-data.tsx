@@ -359,9 +359,6 @@ export function YourData({
         </Card>
       )}
 
-      {/* Only while consent is in place: `funnelLink.status` sits behind the consent gate, and a withdrawn student makes no new link. */}
-      {!reduced && gate?.state === "ok" && <FunnelLinkCard />}
-
       <Card>
         <h2 className="text-sm font-semibold">Download or erase</h2>
         <p className="mt-2 text-sm text-mute touch:text-base">
@@ -406,6 +403,10 @@ export function YourData({
           </div>
         )}
       </Card>
+
+      {/* Only while consent is in place: `funnelLink.status` sits behind the consent gate, and a withdrawn student makes no new link. It is the
+          last card, because it appears only when its answer arrives, and so nothing below it can move (the sweep of 2026-10-27). */}
+      {!reduced && gate?.state === "ok" && <FunnelLinkCard />}
     </div>
   );
 }

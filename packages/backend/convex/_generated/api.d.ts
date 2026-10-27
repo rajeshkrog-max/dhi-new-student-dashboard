@@ -117,6 +117,7 @@ import type * as pauseHistory from "../pauseHistory.js";
 import type * as purge from "../purge.js";
 import type * as referral from "../referral.js";
 import type * as referralHttp from "../referralHttp.js";
+import type * as rehearsalProof from "../rehearsalProof.js";
 import type * as reportCopy from "../reportCopy.js";
 import type * as reportCore from "../reportCore.js";
 import type * as reportHttp from "../reportHttp.js";
@@ -271,6 +272,7 @@ declare const fullApi: ApiFromModules<{
   purge: typeof purge;
   referral: typeof referral;
   referralHttp: typeof referralHttp;
+  rehearsalProof: typeof rehearsalProof;
   reportCopy: typeof reportCopy;
   reportCore: typeof reportCore;
   reportHttp: typeof reportHttp;

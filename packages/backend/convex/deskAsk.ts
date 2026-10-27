@@ -2,7 +2,7 @@
 // entry check, the limits, the exam lock, the cache and the coins), calls the model only on a miss, and then keeps the answer (`desk.finish`) or returns
 // the coins (`desk.abandon`). The model receives the instruction and the student's typed question, and for a clarifying question the talk's last
 // question and answer: never a name, a class or another student's data. The key is read from the deployment's environment and goes nowhere else.
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action, env } from "./_generated/server";
 import { answerMaxFor, cleanSvg, maxTokensFor, systemPromptFor, userTextFor } from "./deskRules";
@@ -65,7 +65,15 @@ export const ask = action({
   args: { threadId: v.optional(v.string()), kind: v.string(), question: v.string() },
   returns: v.union(refused, answered),
   handler: async (ctx, args): Promise<Reply> => {
-    const start: Begin = await ctx.runMutation(internal.desk.begin, args);
+    // Many questions from one student at the same moment can conflict on their wallet and limits until the retries run out (burst check of
+    // 2026-10-26). That is answered as `busy`, a plain refusal that took nothing; a refusal with a code (the entry check) is passed on as it is.
+    let start: Begin;
+    try {
+      start = await ctx.runMutation(internal.desk.begin, args);
+    } catch (error) {
+      if (error instanceof ConvexError) throw error;
+      return { ok: false as const, code: "busy" };
+    }
     if (!start.ok) return start;
     if (start.mode === "care") return { ok: true as const, threadId: "", turnId: "", answer: null, care: true, cached: false, balance: null };
     if (start.mode === "cached") {

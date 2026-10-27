@@ -10,6 +10,7 @@ const DESK_REFUSALS: Record<string, string> = {
     "You have no coins left this month. Questions you asked before still answer for free, and new coins come next month.",
   exam_open: "The desk is closed while a paper is open. It opens again when you hand in.",
   model_not_chosen: "The desk is not switched on yet. Please try again later.",
+  busy: "The desk is busy with your other questions. No coin was taken. Please ask again in a moment.",
   desk_my_day_full:
     "You have asked all the new questions you can for today. Questions you asked before still answer for free. No coin was taken. Please come back tomorrow.",
   desk_day_full:
