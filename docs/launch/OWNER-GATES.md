@@ -4,7 +4,7 @@ Everything only the owner can close before real students enter. Written 2026-10-
 
 ## Word approvals
 
-Read the words in one sitting: `docs/launch/words/english.md` (427 lines, with counseling, the school report and the staff houses since 2026-10-27) and `docs/launch/words/hinglish.md` (102 lines), grouped by room. While a switch is false, its screen shows a small draft note.
+Read the words in one sitting: `docs/launch/words/english.md` (462 lines, with counseling, the school report, the staff houses and the study hour call since 2026-10-27) and `docs/launch/words/hinglish.md` (102 lines), grouped by room. While a switch is false, its screen shows a small draft note.
 
 | | Gate | File and constant | Flipping it to true changes | Decides |
 |---|---|---|---|---|
@@ -15,6 +15,7 @@ Read the words in one sitting: `docs/launch/words/english.md` (427 lines, with c
 | [ ] | The Brain report (English and Hinglish) | `src/lib/dhi/brain-words.ts`, `BRAIN_WORDS_APPROVED` | the draft note leaves Progress | owner, after the Hinglish read |
 | [ ] | The weekly parent page and the link lines | `src/lib/dhi/parent-words.ts`, `PARENT_WORDS_APPROVED` | the draft note leaves the parent page | owner, after the Hinglish read |
 | [ ] | The desk's screen words and its instructions to the model | `src/lib/dhi/desk-words.ts` and `packages/backend/convex/deskRules.ts`, `DESK_WORDS_APPROVED` (both) | the draft note leaves the desk | owner |
+| [ ] | The study hour call's words | `src/lib/dhi/hour-call-words.ts`, `HOUR_CALL_WORDS_APPROVED` | the draft note leaves the call card and Hour calls | owner, after the legal check |
 | [ ] | The staff houses' words | `src/lib/dhi/staff-words.ts`, `STAFF_WORDS_APPROVED` | the draft note leaves Home, Overview and Counselors | owner |
 | [ ] | The school report's words | `src/lib/dhi/school-words.ts`, `SCHOOL_WORDS_APPROVED` | the draft note leaves the school report | owner |
 | [ ] | Counseling words, the recording notice and the helpline | `src/lib/dhi/counsel-words.ts`, `COUNSEL_WORDS_APPROVED` | the draft note leaves the Counseling room and the counselor's Sessions | owner, after the legal check |
@@ -32,7 +33,7 @@ Read the words in one sitting: `docs/launch/words/english.md` (427 lines, with c
 | | Gate | What is needed | Decides |
 |---|---|---|---|
 | [ ] | Rotate the OpenAI key | The key pasted in chat is on the development deployment only and appears nowhere in code, docs, build output or git history (scan of 2026-10-26). Revoke it at OpenAI, make a new key, and set the new one on **production only**: `npx convex env set OPENAI_API_KEY ... --prod` (typed by the owner, never pasted in chat). Then set a fresh one on development too | owner |
-| [ ] | The legal check | `docs/launch/legal-check.md`: verifiable parental consent through the school's record (DPDP), the missing desk and counseling lines in the notice (counseling calls are recorded on Stream), the production region in the notice, the retention numbers | owner and counsel |
+| [ ] | The legal check | `docs/launch/legal-check.md`: verifiable parental consent through the school's record (DPDP), the missing desk, counseling and study hour call lines in the notice (both calls are recorded on Stream), the production region in the notice, the retention numbers | owner and counsel |
 | [ ] | A Hinglish speaker's read | `docs/launch/hinglish-reader.md` | owner names the reader |
 | [ ] | Food catalog licences | The catalog starts empty; each source's licence is checked before any item is loaded (`foods.ts`). Students can add their own dishes, and DHI can publish them | owner |
 | [ ] | Cloudflare accounts | A Cloudflare account that owns `dhirise` (for `pnpm deploy:house`), and a Cloudflare Stream account for the films (a stand-in host is used until then, `moduleRules.ts`) | owner |

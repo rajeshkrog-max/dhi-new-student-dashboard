@@ -371,6 +371,46 @@ Switch: `STAFF_WORDS_APPROVED` (a draft). File: `src/lib/dhi/staff-words.ts`.
 - `STAFF_WORDS.state.excused`: Excused (the class was paused)
 - `STAFF_WORDS.state.waiting`: Not marked yet
 
+## The study hour call
+
+Switch: `HOUR_CALL_WORDS_APPROVED` (a draft). File: `src/lib/dhi/hour-call-words.ts`.
+
+- `HOUR_CALL_WORDS.draft`: These words are drafts and may change.
+- `HOUR_CALL_WORDS.title`: Study together on camera
+- `HOUR_CALL_WORDS.intro`: Join the call to study with your school's students in this hour. Your camera and microphone start off; turn them on when you like.
+- `HOUR_CALL_WORDS.recordedNotice`: This call is recorded. Your school's teachers and the DHI team can watch the recording for 30 days, and may share it with a student who asks. Only students of your school are in this call.
+- `HOUR_CALL_WORDS.join`: Join the call
+- `HOUR_CALL_WORDS.joining`: Joining…
+- `HOUR_CALL_WORDS.leave`: Leave the call
+- `HOUR_CALL_WORDS.recordedNow`: Recording is on.
+- `HOUR_CALL_WORDS.recordingSoon`: Recording starts in a moment.
+- `HOUR_CALL_WORDS.microphone`: Microphone
+- `HOUR_CALL_WORDS.camera`: Camera
+- `HOUR_CALL_WORDS.shareScreen`: Share screen
+- `HOUR_CALL_WORDS.loading`: Getting the call ready…
+- `HOUR_CALL_WORDS.failed`: The call could not start just now. Please try again in a moment.
+- `HOUR_CALL_WORDS.people`: In the call
+- `HOUR_CALL_WORDS.mute`: Mute
+- `HOUR_CALL_WORDS.remove`: Remove
+- `HOUR_CALL_WORDS.moderating`: You are in this call as a moderator: you can mute a person or remove them from this call.
+- `HOUR_CALL_WORDS.staffTitle`: Study hour calls
+- `HOUR_CALL_WORDS.staffIntro`: Join the open hour to keep it a good place to study, and watch any recording of the last 30 days. Each time you open a recording, the students of that hour see it in Your data.
+- `HOUR_CALL_WORDS.institute`: Institute
+- `HOUR_CALL_WORDS.chooseInstitute`: Choose an institute
+- `HOUR_CALL_WORDS.noOpenHour`: No study hour is open right now.
+- `HOUR_CALL_WORDS.joinModerate`: Join to moderate
+- `HOUR_CALL_WORDS.recordedTitle`: Recorded hours
+- `HOUR_CALL_WORDS.noRecorded`: No hour of the last 30 days had anyone seated.
+- `HOUR_CALL_WORDS.seated(…)`: {name} students seated
+- `HOUR_CALL_WORDS.recordings`: Recording
+- `HOUR_CALL_WORDS.noRecordings`: No recording yet. It appears a little while after the hour ends, if anyone was in the call.
+- `HOUR_CALL_WORDS.shareLabel`: Share with a student of this school who asked (their house email)
+- `HOUR_CALL_WORDS.share`: Share
+- `HOUR_CALL_WORDS.unshare`: Take back
+- `HOUR_CALL_WORDS.sharedWith`: Shared with
+- `HOUR_CALL_WORDS.sharedTitle`: Study hour recordings shared with you
+- `hourCallRefusal(…)`: Something went wrong. Please try again.
+
 ## Progress (the Brain report)
 
 Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.

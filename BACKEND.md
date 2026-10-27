@@ -49,7 +49,7 @@ Menu is `src/routes/home.tsx`. Each room is a component under `src/components/dh
 | Blog | `blog/blog-real.tsx` | none (real, house spec 0014) | Student posts. One photo, title, tag, body. Marks allowed: bold, italic, numbered list. Comments are plain text |
 | DHI desk | `desk/desk-real.tsx` | none (real, house spec 0016) | Coins. Clarify is free. A cache hit costs 0 and must not call the model again |
 | Counseling | `counsel/counsel-room.tsx`, the counselor's `staff/counsel-section.tsx` | none (real, house spec 0024) | Counselors open their own 30 minute slots. The counselor sees the student's first name, class, school and note only. The call is inside the house on Stream, recorded and transcribed. School staff and DHI admins never see a booking |
-| Study hour | `study/study-hour-real.tsx` | none (real, house spec 0015) | Opens only inside `[opens_at, closes_at]` set by DHI admin. Leave or clock-end drops the seat. Live = self large, others beside. Away = profile only. DND = no people, no chat |
+| Study hour | `study/study-hour-real.tsx` | none (real, house specs 0015 and 0027) | Opens only inside `[opens_at, closes_at]` set by DHI admin. Leave or clock-end drops the seat. Live = self large, others beside, and may join the hour's call (camera and voice, one call per institute, recorded on Stream 30 days; that institute's teachers and a DHI admin may watch, owner 2026-10-28). Away = profile only. DND = no people, no chat |
 
 Coin costs in `src/lib/dhi/desk/schema.ts`: chat 1, write 2, paper 2, mock 4, story 5, draw 8. Admin sets the month’s allotment. A later purchase only adds `bonus`.
 
@@ -150,3 +150,4 @@ The demo opens straight into Suzzy’s house. **Leave** returns to the lake. **S
 - Do not run the model on a cache hit.
 - Do not store counselor recordings, transcripts or links to them in DHI tables, logs, or the desk cache. They stay on Stream (house spec 0024).
 - Do not show a counseling booking, note or summary to school staff or a DHI admin, or a room's data to a counselor.
+- Do not put a study hour call in front of another institute's students or staff, or keep its recording past 30 days (house spec 0027).
