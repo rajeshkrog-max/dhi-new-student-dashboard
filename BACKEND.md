@@ -1,6 +1,6 @@
 # DHI student house — backend brief
 
-> **Status, 2026-10-22.** This brief was written for a demo that ran on local data. The backend it asks for now exists (`packages/backend`, a shared Convex deployment, with Better Auth sign in and invite only entry), and every room except the DHI desk and Counseling runs on it; the tables below are the original plan, and the real ones are in `packages/backend/convex/schema.ts` and the specs in `docs/specs/house/`. The room rules in this file are still the product rules. The "Demo data" column names the old demo files, most of which have been removed.
+> **Status, 2026-10-22.** This brief was written for a demo that ran on local data. The backend it asks for now exists (`packages/backend`, a shared Convex deployment, with Better Auth sign in and invite only entry), and every room runs on it, the DHI desk (house spec 0016) and Counseling (house spec 0024, 2026-10-27) included; the tables below are the original plan, and the real ones are in `packages/backend/convex/schema.ts` and the specs in `docs/specs/house/`. The room rules in this file are still the product rules. The "Demo data" column names the old demo files, most of which have been removed.
 
 This repository is the **student dashboard UI**, with a shared backend.
 
@@ -16,7 +16,7 @@ DHI is a B2B house for an institute’s students.
 - DHI master admin owns modules, counselor access, coin allotment, and which rooms an institute may show.
 - A teacher builds a paper (MCQ and long writing), sends it to a class or to one student, then marks it with remarks.
 - A student sits the paper, logs meals, mood, and habits, watches house films, writes a blog, and can enter a study hour only while the admin clock is open.
-- Counseling is a DHI service. The student books a slot. DHI may help with infrastructure and a written summary after the meeting. **DHI never reads or stores the counselor recording.**
+- Counseling is a DHI service. The student books a slot a counselor opened and meets them in a video call inside the house. The counselor may write a short summary after the meeting. **Every call is recorded and transcribed on Stream, and the recordings stay on Stream** (the owner's choice, 2026-10-27, house spec 0024; this replaces "DHI never reads or stores the counselor recording"). DHI's own tables never hold a recording, a transcript or a link to one. Only the counselor, and a house member they share it with on request, can open it.
 
 Do not label a student weak, average, or bright. Scores are growth marks (Gurukul), not a rank that shames them.
 
@@ -43,11 +43,12 @@ Menu is `src/routes/home.tsx`. Each room is a component under `src/components/dh
 | Home | `src/routes/home.tsx` | none (real, house spec 0017) | Greeting, DHI score, open exams, recent exams, quick access |
 | Exams | `exams/exams-room.tsx` | none (real, house specs 0011, 0012) | Window has `opens_at` / `due_at`. After due, the tile leaves and the miss is stored. Starting locks the other menus. MCQ hint is a slider and must **not** reveal the answer. Submit goes to the teacher. Student accepts feedback |
 | Meals | `meals/meals-real.tsx` | none (real, house specs 0009, 0010) | Indian plate: item, count (rotis), meal (breakfast, lunch, dinner, snack), time. Custom dishes are allowed. Macros may arrive later. Day resets; the week does not |
-| Mood | `mood-tracker.tsx` | none (real, house spec 0006; `mood-demo.ts` keeps the colours) | One colour a day, their own words, DHI line. Help request creates a counselor booking, not a chat with the model |
+| Mood | `mood-tracker.tsx` | none (real, house spec 0006; `mood-demo.ts` keeps the colours) | One colour a day, their own words, DHI line. The help button opens Counseling, not a chat with the model |
 | Habits | `habits/` | none (real, house spec 0007) | At most 5. Own label, start, end, daily tick, streak. Misses stay visible |
 | Modules | `modules/modules-real.tsx` | none (real on a stand-in video host, house spec 0013) | **House upload only.** Student cannot add a film. Score is written once, when playback reaches the end. Seek past the watched point stays closed until then |
 | Blog | `blog/blog-real.tsx` | none (real, house spec 0014) | Student posts. One photo, title, tag, body. Marks allowed: bold, italic, numbered list. Comments are plain text |
-| DHI desk | `ui/coming-soon.tsx` | on hold (house spec 0016); the demo files are removed | Coins. Clarify is free. A cache hit costs 0 and must not call the model again |
+| DHI desk | `desk/desk-real.tsx` | none (real, house spec 0016) | Coins. Clarify is free. A cache hit costs 0 and must not call the model again |
+| Counseling | `counsel/counsel-room.tsx`, the counselor's `staff/counsel-section.tsx` | none (real, house spec 0024) | Counselors open their own 30 minute slots. The counselor sees the student's first name, class, school and note only. The call is inside the house on Stream, recorded and transcribed. School staff and DHI admins never see a booking |
 | Study hour | `study/study-hour-real.tsx` | none (real, house spec 0015) | Opens only inside `[opens_at, closes_at]` set by DHI admin. Leave or clock-end drops the seat. Live = self large, others beside. Away = profile only. DND = no people, no chat |
 
 Coin costs in `src/lib/dhi/desk/schema.ts`: chat 1, write 2, paper 2, mock 4, story 5, draw 8. Admin sets the month’s allotment. A later purchase only adds `bonus`.
@@ -147,4 +148,5 @@ The demo opens straight into Suzzy’s house. **Leave** returns to the lake. **S
 - Do not send the answer in an MCQ hint.
 - Do not let the institute admin edit counseling, coins, or modules.
 - Do not run the model on a cache hit.
-- Do not store counselor recordings in DHI tables, logs, or the desk cache.
+- Do not store counselor recordings, transcripts or links to them in DHI tables, logs, or the desk cache. They stay on Stream (house spec 0024).
+- Do not show a counseling booking, note or summary to school staff or a DHI admin, or a room's data to a counselor.
