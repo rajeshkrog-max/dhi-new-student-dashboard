@@ -263,7 +263,9 @@
   }
 }
 
-/* The counseling call (house spec 0024): a tile's name takes Stream's own light text on Stream's dark tile, not the house ink it would inherit. */
-.dhi-counsel-call .str-video__participant-details {
+/* The house's calls (house specs 0024 and 0027): a tile's name and the initials of a tile with no camera take Stream's own light text on Stream's
+   dark tile, not the house ink they would inherit. */
+.dhi-call .str-video__participant-details,
+.dhi-call .str-video__video-placeholder {
   color: var(--str-video__text-color1);
 }

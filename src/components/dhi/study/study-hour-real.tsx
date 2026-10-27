@@ -1,8 +1,8 @@
 // The study hour, the student's side (spec house/0015). A DHI admin sets the hour; a student sits in it only while it is open, as Live, Away or Do
 // not disturb. Seats and chat update live, and show only the students of the student's own institute. Do not disturb shows no people and no chat,
-// and hides the student from others. The screen sends a heartbeat every 20 seconds; a seat that goes quiet is dropped by the server. Voice and
-// video are a later row, so there is none here.
-import { useEffect, useRef, useState, type FormEvent } from "react";
+// and hides the student from others. The screen sends a heartbeat every 20 seconds; a seat that goes quiet is dropped by the server. A Live seat may
+// join the hour's call, camera and voice, recorded (house spec 0027); the call is loaded only when joined, and leaves when the seat stops being Live.
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { GenericId } from "convex/values";
 import { api } from "@dhi/backend/api";
@@ -10,6 +10,10 @@ import { BEAT_MS, MAX_MESSAGE } from "@dhi/backend/hourRules";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
+import { HourRecordings } from "@/components/dhi/study/hour-recordings";
+import { HOUR_CALL_WORDS, HOUR_CALL_WORDS_APPROVED } from "@/lib/dhi/hour-call-words";
+
+const HourCall = lazy(() => import("@/components/dhi/study/hour-call"));
 
 const MODE_WORDS: Record<string, string> = { live: "Live", away: "Away", dnd: "Do not disturb" };
 const WORDS: Record<string, string> = {
@@ -37,6 +41,7 @@ export function StudyHourReal() {
     <div className="space-y-4">
       <FeedbackCard />
       <StudyHourContent />
+      <SharedHourRecordings />
     </div>
   );
 }
@@ -227,7 +232,48 @@ function OpenHour({ closesAt, now, mode }: { closesAt: number; now: number; mode
           <Chat mode={mode} />
         </>
       )}
+      {/* Last, so it arriving with a Live seat moves nothing above it. */}
+      {mode === "live" && <CallCard />}
     </div>
+  );
+}
+
+// The hour's call, for a Live seat: the notice first, then the call on the student's own press.
+function CallCard() {
+  const [joined, setJoined] = useState(false);
+  return (
+    <Card className="space-y-3" data-testid="hour-call">
+      {!HOUR_CALL_WORDS_APPROVED && <p className="text-xs text-mute">{HOUR_CALL_WORDS.draft}</p>}
+      <h2 className="text-sm font-semibold">{HOUR_CALL_WORDS.title}</h2>
+      <p className="text-sm text-mute">{HOUR_CALL_WORDS.intro}</p>
+      <p className="text-xs text-mute touch:text-sm">{HOUR_CALL_WORDS.recordedNotice}</p>
+      {joined ? (
+        <Suspense fallback={<p className="text-sm text-mute">{HOUR_CALL_WORDS.loading}</p>}>
+          <HourCall onDone={() => setJoined(false)} />
+        </Suspense>
+      ) : (
+        <Button onClick={() => setJoined(true)} data-testid="hour-call-join">
+          {HOUR_CALL_WORDS.join}
+        </Button>
+      )}
+    </Card>
+  );
+}
+
+// Study hour recordings a teacher or DHI shared with this student, if any.
+function SharedHourRecordings() {
+  const shared = useQuery(api.hourShares.sharedWithMe, {});
+  if (!shared || shared.length === 0) return null;
+  return (
+    <Card className="space-y-3" data-testid="hour-shared">
+      <h2 className="text-sm font-semibold">{HOUR_CALL_WORDS.sharedTitle}</h2>
+      {shared.map((s) => (
+        <div key={`${s.hourId}-${s.instituteId}`} className="space-y-1">
+          <p className="text-sm">{when(s.opensAt)}</p>
+          <HourRecordings hourId={s.hourId} instituteId={s.instituteId} />
+        </div>
+      ))}
+    </Card>
   );
 }
 

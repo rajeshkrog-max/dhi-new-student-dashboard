@@ -51,6 +51,7 @@ export const DATA_MAP: Readonly<Record<string, DataMapEntry>> = {
   deskSettings: { owner: "house", class: "kept", retention: "Kept. The monthly coins DHI gives each student; no student in it." },
   counselSlots: { owner: "house", class: "kept", retention: "Kept. A counselor's open times; no student in it." },
   counselBookings: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Their booking: the time, the counselor, their own note and the counselor's short summary. Seen by the student and that counselor only. Each call is recorded and transcribed on Stream (never in a DHI table); the recordings of the student's sessions are deleted on Stream when they are erased." },
+  hourShares: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Which study hour recordings a teacher or DHI admin shared with this student; the recordings themselves stay on Stream for 30 days." },
   counselShares: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Who the counselor shared a session's recording with; the recording itself stays on Stream and is deleted there too." },
   deskDaily: { owner: "house", class: "system", retention: "Kept. How many desk questions reached the model on each day, for the whole deployment; no student in it." },
   deskWallets: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Their coin balance and the month it was last topped up." },

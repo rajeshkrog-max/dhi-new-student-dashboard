@@ -24,6 +24,7 @@
     "./deskRules": "./convex/deskRules.ts",
     "./sessionRules": "./convex/sessionRules.ts",
     "./counselRules": "./convex/counselRules.ts",
+    "./hourCallRules": "./convex/hourCallRules.ts",
     "./feedbackRules": "./convex/feedbackRules.ts",
     "./challengeRules": "./convex/challengeRules.ts",
     "./reportVersion": "./convex/reportVersion.ts"

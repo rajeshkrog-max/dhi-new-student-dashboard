@@ -16,10 +16,11 @@ import {
   useCallStateHooks,
   type Call,
 } from "@stream-io/video-react-sdk";
-import { Mic, MicOff, MonitorUp, PhoneOff, Video, VideoOff } from "lucide-react";
+import { PhoneOff } from "lucide-react";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { api } from "@dhi/backend/api";
 import type { GenericId } from "convex/values";
+import { DeviceButtons } from "@/components/dhi/call/device-buttons";
 import { Button } from "@/components/dhi/ui/button";
 import { Notice } from "@/components/dhi/ui/notice";
 import { COUNSEL_WORDS, counselRefusal } from "@/lib/dhi/counsel-words";
@@ -80,7 +81,7 @@ export default function CounselCall({ bookingId, onDone }: Props) {
   return (
     <StreamVideo client={client}>
       <StreamCall call={call}>
-        <StreamTheme className="dhi-counsel-call">
+        <StreamTheme className="dhi-call">
           <CallStage call={call} onDone={onDone} />
         </StreamTheme>
       </StreamCall>
@@ -90,36 +91,6 @@ export default function CounselCall({ bookingId, onDone }: Props) {
 
 // A tile without its menu (pin, full screen and the like), which has no name for a screen reader and is not needed for two people.
 const TILE = <DefaultParticipantViewUI showMenuButton={false} />;
-
-// The microphone and camera switches, and in the call the screen share where the browser has one. Each says its on or off state with aria-pressed.
-function DeviceButtons({ call, lobby = false }: { call: Call; lobby?: boolean }) {
-  const { useMicrophoneState, useCameraState, useScreenShareState } = useCallStateHooks();
-  const mic = useMicrophoneState();
-  const cam = useCameraState();
-  const screen = useScreenShareState();
-  const canShare = !lobby && typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getDisplayMedia === "function";
-  const micOn = !mic.optimisticIsMute;
-  const camOn = !cam.optimisticIsMute;
-  const screenOn = !screen.optimisticIsMute;
-  return (
-    <>
-      <Button variant={micOn ? "quiet" : "solid"} aria-pressed={micOn} onClick={() => void call.microphone.toggle()} data-testid="counsel-mic">
-        {micOn ? <Mic className="size-4" aria-hidden /> : <MicOff className="size-4" aria-hidden />}
-        {COUNSEL_WORDS.microphone}
-      </Button>
-      <Button variant={camOn ? "quiet" : "solid"} aria-pressed={camOn} onClick={() => void call.camera.toggle()} data-testid="counsel-camera">
-        {camOn ? <Video className="size-4" aria-hidden /> : <VideoOff className="size-4" aria-hidden />}
-        {COUNSEL_WORDS.camera}
-      </Button>
-      {canShare && (
-        <Button variant="quiet" aria-pressed={screenOn} onClick={() => void call.screenShare.toggle()} data-testid="counsel-screen">
-          <MonitorUp className="size-4" aria-hidden />
-          {COUNSEL_WORDS.shareScreen}
-        </Button>
-      )}
-    </>
-  );
-}
 
 function CallStage({ call, onDone }: { call: Call; onDone: () => void }) {
   const { useCallCallingState, useIsCallRecordingInProgress } = useCallStateHooks();
@@ -139,7 +110,7 @@ function CallStage({ call, onDone }: { call: Call; onDone: () => void }) {
         </p>
         <SpeakerLayout participantsBarPosition="bottom" ParticipantViewUISpotlight={TILE} ParticipantViewUIBar={TILE} />
         <div className="flex flex-wrap justify-center gap-2">
-          <DeviceButtons call={call} />
+          <DeviceButtons call={call} words={COUNSEL_WORDS} />
           <Button
             variant="quiet"
             onClick={() => void call.leave().finally(onDone)}
@@ -162,7 +133,7 @@ function CallStage({ call, onDone }: { call: Call; onDone: () => void }) {
         <VideoPreview />
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <DeviceButtons call={call} lobby />
+        <DeviceButtons call={call} words={COUNSEL_WORDS} lobby />
       </div>
       {error && (
         <Notice tone="danger" role="alert" className="px-4 py-3 text-sm">

@@ -750,6 +750,17 @@ export default defineSchema({
     .index("by_memberId", ["memberId"])
     .index("by_leftAt", ["leftAt"]),
 
+  // A study hour call's recording shared with one student who asked (house spec 0027; owner, 2026-10-28). The recording itself stays on Stream and is
+  // deleted there after 30 days. `sharedBy` is a teacher of the institute or a DHI admin. Erase class `erased` (the student's own access).
+  hourShares: defineTable({
+    hourId: v.id("studyHours"),
+    instituteId: v.id("institutes"),
+    memberId: v.id("members"),
+    sharedBy: v.id("members"),
+    at: v.number(),
+  })
+    .index("by_memberId", ["memberId"])
+    .index("by_hourId_and_instituteId", ["hourId", "instituteId"]),
   chatMessages: defineTable({
     hourId: v.id("studyHours"),
     instituteId: v.id("institutes"),

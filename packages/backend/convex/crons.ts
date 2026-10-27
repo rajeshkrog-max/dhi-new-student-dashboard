@@ -17,6 +17,8 @@ crons.interval("settle challenge referrals", { minutes: 5 }, internal.challengeB
 // The house (spec house/0005, AC-15): old view records, long removed members and ended erase blocks.
 // The study hour (spec house/0015): every minute, drop the seats whose heartbeat stopped and the seats of an hour that has closed.
 crons.interval("drop idle study hour seats", { minutes: 1 }, internal.studyHour.sweep, {});
+// Study hour call recordings are deleted on Stream after 30 days (house spec 0027).
+crons.daily("delete old study hour recordings", { hourUTC: 22, minuteUTC: 15 }, internal.hourCall.sweepRecordings, {});
 // The exams room (spec house/0012): every minute, close the sittings whose window has ended, so a paper nobody opens still becomes a miss.
 crons.interval("close due exam sittings", { minutes: 1 }, internal.exams.sweep, {});
 // The Brain (spec house/0019): every minute, keep the daily values up to date from the new events; each morning after the house day turns, close

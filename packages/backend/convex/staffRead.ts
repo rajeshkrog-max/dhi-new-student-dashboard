@@ -130,3 +130,16 @@ export async function classTotal(
   return count >= MIN_TOTAL ? { count } : null;
 }
 
+// A staff look at something many students are in at once, outside a named read: a study hour recording (house spec 0027; owner, 2026-10-28). One
+// view row for each student, in their own "Who has looked". Kept here so this file and the parent page stay the only writers of the view record.
+export async function recordGroupLook(
+  ctx: MutationCtx,
+  look: { viewerId: Id<"members">; viewerRole: "teacher" | "dhi_admin"; instituteId: Id<"institutes">; kind: DataKind; targetMemberIds: Id<"members">[] },
+): Promise<number> {
+  const at = Date.now();
+  const ids = [...new Set(look.targetMemberIds)];
+  for (const id of ids) {
+    await ctx.db.insert("viewLog", { viewerId: look.viewerId, viewerRole: look.viewerRole, targetMemberId: id, instituteId: look.instituteId, kind: look.kind, at });
+  }
+  return ids.length;
+}

@@ -15,6 +15,16 @@ export const hourRoom: RoomEntry = {
   // After the seats, pages of the student's own chat messages (cursor `m:` and the creation time of the last message sent), until the 30 day sweep
   // deletes them.
   exporter: async (ctx: QueryCtx | MutationCtx, memberId: Id<"members">, cursor: string | null, limit: number) => {
+    // Last, the study hour recordings a teacher or DHI shared with the student (house spec 0027): the day of the hour, never the recording itself.
+    if (cursor === "s:") {
+      const shares = await ctx.db.query("hourShares").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).take(200);
+      const rows = [];
+      for (const s of shares) {
+        const hour = await ctx.db.get(s.hourId);
+        rows.push({ sharedRecordingOfDay: hour ? dayOf(hour.opensAt) : "", sharedOn: dayOf(s.at) });
+      }
+      return { rows, next: null };
+    }
     if (cursor !== null && cursor.startsWith("m:")) {
       const after = Number(cursor.slice(2));
       if (Number.isNaN(after)) return { rows: [], next: null };
@@ -23,9 +33,10 @@ export const hourRoom: RoomEntry = {
         .withIndex("by_authorMemberId", (q) => q.eq("authorMemberId", memberId).gt("_creationTime", after))
         .take(limit + 1);
       const page = messages.slice(0, limit);
+      const shared = (await ctx.db.query("hourShares").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).first()) ? "s:" : null;
       return {
         rows: page.map((m) => ({ message: m.text, day: dayOf(m.createdAt), status: m.status })),
-        next: messages.length > limit ? `m:${page[page.length - 1]._creationTime}` : null,
+        next: messages.length > limit ? `m:${page[page.length - 1]._creationTime}` : shared,
       };
     }
     const rows = await ctx.db
@@ -47,7 +58,9 @@ export const hourRoom: RoomEntry = {
           ? String(page[page.length - 1]._creationTime)
           : (await ctx.db.query("chatMessages").withIndex("by_authorMemberId", (q) => q.eq("authorMemberId", memberId)).first())
             ? "m:0"
-            : null,
+            : (await ctx.db.query("hourShares").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).first())
+              ? "s:"
+              : null,
     };
   },
   eraser: async (ctx: MutationCtx, memberId: Id<"members">, limit: number) => {
@@ -55,6 +68,9 @@ export const hourRoom: RoomEntry = {
     for (const s of seats) await ctx.db.delete(s._id);
     const messages = await ctx.db.query("chatMessages").withIndex("by_authorMemberId", (q) => q.eq("authorMemberId", memberId)).take(limit);
     for (const m of messages) await ctx.db.delete(m._id);
-    return { deleted: seats.length + messages.length, done: seats.length < limit && messages.length < limit };
+    // The study hour recordings shared with this student (house spec 0027).
+    const shares = await ctx.db.query("hourShares").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).take(limit);
+    for (const s of shares) await ctx.db.delete(s._id);
+    return { deleted: seats.length + messages.length + shares.length, done: seats.length < limit && messages.length < limit && shares.length < limit };
   },
 };

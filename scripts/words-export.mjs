@@ -17,6 +17,7 @@ const ROOMS = [
   { title: "Counseling (the room, the call and the counselor's Sessions)", file: "./src/lib/dhi/counsel-words.ts", gate: "COUNSEL_WORDS_APPROVED" },
   { title: "School report (the staff area)", file: "./src/lib/dhi/school-words.ts", gate: "SCHOOL_WORDS_APPROVED" },
   { title: "The staff houses (home, overview, counselors, a student's papers)", file: "./src/lib/dhi/staff-words.ts", gate: "STAFF_WORDS_APPROVED" },
+  { title: "The study hour call", file: "./src/lib/dhi/hour-call-words.ts", gate: "HOUR_CALL_WORDS_APPROVED" },
   { title: "Progress (the Brain report)", file: "./src/lib/dhi/brain-words.ts", gate: "BRAIN_WORDS_APPROVED" },
   { title: "The weekly parent page and the link on Your data", file: "./src/lib/dhi/parent-words.ts", gate: "PARENT_WORDS_APPROVED" },
 ];
