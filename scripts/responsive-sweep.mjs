@@ -19,7 +19,7 @@ import {
   isTouchWidth,
   judge,
 } from "./responsive-verdict.mjs";
-import { PEOPLE, TEST_STUDENT, signInMember } from "./test-student.mjs";
+import { PEOPLE, TEST_STUDENT, signInCounselor, signInMember } from "./test-student.mjs";
 
 function parseArgs(argv) {
   const out = {
@@ -356,6 +356,14 @@ const SCREENS = {
   "staff-invites": staffScreen("invites", "Invites"),
   "staff-list": staffScreen("list", "Class list"),
   "staff-parent": staffScreen("parent", "Parent consent"),
+  // The counselor's Sessions (spec house/0024), as the demo counselor, with a free time and the demo student's booking (`counselProof:seedDemo`).
+  "staff-counsel": {
+    auth: "counselor",
+    path: "/staff",
+    ready: (p) => p.getByTestId("counsel-booking"),
+    expect: { h1: "Sessions" },
+    showsStudent: true,
+  },
   // The consent screen (spec house/0005, AC-20): the notice, the locked I agree, and Your data for a student who is not through consent.
   consent: {
     auth: "gate",
@@ -484,6 +492,11 @@ async function main() {
       stranger: await signInMember(browser, new URL(base), PEOPLE.stranger, { join: false }),
       gate: await signInMember(browser, new URL(base), PEOPLE.gate),
     };
+    if (rooms.some((r) => r === "counsel" || r === "staff-counsel")) {
+      states.counselor = await signInCounselor(browser, new URL(base));
+      const json = JSON.stringify({ counselorEmail: PEOPLE.counselor.email, studentEmail: PEOPLE.student.email }).replace(/"/g, '\\"');
+      execSync(`npx convex run counselProof:seedDemo "${json}"`, { cwd: "packages/backend", stdio: "pipe" });
+    }
     for (const width of widths) {
       const touch = isTouchWidth(width);
       const options = { viewport: { width, height: touch ? 740 : 800 }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 };

@@ -144,6 +144,17 @@ try {
   });
   await kidContext.close();
 
+  console.log("\nThe staff download");
+  await step("the institute admin downloads one file of their own staff data, with no student in it", async () => {
+    await admin.goto("/staff");
+    await admin.locator('[data-room="data"]:visible').click();
+    const [file] = await Promise.all([admin.waitForEvent("download", { timeout: 30_000 }), admin.getByTestId("staff-download").click()]);
+    const data = JSON.parse(await readFile(await file.path(), "utf8"));
+    expect(data.schema === "dhi-house-staff-export-v1" && data.profile?.email === PEOPLE.admin.email, "the file is not the admin's own staff export");
+    expect(Array.isArray(data.actions) && data.actions.every((a) => Object.keys(a).sort().join() === "action,at"), "an action in the file holds more than a code and a date");
+    expect(!JSON.stringify(data).includes(kid.email), "the staff file holds a student's email");
+  });
+
   console.log("\nMove staff");
   const teacher = { email: `${tagOf("move")}@example.test`, name: `Move Proof ${letters(5)}` };
 

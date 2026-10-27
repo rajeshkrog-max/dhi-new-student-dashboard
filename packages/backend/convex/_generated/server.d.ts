@@ -52,6 +52,8 @@ type Env = {
   readonly REPORT_RENDER_SECRET: string | undefined;
   readonly SHARE_LINK_SECRET: string | undefined;
   readonly SHEET_ID: string | undefined;
+  readonly STREAM_API_KEY: string | undefined;
+  readonly STREAM_API_SECRET: string | undefined;
   readonly TEAM_EMAILS: string | undefined;
   readonly TEST_SIGNIN_ENABLED: string | undefined;
 };

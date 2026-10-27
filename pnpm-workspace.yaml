@@ -22,5 +22,6 @@ minimumReleaseAgeExclude:
 allowBuilds:
   esbuild: true # Vite and Astro build tool, downloads its native binary
   workerd: true # Cloudflare Workers runtime used by Wrangler
+  "@stream-io/node-sdk": false # its only script installs husky git hooks for its own developers; not needed
 
 engineStrict: true

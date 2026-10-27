@@ -57,6 +57,10 @@ const app = defineApp({
     DESK_LIVE: v.optional(v.string()),
     // The most questions that reach the model in one India day across the deployment (`deskRules.dailyCapOf`): unset means 300, `0` stops the model.
     DESK_DAILY_CAP: v.optional(v.string()),
+    // Counseling calls on Stream Video (house spec 0024): the app's key, and its secret, which signs the call tokens and never leaves the deployment.
+    // Unset means a join answers `calls_not_set_up`.
+    STREAM_API_KEY: v.optional(v.string()),
+    STREAM_API_SECRET: v.optional(v.string()),
   },
 });
 app.use(betterAuth);

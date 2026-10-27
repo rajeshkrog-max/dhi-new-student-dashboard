@@ -4,7 +4,7 @@
 
 // The kinds of data a student has. `profile` is the roster (name, email, class, under 18): staff run access with it, it is not "viewed" through
 // the wrapper, and `canView` gives staff nothing for it. The others are room data.
-export const DATA_KINDS = ["profile", "academic", "mood", "meals", "habits", "sleep", "writing", "desk", "hour", "modules", "brain"] as const;
+export const DATA_KINDS = ["profile", "academic", "mood", "meals", "habits", "sleep", "writing", "desk", "hour", "modules", "brain", "counsel"] as const;
 export type DataKind = (typeof DATA_KINDS)[number];
 
 // What each kind is. `academic` is exam results (named to a teacher and the institute). `wellbeing` is a feeling or a habit, which the institute
@@ -23,6 +23,8 @@ export const KIND_CLASS: Readonly<Record<DataKind, KindClass>> = {
   desk: "private",
   // The Brain's daily values and the patterns read from them (spec house/0019): worked out from every other room, and shown to the student alone.
   brain: "private",
+  // A counseling booking (spec house/0024): the student's and the counselor they booked, read only through counsel.ts, never by school staff.
+  counsel: "private",
 };
 
 // Each room registers the kind codes its data uses (AC-8). This is the code to room table: a test fails if a room is missing or a kind has no room.
@@ -38,6 +40,7 @@ export const ROOM_KINDS: Readonly<Record<string, readonly DataKind[]>> = {
   desk: ["desk"],
   hour: ["hour"],
   brain: ["brain"],
+  counsel: ["counsel"],
   test: [],
 };
 

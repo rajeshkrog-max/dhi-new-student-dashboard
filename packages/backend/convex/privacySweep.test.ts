@@ -1,13 +1,13 @@
 /// <reference types="vite/client" />
 // The privacy sweep of the production run (Phase 2). Free text in events is refused by the registry itself (eventLog.test.ts, AC-8), and the parent
 // page by `weekOf` (parentSharing.test.ts). This file adds two scans:
-//   1. Every house table the data map marks `erased` (a person's own rows) is read by an exporter, so the download holds what the erase deletes.
-//      `teacherClasses` is a teacher's own class links: there is no staff download yet, which is named in docs/launch/HARDENING.md.
+//   1. Every house table the data map marks `erased` (a person's own rows) is read by an exporter, so the download holds what the erase deletes
+//      (a student's in `exportMine` and the room exporters, a staff member's in `exportStaffMine`).
 //   2. A log line in a house file carries counts only: every value put into it is a `.length` or a named count, never a name, an email or a text.
 import { describe, expect, test } from "vitest";
 import { DATA_MAP } from "./dataMap";
 
-const NO_STAFF_DOWNLOAD = new Set(["teacherClasses"]);
+const NO_STAFF_DOWNLOAD = new Set<string>();
 const COUNTS = new Set(["mismatches", "checked", "erased", "skipped"]);
 
 const files = import.meta.glob("./*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;

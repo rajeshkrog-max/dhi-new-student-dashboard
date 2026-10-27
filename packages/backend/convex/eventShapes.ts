@@ -6,7 +6,7 @@
 // The rooms of the house. Counseling is deferred and has no code. `brain` writes no event: it owns the daily values worked out from the others' events
 // (spec house/0019), and has a code so its export, erase and data kind are registered like a room's. `test` is for the log's own tests and the
 // development proof only.
-export const ROOMS = ["mood", "meals", "habits", "sleep", "exams", "modules", "blog", "desk", "hour", "brain", "test"] as const;
+export const ROOMS = ["mood", "meals", "habits", "sleep", "exams", "modules", "blog", "desk", "hour", "brain", "counsel", "test"] as const;
 export type Room = (typeof ROOMS)[number];
 export const isRoom = (text: unknown): text is Room => typeof text === "string" && (ROOMS as readonly string[]).includes(text);
 

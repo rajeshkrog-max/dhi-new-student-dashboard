@@ -22,10 +22,11 @@ export function securityHeaders(convexUrl: string, opts: { dev?: boolean } = {})
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${opts.dev ? " 'unsafe-eval' https://grok.com" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: ${[cloud, site].filter(Boolean).join(" ")}`.trim(),
-    `media-src 'self' blob: ${[cloud, site].filter(Boolean).join(" ")}`.trim(),
+    `img-src 'self' data: blob: ${[cloud, site, ...STREAM_MEDIA].filter(Boolean).join(" ")}`.trim(),
+    `media-src 'self' blob: ${[cloud, site, ...STREAM_MEDIA].filter(Boolean).join(" ")}`.trim(),
     "font-src 'self'",
-    `connect-src 'self' ${[...convex, ...dev].join(" ")}`.trim(),
+    `connect-src 'self' ${[...convex, ...STREAM_CONNECT, ...dev].join(" ")}`.trim(),
+    "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'self'",
@@ -37,6 +38,12 @@ export function securityHeaders(convexUrl: string, opts: { dev?: boolean } = {})
     "Strict-Transport-Security": "max-age=31536000",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Permissions-Policy": "camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=()",
   };
 }
+
+// Counseling calls on Stream Video (spec house/0024): the call service and its media servers (https and wss), and the recordings, which play in the
+// page from Stream's own storage. The camera, the microphone and screen share are allowed for the house's own pages only, and the browser still
+// asks the person on their own press of Join.
+const STREAM_CONNECT = ["https://*.stream-io-api.com", "wss://*.stream-io-api.com", "https://*.stream-io-video.com", "wss://*.stream-io-video.com", "https://*.getstream.io", "wss://*.getstream.io"];
+const STREAM_MEDIA = ["https://*.stream-io-cdn.com", "https://*.stream-io-video.com", "https://*.getstream.io"];

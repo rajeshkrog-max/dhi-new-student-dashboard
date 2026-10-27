@@ -21,7 +21,7 @@ import {
   UtensilsCrossed,
   BedDouble,
 } from "lucide-react";
-import { ComingSoon as ComingSoonPage } from "@/components/dhi/ui/coming-soon";
+import { CounselRoom } from "@/components/dhi/counsel/counsel-room";
 import { BrainReport } from "@/components/dhi/brain/brain-report";
 import { HomeScore } from "@/components/dhi/home-score";
 import { HabitTracker } from "@/components/dhi/habits/habit-tracker";
@@ -270,7 +270,7 @@ export function StudentHome() {
       ) : tab === "day" ? (
         <MealsRoom />
       ) : tab === "mood" ? (
-        <MoodTracker />
+        <MoodTracker onCounsel={() => setTab("counsel")} />
       ) : tab === "habits" ? (
         <HabitTracker />
       ) : tab === "sleep" ? (
@@ -288,7 +288,7 @@ export function StudentHome() {
       ) : tab === "data" ? (
         <YourData onErased={() => student.signOut()} />
       ) : (
-        <ComingSoonPage title="Counseling" text="Counseling is not open yet. It will be a DHI service you can book, and you will find it here when it opens." />
+        <CounselRoom />
       )}
       </RoomGuard>
     </HouseFrame>

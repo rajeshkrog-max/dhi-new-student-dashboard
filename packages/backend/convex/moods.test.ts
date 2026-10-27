@@ -308,7 +308,7 @@ describe("export and erase (AC-9)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections).toEqual(["header", "events", "mood", "mood", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk"]); // the habits and sleep rooms add their own (empty here) sections after
+    expect(sections).toEqual(["header", "events", "mood", "mood", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk", "counsel"]); // the habits and sleep rooms add their own (empty here) sections after
     expect(rows).toHaveLength(230);
     expect(new Set(rows.map((r) => r.day)).size).toBe(230);
     expect(Object.keys(rows[0]).sort()).toEqual(["day", "mood", "note"]);

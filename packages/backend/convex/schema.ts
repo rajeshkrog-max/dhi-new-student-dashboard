@@ -411,7 +411,9 @@ export default defineSchema({
     instituteId: v.optional(v.id("institutes")),
     targetMemberId: v.optional(v.id("members")),
     inviteId: v.optional(v.id("invites")),
-  }).index("by_instituteId_and_at", ["instituteId", "at"]),
+  })
+    .index("by_instituteId_and_at", ["instituteId", "at"])
+    .index("by_actor_and_at", ["actor", "at"]), // a staff member's own actions, for their download (dataRights.exportStaffMine)
 
   // What a student and their school agreed to, and every withdrawal (spec house/0005). Append only: no app code changes a row, and none deletes one
   // (the erase of a student keeps them as the proof of what consent applied). Erase class `kept`. Holds ids, codes and a wording version only:
@@ -796,6 +798,50 @@ export default defineSchema({
     flips: v.number(),
   })
     .index("by_planId_and_day", ["planId", "day"])
+    .index("by_memberId", ["memberId"]),
+
+  // Counseling (spec house/0024). A counselor opens their own 30 minute slots; a student books one. A slot holds the counselor and the time only.
+  // `status` is "open", "booked" or "closed" (the counselor took it back before anyone booked). Erase class `kept` (no student in it).
+  counselSlots: defineTable({
+    counselorMemberId: v.id("members"),
+    startsAt: v.number(),
+    endsAt: v.number(),
+    status: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_counselorMemberId_and_startsAt", ["counselorMemberId", "startsAt"])
+    .index("by_status_and_startsAt", ["status", "startsAt"]),
+
+  // A student's booking of a slot: their own optional note (at most 300 letters), and after the session the counselor's short summary, which only
+  // this student and this counselor read. The session is a Stream Video call inside the house (call type dhi_counsel, call id = this booking's id),
+  // recorded and transcribed on Stream (owner, 2026-10-27); the recording and the transcript stay on Stream and are never copied into a DHI table. `status` is "booked",
+  // "cancelled_by_student", "cancelled_by_counselor" or "done". Seen by the student and the counselor they booked, never by school staff or a DHI
+  // admin. Erase class `erased`.
+  counselBookings: defineTable({
+    slotId: v.id("counselSlots"),
+    counselorMemberId: v.id("members"),
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    startsAt: v.number(),
+    note: v.optional(v.string()),
+    status: v.string(),
+    summary: v.optional(v.string()),
+    summaryAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_memberId_and_startsAt", ["memberId", "startsAt"])
+    .index("by_counselorMemberId_and_startsAt", ["counselorMemberId", "startsAt"])
+    .index("by_slotId", ["slotId"]),
+
+  // Who the counselor of a session shared its recording and transcript with, on request (owner, 2026-10-27). The recording itself stays on Stream
+  // and is never copied into a DHI table; this row only lets that person open it from the house. Erase class `erased` (with the student).
+  counselShares: defineTable({
+    bookingId: v.id("counselBookings"),
+    memberId: v.id("members"), // who may now open the recording
+    sharedBy: v.id("members"), // the counselor
+    at: v.number(),
+  })
+    .index("by_bookingId", ["bookingId"])
     .index("by_memberId", ["memberId"]),
 
   // The DHI desk (spec house/0016). One row: the coins DHI gives each student every month, set by a DHI admin only. Kept, no student in it.

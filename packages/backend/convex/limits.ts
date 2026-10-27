@@ -109,6 +109,10 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   deskClarify: { kind: "token bucket", rate: 20, period: HOUR, capacity: 20 },
   // Each student's share of the deployment's daily cap (owner, 2026-10-26): 20 questions to the model in one India day, so one student can never use
   // up the day for everyone. The window starts at 04:00 India time, with the house day. Taken only on the way to the model (desk.begin).
+  // Counseling (spec house/0024): a counselor opens or closes slots and writes links and summaries 120 times an hour; a student books, cancels or
+  // edits a booking 10 times a day.
+  counselWrite: { kind: "token bucket", rate: 120, period: HOUR, capacity: 120 },
+  counselBook: { kind: "fixed window", rate: 10, period: DAY, start: Date.parse("2026-01-01T04:00:00+05:30") },
   deskStudentDay: { kind: "fixed window", rate: DESK_STUDENT_DAILY, period: DAY, start: Date.parse("2026-01-01T04:00:00+05:30") },
   shareMake: { kind: "fixed window", rate: SHARE_MAKE_PER_HOUR, period: HOUR },
   shareRead: { kind: "fixed window", rate: SHARE_READ_PER_MINUTE, period: MINUTE, shards: SHARE_READ_SHARDS, start: 0 },

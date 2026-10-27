@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Building2, FileText, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, Building2, FileText, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, Video, type LucideIcon } from "lucide-react";
 import { HouseMenu } from "@/components/dhi/house-menu";
 import { Sheet } from "@/components/dhi/sheet";
 import { ClassListSection } from "@/components/dhi/staff/class-list-section";
@@ -13,6 +13,8 @@ import { FoodsSection } from "@/components/dhi/staff/foods-section";
 import { FilmsSection } from "@/components/dhi/staff/films-section";
 import { HourSection } from "@/components/dhi/staff/hour-section";
 import { DeskSection } from "@/components/dhi/staff/desk-section";
+import { StaffDataSection } from "@/components/dhi/staff/data-section";
+import { CounselSection, SharedRecordings } from "@/components/dhi/staff/counsel-section";
 import { PeopleSection } from "@/components/dhi/staff/people-section";
 import { ScopeProvider, type InstituteId, type StaffScope } from "@/components/dhi/staff/staff-parts";
 import { BrandMark } from "@/components/dhi/ui/brand-mark";
@@ -24,7 +26,7 @@ import { ROLE_LABEL } from "@/lib/dhi/house-words";
 import type { HouseRole } from "@/lib/entry";
 import { useStudent } from "@/lib/dhi/student";
 
-type Tab = "institutes" | "classes" | "people" | "invites" | "list" | "parent" | "results" | "papers" | "foods" | "films" | "hour" | "desk";
+type Tab = "institutes" | "classes" | "people" | "invites" | "list" | "parent" | "results" | "papers" | "foods" | "films" | "hour" | "desk" | "counsel" | "data";
 type NavItem = { id: Tab; label: string; icon: LucideIcon; about: string };
 
 // The staff area (spec house/0002), built from the house's own frame and menu so it looks like the rest. What each role sees:
@@ -42,14 +44,17 @@ const NAV_ALL: NavItem[] = [
   { id: "films", label: "Films", icon: FileText, about: "Upload films for the Modules room and approve them for students." },
   { id: "foods", label: "Food catalog", icon: BookOpen, about: "Publish the dishes students added into the shared catalog." },
   { id: "papers", label: "Papers and review", icon: FileText, about: "Build and send papers, mark long answers, and review the posts of your classes." },
+  { id: "counsel", label: "Sessions", icon: Video, about: "Open your times, meet students in a recorded video call, and write a short note after." },
+  { id: "data", label: "Your data", icon: ShieldCheck, about: "Download one file of what the house holds about you as staff." },
 ];
 
 function navFor(role: HouseRole): NavItem[] {
-  // Parent consent is the school's alone: a DHI admin cannot record it (spec house/0005, AC-3).
-  if (role === "dhi_admin") return NAV_ALL.filter((n) => n.id !== "parent" && n.id !== "papers" && n.id !== "results");
-  if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "papers" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk");
+  // Parent consent is the school's alone: a DHI admin cannot record it (spec house/0005, AC-3). Sessions are the counselor's alone (spec house/0024).
+  if (role === "counselor") return NAV_ALL.filter((n) => n.id === "counsel" || n.id === "data");
+  if (role === "dhi_admin") return NAV_ALL.filter((n) => n.id !== "parent" && n.id !== "papers" && n.id !== "results" && n.id !== "counsel");
+  if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "papers" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel");
   if (role === "teacher") {
-    return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "parent" && n.id !== "results" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk").map((n) =>
+    return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "parent" && n.id !== "results" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel").map((n) =>
       n.id === "classes"
         ? { ...n, label: "My classes", about: "The classes your institute gave you." }
         : n.id === "people"
@@ -64,13 +69,13 @@ function navFor(role: HouseRole): NavItem[] {
   return [];
 }
 
-// A counselor signs in and sees their own place only. Counseling is not built yet.
-function CounselorHome() {
+// A role with no screens here sees its own place only.
+function NothingHere() {
   return (
     <Card className="flex min-h-60 flex-col items-center justify-center text-center">
       <GraduationCap className="mb-3 size-8 text-lilac" aria-hidden />
-      <h2 className="font-display text-2xl">Counseling opens later</h2>
-      <p className="mt-2 max-w-sm text-sm text-mute">You are in the house as a counselor. There is nothing for you to do here yet.</p>
+      <h2 className="font-display text-2xl">Nothing here yet</h2>
+      <p className="mt-2 max-w-sm text-sm text-mute">There is nothing for you to do here yet.</p>
     </Card>
   );
 }
@@ -178,8 +183,10 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
           This is the staff area. Students' own rooms are not shown here. Marks and answers open only on the marking and results pages, and each look is recorded where the student can see it. Use only people made up for testing until the owner approves the consent words and the legal check is done.
         </Notice>
 
-        {role === "counselor" || !current ? (
-          <CounselorHome />
+        {!current ? (
+          <NothingHere />
+        ) : current.id === "counsel" ? (
+          <CounselSection />
         ) : current.id === "institutes" ? (
           <InstitutesSection onOpen={(id, name) => setOpened({ id, name })} openId={opened?.id} />
         ) : current.id === "classes" ? (
@@ -202,6 +209,11 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
           <HourSection />
         ) : current.id === "desk" ? (
           <DeskSection />
+        ) : current.id === "data" ? (
+          <>
+            <StaffDataSection />
+            <SharedRecordings />
+          </>
         ) : (
           <ClassListSection />
         )}

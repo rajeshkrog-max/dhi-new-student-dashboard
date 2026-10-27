@@ -96,6 +96,48 @@ export const exportMine = mutation({
   },
 });
 
+// A staff member's own data (teacher, institute admin, DHI admin, counselor): who they are, the classes they teach, the papers they built (with how
+// many sittings of each they marked, never which student), the films they uploaded, and their own actions in the access record (a code and a date,
+// never who they acted on). Nothing of a student's own is in it: a mark belongs to the student and is in the student's download. One file, at most
+// the newest 500 of each list; a removed member can still download. Five an hour, shared with the student download (`dataExport`).
+export const exportStaffMine = mutation({
+  args: {},
+  returns: v.union(v.object({ ok: v.literal(true), file: v.any() }), refusal),
+  handler: async (ctx) => {
+    const mc = await requireMemberAllowLocked(ctx, { inactive: true });
+    if (mc.role === "student") fail("forbidden");
+    const limit = await rateLimiter.limit(ctx, "dataExport", { key: mc.member._id });
+    if (!limit.ok) return { ok: false as const, code: "rate_limited" };
+    const me = mc.member._id;
+    const links = await ctx.db.query("teacherClasses").withIndex("by_memberId", (q) => q.eq("memberId", me)).take(500);
+    const classes = [];
+    for (const l of links) {
+      const c = await ctx.db.get(l.classId);
+      if (c) classes.push(`${c.grade} ${c.section}`);
+    }
+    const papers = [];
+    for (const p of await ctx.db.query("papers").withIndex("by_teacherMemberId", (q) => q.eq("teacherMemberId", me)).order("desc").take(500)) {
+      const questions = await ctx.db.query("paperQuestions").withIndex("by_paperId", (q) => q.eq("paperId", p._id)).take(200);
+      const sittings = await ctx.db.query("paperAttempts").withIndex("by_paperId_and_memberId", (q) => q.eq("paperId", p._id)).take(2000);
+      papers.push({ title: p.title, status: p.status, createdAt: p.createdAt, questions: questions.length, sittingsMarkedByYou: sittings.filter((s) => s.markedBy === me).length });
+    }
+    const films = (await ctx.db.query("films").withIndex("by_status").take(2000)).filter((f) => f.uploadedBy === me).map((f) => ({ title: f.title, status: f.status }));
+    const actions = (await ctx.db.query("accessLog").withIndex("by_actor_and_at", (q) => q.eq("actor", me)).order("desc").take(500)).map((a) => ({ action: a.action, at: a.at }));
+    return {
+      ok: true as const,
+      file: {
+        schema: "dhi-house-staff-export-v1",
+        exportedAt: Date.now(),
+        profile: { name: mc.member.name, email: mc.member.email, role: mc.member.role, institute: mc.institute?.name ?? null, joinedAt: mc.member.joinedAt },
+        classes,
+        papers,
+        films,
+        actions,
+      },
+    };
+  },
+});
+
 // The student erases their own house data after a two step confirm on the screen (`confirm: true` is the second step). Invisible at once; the
 // rest finishes in the background. The same email is blocked for 30 days. Needs ERASURE_HASH_SECRET, or it refuses before doing anything.
 export const eraseMine = mutation({

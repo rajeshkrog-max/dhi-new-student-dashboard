@@ -436,7 +436,7 @@ describe("withdrawal (AC-5, AC-6)", () => {
 describe("who sees what (AC-7, AC-8, AC-23, AC-24)", () => {
   const OK = { standing: "ok" } as const;
   const WELL: DataKind[] = ["mood", "meals", "habits", "sleep", "hour", "modules"];
-  const WRITTEN: DataKind[] = ["writing", "desk", "brain"];
+  const WRITTEN: DataKind[] = ["writing", "desk", "brain", "counsel"];
 
   test("covers AC-7: every viewer against every kind returns exactly the table", () => {
     const expected = (viewer: Viewer, relation: Relation, kind: DataKind) => {
@@ -691,7 +691,7 @@ describe("export (AC-12, AC-16)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections.map((s) => s.section).filter((x) => x !== "events")).toEqual(["header", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk"]); // each room adds its own (empty here) section after the events
+    expect(sections.map((s) => s.section).filter((x) => x !== "events")).toEqual(["header", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk", "counsel"]); // each room adds its own (empty here) section after the events
     expect(sections.filter((s) => s.section === "events")).toHaveLength(3);
     const header = sections[0].rows[0] as { profile: Record<string, unknown>; consent: unknown[]; sharing: unknown };
     expect(header.profile).toMatchObject({ name: "Asha Rao", email: "adult@alpha.test", role: "student", institute: "Alpha School", class: "Class 10 A", under18: false });
@@ -1013,7 +1013,7 @@ describe("source scans (AC-6, AC-10, AC-13, AC-19)", () => {
     expect(names.sort()).toEqual(
       [
         "access.mine", "consent.agree", "consent.notice", "consent.parentList", "consent.parentNotice", "consent.recordParent", "consent.recordParentRestored",
-        "consent.recordParentWithdrawn", "consent.restore", "consent.state", "consent.withdraw", "dataRights.eraseMine", "dataRights.exportMine", "sharing.get", "sharing.set",
+        "consent.recordParentWithdrawn", "consent.restore", "consent.state", "consent.withdraw", "dataRights.eraseMine", "dataRights.exportMine", "dataRights.exportStaffMine", "sharing.get", "sharing.set",
       ].sort(),
     );
   });

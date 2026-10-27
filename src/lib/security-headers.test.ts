@@ -11,14 +11,26 @@ test("the house pages may not be framed, stay on HTTPS and never sniff a type", 
   for (const part of ["object-src 'none'", "base-uri 'none'", "form-action 'self'", "default-src 'self'"]) assert.ok(h["Content-Security-Policy"].includes(part), part);
 });
 
-test("the page talks only to itself and the Convex deployment it was built for", () => {
+const STREAM_HOSTS = /^(https|wss):\/\/\*\.(stream-io-api\.com|stream-io-video\.com|stream-io-cdn\.com|getstream\.io)$/;
+
+test("the page talks only to itself, the Convex deployment it was built for and Stream's call service", () => {
   const csp = securityHeaders("https://abundant-caiman-975.convex.cloud")["Content-Security-Policy"];
   const connect = csp.split("; ").find((d) => d.startsWith("connect-src")) ?? "";
-  assert.equal(connect, "connect-src 'self' https://abundant-caiman-975.convex.cloud wss://abundant-caiman-975.convex.cloud https://abundant-caiman-975.convex.site");
+  assert.ok(connect.startsWith("connect-src 'self' https://abundant-caiman-975.convex.cloud wss://abundant-caiman-975.convex.cloud https://abundant-caiman-975.convex.site "));
+  assert.ok(connect.includes("wss://*.stream-io-video.com") && connect.includes("https://*.stream-io-api.com"));
   assert.ok(!csp.includes("proper-camel-616"), "the production policy names the development deployment");
   assert.ok(!/localhost|\bws:/.test(csp), "the production policy allows the dev socket");
-  assert.ok(!csp.includes("*"), "the production policy has a wildcard");
+  for (const word of csp.split(/[ ;]+/).filter((w) => w.includes("*"))) assert.match(word, STREAM_HOSTS, `a wildcard other than Stream's: ${word}`);
   assert.ok(!/unsafe-eval|grok\.com/.test(csp), "the production policy allows eval or the dev preview");
+  assert.ok(!/script-src[^;]*stream/.test(csp), "Stream may not run scripts");
+});
+
+test("the camera, microphone and screen share are for the house's own pages only, for the counseling call", () => {
+  const p = securityHeaders("https://abundant-caiman-975.convex.cloud")["Permissions-Policy"];
+  assert.match(p, /camera=\(self\)/);
+  assert.match(p, /microphone=\(self\)/);
+  assert.match(p, /display-capture=\(self\)/);
+  assert.match(p, /geolocation=\(\)/);
 });
 
 test("the dev server may also open its own reload socket, and a missing address allows only the page itself", () => {

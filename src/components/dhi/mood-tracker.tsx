@@ -1,25 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { Clock, Heart, Sparkles } from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
 import { dayBounds, shiftDay, todayOf } from "@dhi/backend/dayRules";
 import { isMood } from "@dhi/backend/moodRules";
-import {
-  COUNSELOR,
-  MONTHS,
-  MOODS,
-  daysInMonth,
-  inkOn,
-  loadMood,
-  moodOf,
-  openSlots,
-  prettyDate,
-  sendHelp,
-  type CounselSlot,
-  type MoodKey,
-  type MoodStore,
-} from "@/lib/dhi/mood-demo";
+import { MONTHS, MOODS, daysInMonth, inkOn, moodOf, prettyDate, type MoodKey } from "@/lib/dhi/mood-demo";
 import { GUNA_WORDS, MOOD_WORDS_APPROVED, dhiLine, gunaOf, moodRefusal } from "@/lib/dhi/mood-words";
 import { Notice } from "@/components/dhi/ui/notice";
 import { Sheet } from "@/components/dhi/sheet";
@@ -30,10 +16,9 @@ const glass = "rounded-card border border-white/80 bg-white/70 shadow-sm backdro
 
 type DayCell = { mood: MoodKey; note: string; lineIx: number };
 
-// The mood room (spec house/0006). The days are the student's own, read from the server; saving writes today's entry there. The help button
-// below still runs on the demo store until the counseling row, so `store` here holds only the help asks.
-export function MoodTracker() {
-  const [store, setStore] = useState<MoodStore>({ studentId: "", year: 2026, days: {}, help: [] });
+// The mood room (spec house/0006). The days are the student's own, read from the server; saving writes today's entry there. The help button opens
+// the Counseling room (spec house/0024) through `onCounsel`.
+export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
   const [scope, setScope] = useState<"week" | "month">("week");
   const [pick, setPick] = useState<string | null>(null);
   const [mood, setMood] = useState<MoodKey>("content");
@@ -42,11 +27,7 @@ export function MoodTracker() {
   const [saving, setSaving] = useState(false);
   const [fail, setFail] = useState("");
   const [dayChanged, setDayChanged] = useState(false);
-  const [help, setHelp] = useState(false);
   const [confirmHelp, setConfirmHelp] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [slotId, setSlotId] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
   // The day the screen shows as today comes from the shared day rule on the device clock, and moves on at the next 04:00. The save result carries
   // the server's day, which wins.
   const [today, setToday] = useState(() => todayOf(Date.now()));
@@ -63,16 +44,11 @@ export function MoodTracker() {
   const currentRows = useQuery(api.moods.month, { month: today.slice(0, 7) });
   const viewRows = useQuery(api.moods.month, { month: monthKey(month) });
   const yearRows = useQuery(api.moods.year, { year: String(year) });
-  const slots = useMemo(() => openSlots(), []);
 
   useEffect(() => {
     const t = window.setTimeout(() => setToday(todayOf(Date.now())), Math.max(1000, dayBounds(today).end - Date.now()) + 50);
     return () => window.clearTimeout(t);
   }, [today]);
-
-  useEffect(() => {
-    setStore(loadMood());
-  }, []);
 
   const asCell = (r: { mood: string; note: string; lineIx: number }): DayCell | null => (isMood(r.mood) ? { mood: r.mood, note: r.note, lineIx: r.lineIx } : null);
   const todayEntry = useMemo(() => {
@@ -406,48 +382,25 @@ export function MoodTracker() {
         />
       )}
 
-      {confirmHelp && !help && !sent && (
-        <Modal title="Sit with a counselor?" onClose={() => setConfirmHelp(false)}>
-          <p className="text-sm text-mute">In-house, human. DHI does not enter the recording. Asha Rao will see your note, not a diagnosis.</p>
+      {confirmHelp && (
+        <Modal title="Talk to a counselor?" onClose={() => setConfirmHelp(false)}>
+          <p className="text-sm text-mute">A counselor from the DHI team can talk with you in a video call inside the house. You pick a free time in Counseling.</p>
           <div className="mt-5 flex gap-2">
             <button type="button" onClick={() => setConfirmHelp(false)} className="h-11 rounded-control bg-white px-4 text-sm">
               Not now
             </button>
-            <button type="button" onClick={() => setHelp(true)} className="h-11 rounded-control bg-home px-4 text-sm text-paper">
-              Yes, write to them
+            <button
+              type="button"
+              data-testid="mood-to-counsel"
+              onClick={() => {
+                setConfirmHelp(false);
+                onCounsel?.();
+              }}
+              className="h-11 rounded-control bg-home px-4 text-sm text-paper"
+            >
+              Go to Counseling
             </button>
           </div>
-        </Modal>
-      )}
-
-      {help && (
-        <HelpDesk
-          slots={slots}
-          message={msg}
-          slotId={slotId}
-          onMessage={setMsg}
-          onSlot={setSlotId}
-          onClose={() => {
-            setHelp(false);
-            setConfirmHelp(false);
-          }}
-          onSend={() => {
-            setStore(sendHelp(store, msg, slotId));
-            setHelp(false);
-            setConfirmHelp(false);
-            setSent(true);
-            setMsg("");
-            setSlotId(null);
-          }}
-        />
-      )}
-
-      {sent && (
-        <Modal title="The door is open" onClose={() => setSent(false)}>
-          <p className="text-sm text-mute">Your words went to the counselor desk. If you booked a slot, it is held.</p>
-          <button type="button" onClick={() => setSent(false)} className="mt-5 h-11 rounded-control bg-home px-5 text-sm text-paper">
-            Stay in the house
-          </button>
         </Modal>
       )}
     </div>
@@ -566,76 +519,10 @@ function DaySlide({
           <p className="mt-1 text-sm leading-relaxed text-paper/80">{guna.tip}</p>
         </div>
         <button type="button" onClick={onHelp} className="lamp-glow flex h-12 w-full items-center justify-center gap-2 rounded-full bg-paper text-sm font-medium text-home">
-          <Heart className="size-4" aria-hidden /> Ask DHI for a sitting
+          <Heart className="size-4" aria-hidden /> Talk to a counselor
         </button>
       </div>
     </Sheet>
-  );
-}
-
-function HelpDesk({
-  slots,
-  message,
-  slotId,
-  onMessage,
-  onSlot,
-  onClose,
-  onSend,
-}: {
-  slots: CounselSlot[];
-  message: string;
-  slotId: string | null;
-  onMessage: (v: string) => void;
-  onSlot: (id: string | null) => void;
-  onClose: () => void;
-  onSend: () => void;
-}) {
-  const days = [...new Set(slots.map((s) => s.date))];
-  const [day, setDay] = useState(days[0] ?? "");
-  const ofDay = slots.filter((s) => s.date === day);
-
-  return (
-    <Modal title={`Write to ${COUNSELOR}`} onClose={onClose}>
-      <p className="text-xs text-mute">A human sitting. Pick an open hour if you want a time held.</p>
-      <textarea
-        value={message}
-        onChange={(e) => onMessage(e.target.value)}
-        rows={4}
-        placeholder="What do you need them to know before the sitting?"
-        className="mt-4 w-full resize-none rounded-control bg-white p-3 text-sm outline-none"
-      />
-      <p className="mt-4 text-[11px] uppercase tracking-wide text-mute touch:text-xs">Open hours</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {days.map((d) => (
-          <button key={d} type="button" onClick={() => setDay(d)} className={cn("h-9 rounded-full px-3 text-xs touch:h-11", day === d ? "bg-home text-paper" : "bg-white")}>
-            {d.slice(5)}
-          </button>
-        ))}
-      </div>
-      <div className="mt-2 grid grid-cols-3 gap-2">
-        {ofDay.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            disabled={s.status === "booked"}
-            onClick={() => onSlot(s.id === slotId ? null : s.id)}
-            className={cn(
-              "flex h-12 flex-col items-center justify-center rounded-control text-xs",
-              s.status === "booked" && "bg-white/50 text-mute line-through",
-              s.status === "open" && slotId === s.id && "bg-grove text-paper",
-              s.status === "open" && slotId !== s.id && "bg-white",
-            )}
-          >
-            <Clock className="mb-0.5 size-3" />
-            {s.start}
-            {s.status === "booked" ? " held" : " open"}
-          </button>
-        ))}
-      </div>
-      <button type="button" disabled={!message.trim()} onClick={onSend} className="mt-5 h-11 w-full rounded-control bg-home text-sm font-medium text-paper disabled:opacity-40">
-        Send to counselor desk
-      </button>
-    </Modal>
   );
 }
 
