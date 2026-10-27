@@ -41,6 +41,8 @@ pnpm enter:check     # real browser proof of the front door, dev server on 8080 
 pnpm consent:check   # real browser proof of the consent flow, Your data and erase (dev server on 8080, development backend only)
 pnpm desk:check      # real browser proof of the desk: every kind and its coins, clarify, care text, the stored answer (calls the real model on development, about seven calls)
 pnpm parent:check    # real browser proof of the weekly parent page and the connections on Progress (pauses and resumes the demo class)
+pnpm burst:check     # many calls at once end in an answer or a plain refusal, never a server error (needs an open hour)
+pnpm rehearsal:check # the first look after a deploy, on development, in a fresh made up Rehearsal School
 pnpm platform:check  # real browser proof of the funnel link and that only a DHI admin is offered the staff move (dev server on 8080, the funnel built)
 pnpm mood:check      # real browser proof of the mood room (dev server on 8080, development backend only)
 pnpm habit:check     # real browser proof of the habits room (dev server on 8080, development backend only)

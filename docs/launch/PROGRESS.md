@@ -15,7 +15,7 @@ No git push, no production deploy, no `--prod` command and no production env cha
 
 ## Where we are
 
-Phase 1, groups A, B and C closed 2026-10-26 (fixes not yet committed: the owner is asked at the next commit point). Phase 1 closed 2026-10-26: groups A to F verified, tested, reviewed by a fresh model and documented. Next: the owner's yes to commit the Phase 1 fixes, then Phase 2 (hardening). Phase 0 is done and the 8 slices are committed (no push).
+Phase 1, groups A, B and C closed 2026-10-26 (fixes not yet committed: the owner is asked at the next commit point). Phases 1 and 2 done (2026-10-27). Phase 1 committed (3 commits, no push). Phase 2 written up in `docs/launch/HARDENING.md`, its fixes not yet committed. Phase 3 done (2026-10-27): `OWNER-GATES.md`, `words/english.md` and `words/hinglish.md` (from `scripts/words-export.mjs`), `hinglish-reader.md`, `legal-check.md`. Phase 5 done (2026-10-27): the ready report is given to the owner. Verdict: go for deploying the code with the desk off and only made up people; no go for real students until the owner gates close. Waiting: the owner's yes for each Phase 6 step (commit, push, backend deploy, Worker deploy). Phase 2 to 4 changes are not yet committed (33 entries). Phase 0 is done and the 8 slices are committed (no push).
 
 ## Log
 
@@ -59,6 +59,19 @@ Phase 1, groups A, B and C closed 2026-10-26 (fixes not yet committed: the owner
 | 2026-10-26 | 1 | F | Fresh review: 6 findings, all about the new exam lock. The owner narrowed it to the rooms that could help (desk, blog, study hour, films); Your data and Leave never frozen; a seat can be left; error card resets; no study hour zero on a paper day (metric version 7). 5 and 6 named, not changed | see `docs/reviews/2026-10-26-group-f-home-staff.md` |
 | 2026-10-26 | 1 | all | Backend 1317 of 1317 (65 files), both typechecks; exams 13/13, hour 7/7, parent 6/6, brain 8/8; sweep of changed screens clean | pass |
 | 2026-10-26 | 2 | all | Key scan: working tree, build output (`dist`, `apps/joining/dist`) and the whole git history hold no OpenAI key pattern (the build matched only `mask-image-` class names, clean with a word boundary) | pass |
+| 2026-10-27 | 2 | all | Settings matrix (dev read, secrets as set or unset only; prod not read), Worker routes match `public/`, schema additive against `main`, 9 new crons | done, see HARDENING.md |
+| 2026-10-27 | 2 | all | Races on dev: mood, sleep, habits, events all pass. New `burst:check`: desk had 21 server errors of 40 at once; fixed (no cache hit counter, conflict answers `busy`), then clean | pass |
+| 2026-10-27 | 2 | all | New `authSweep.test.ts` and `privacySweep.test.ts`; gap named: no staff download (`teacherClasses`) | pass |
+| 2026-10-27 | 2 | all | `pnpm audit`: zod 4.6.5 to 4.6.7 (only lockfile change); 7 left in dev tools only | done |
+| 2026-10-27 | 2 | all | Accessibility (axe on every main screen at 1280 and 360, keyboard): fixed mood tile contrast and the chart rings; now 0 failures | pass |
+| 2026-10-27 | 2 | all | Full responsive sweep: one shift left (Your data at 1024), fixed (the link card last); clean | pass |
+| 2026-10-27 | 2 | all | /security-review of the branch: no High or Medium finding | pass |
+| 2026-10-27 | 3 | all | Owner packet written. Found: the notice does not mention the DHI desk or its outside model provider (in `legal-check.md`, for the owner) | done |
+| 2026-10-27 | 4 | all | Owner chose: no wipe of development, a fresh Rehearsal School. `bootstrap:dhiAdmin` ran on dev (an unclaimed invite, as production will make) | done |
+| 2026-10-27 | 4 | all | New `rehearsal:check` (first look, real screens): 9 of 9 | pass |
+| 2026-10-27 | 4 | all | `pnpm deploy:house --dry-run`: clean build with the production address, 17 routes, nothing deployed | pass |
+| 2026-10-27 | 4 | all | Four dev helpers had no test sign in check (read only internal queries): guarded; `proofGuard.test.ts` scans every helper | fixed |
+| 2026-10-27 | 4 | all | `docs/HOUSE-DEPLOY.md` rewritten to match: the desk live, 44 tables, 9 crons, the variables, the snapshot, the rollback | done |
 | 2026-10-26 | 2 | D | Built early: the desk daily cap (`deskDaily`, `DESK_DAILY_CAP` default 300, `desk_day_full`), today's count on the DHI admin's desk screen. `DESK_LIVE=false` is the off switch with no deploy. 4 new tests | pass |
 
 ## Open
