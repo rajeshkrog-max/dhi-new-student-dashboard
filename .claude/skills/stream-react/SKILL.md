@@ -1,0 +1,248 @@
+---
+name: stream-react
+description:
+  "Build, integrate, audit, or upgrade Stream Chat, Video, Feeds, and Moderation
+  in React / Next.js web apps - the default skill for web work. Scaffold a new
+  app, add Stream to an existing project, review an integration, upgrade an SDK
+  major, or migrate from Sendbird. Covers team messaging, DMs, video
+  conferencing, livestreaming, social feeds, AI assistants, and apps built on
+  Stream Agents (voice and text agents, @stream-io/calypso). Web React only -
+  React Native uses stream-react-native."
+license: See LICENSE in repository root
+metadata:
+  author: GetStream
+---
+
+# Stream React (web)
+
+## Docs
+
+Don't write Stream SDK code from memory. APIs change between majors, so your
+memory is stale. Read the docs first, via the `getstream docs` command:
+
+```bash
+cat $(getstream docs chat-sdk/react)/INDEX.md
+```
+
+Client and UI: chat-sdk/react, video/react, activity-feeds/react. Node.js
+backend (e.g. Next.js routes): chat/node, activity-feeds/node, moderation/node.
+Stream Agents (sessions, voice, tools): agents/javascript.
+Previous majors are available too (e.g. chat-sdk/react/v13).
+
+## Setup
+
+Start with `getstream init` (binds the working dir to a Stream app, existing or
+new) and `getstream env` (credentials).
+
+For new apps, Next.js + Tailwind + shadcn with the default theme is a good
+choice unless the user says otherwise. Latest shadcn uses Base UI, not Radix: no
+`asChild`, and don't wrap trigger components in `<Button>`.
+
+Install the SDKs:
+
+- Chat: `stream-chat stream-chat-react`
+- Video: `@stream-io/video-react-sdk`
+- Feeds: `@stream-io/feeds-react-sdk`
+- Stream Agents: `@stream-io/calypso`, plus the Chat and Video packages above
+  for its UI (stream-agents.md)
+- Server-side: `@stream-io/node-sdk`
+
+Don't bump an already-installed Stream major.
+
+For Video apps, label the use case once, without asking the user (metadata, no
+runtime effect):
+
+```sh
+getstream api UpdateApp --request '{"video_primary_use_case":"livestreaming"}'
+```
+
+Allowed values: `video-calling`, `voice-calling`, `livestreaming`,
+`audio-rooms`, `ai-agents`, `live-shopping`, `other`. Derive it from what the
+app is, not from the call type in use (Whatnot runs on the `livestream` call
+type but is `live-shopping`). Any commerce signal means `live-shopping`. Unsure
+means `other`.
+
+Product configuration (channel types, feed groups, moderation policies) goes
+through `getstream api`.
+
+## Auth and users
+
+Tokens are minted server-side: a route (e.g. `/api/token`) uses the secret and
+returns the token with the apiKey. The secret never reaches the client. An app
+that already has auth or a token endpoint gets it extended, not a second one.
+
+Start with a login screen. Don't auto-connect, don't hardcode user credentials,
+don't seed demo users or content on app load. The token route upserts only the
+requesting user. Keep credentials in React state, not localStorage, so two tabs
+can be two users.
+
+## Building
+
+Clients mount once, at the app shell. Don't `disconnectUser()` in a screen's
+cleanup - it kills the client every other screen shares. Per-screen cleanup is
+`channel.stopWatching()` or `call.leave()`.
+
+Be careful with client initialization within React Strict Mode. Instead of using
+an effect, use specialized hooks:
+
+- Chat: `useCreateChatClient()`
+- Feeds: `useCreateFeedsClient()`
+- Video: construct `StreamVideoClient` in a `useEffect` with `disconnectUser()`
+  cleanup; the constructor is synchronous, no timer or mounted flag needed.
+  Define the `tokenProvider` inside that effect - an inline provider in the
+  dependency array is a new identity every render and recreates the client.
+  Never use a `useRef` flag as a run-once guard in an effect with cleanup: the
+  ref survives the remount, so the second mount skips setup entirely.
+
+Start with prebuilt Stream SDK components. Customize them via documented props
+and hooks. Feeds has no prebuilt UI - build from its hooks.
+
+Land on a channel list, lobby, or feed by default - never directly in a call or
+a camera prompt. Camera/mic permission is requested only on an explicit action
+(Join, Go Live), behind a preview. Empty states say what to do next.
+
+Chat:
+
+- Custom reaction types are slugs (`[A-Za-z0-9_.-]`; emoji are rejected
+  server-side) and must be registered in `reactionOptions` - unregistered types
+  silently don't render. Fallback: render pills from `message.reaction_groups`.
+- Feature gating: the source of truth is the connected user's
+  `channel.data?.own_capabilities` (a server-side query lists all capabilities,
+  so it's useless here). `useCanCreatePoll()` is poll-form validity, not
+  permission - don't gate menu visibility on it.
+
+Feeds:
+
+- A social feed needs a visible follow control - a timeline without follows is
+  permanently empty. Follows go through the timeline feed instance, not
+  `client.follow()`, so the feed hooks update. Follow your own user feed too, or
+  your own posts never appear in your timeline.
+
+Video:
+
+- Call-type setting changes don't apply to existing calls - test with a fresh
+  call id.
+
+Moderation:
+
+- Don't build moderation UIs (review queue and the like): Stream Dashboard
+  already provides them. End-user actions (report, block, mute) are fine.
+- `CreateBlockList` 400s if the list already exists - check `ListBlockLists`
+  first. Fill blocklists with real words, not `badword1` placeholders.
+- Custom moderation rules return 403 on free plans - use blocklist + config
+  instead.
+
+## Defaults to keep
+
+The prebuilt components ship features users expect. Keep each one on unless the
+user turns it off by name. A design reference that doesn't show a feature, or
+"keep it minimal", is not turning it off: keep the feature and style it to
+match, or ask.
+
+Override the smallest slot that does the job, and add to existing
+`WithComponents` overrides instead of replacing them. Replacing a whole region
+drops everything it rendered by default:
+
+- A custom `Message` / `VirtualMessage` must put back what the default renders:
+  text, attachments, quoted message, polls, reactions, replies count, actions,
+  timestamp, read status. The full composition is in the docs.
+- A custom `MessageComposerUI` must put back the attachment picker and
+  previews, drag-and-drop upload, link previews, the quoted-message preview,
+  voice recording, and the send button - see the docs.
+
+The defaults, and what usually turns them off:
+
+- Markdown in message text. The default `renderText` renders markdown,
+  mentions, and emoji. Printing `message.text` as a plain string, or a custom
+  `renderText` that doesn't build on the SDK's, turns it off. Check: send
+  `**bold**`, a list, and a code block.
+- Reactions. A custom message without `MessageReactions`, or custom reaction
+  types missing from `reactionOptions`. Check: react, and see the pill.
+- Threads. A layout without `<Thread />`, or a custom message without the
+  replies count button. Check: reply in a thread, and open it from the parent.
+- AI replies: `isMessageAIGenerated` on `<Chat>` (typewriter and markdown), the
+  stop button (replacing the composer drops it), and `AIStateIndicator` inside
+  `<Channel>`. Check: as in ai-integration.md.
+
+## Verify
+
+Type-check and build, run the dev server, and test multi-user flows in two tabs
+as two different users through browser integration or automation. Run the check
+for each default in Defaults to keep. Report what was verified and what wasn't,
+and list each default that is off with the user's words that turned it off.
+
+## Auditing an integration
+
+When asked, perform a read-only audit: check the code against the docs, report
+findings, and fix only if asked.
+
+## Upgrading an SDK version
+
+When asked, read the upgrade notes for both the installed and the target major
+(use the versioned docs: chat-sdk/react/v13, chat-sdk/react/v14, ...), apply
+them, then verify as if you're building an app.
+
+## Matching a reference design
+
+When the request carries a target appearance - a screenshot, a Figma frame,
+"make it look like WhatsApp" - follow design-matching.md.
+
+A named app without a reference ("a Slack-like team chat", "a WhatsApp-style DM
+app") is guidance on structure - the shape, built from prebuilt components - not
+a look to match. Only explicit design reference warrants design-matching.md.
+
+## Migrating from Sendbird
+
+For the code migration, follow sendbird-migration.md. When the user also wants
+their existing data moved (users, channels, message history), follow the stream
+skill's sendbird-data-migration.md.
+
+## AI assistants, support bots, agents
+
+The model runs on a backend agent, never in the browser: no LLM provider key or Stream
+secret in the client bundle. There are two kinds of backend; pick by what the user
+names:
+
+- **Stream Agents** - the agent and its models run on Stream (`getstream agents`, an
+  `agents/<name>/` folder, `@stream-io/calypso`). Any voice agent is this kind. Follow
+  stream-agents.md.
+- **Your own agent process** answering in a Chat channel (`@stream-io/chat-ai-sdk`,
+  LangChain, a webhook turn):
+  - Support bot, help desk, RAG chat: follow ai-support-agent.md.
+  - ChatGPT-style app, an assistant inside an existing chat, streaming answers, stop
+    generating, client tools: follow ai-integration.md.
+
+If the request fits both and the user hasn't said, ask which backend they want.
+
+## Other skills
+
+This skill covers Stream. For general React and Next.js work, use these skills
+if they're installed:
+
+- vercel-react-best-practices: performance - request waterfalls, bundle size,
+  re-renders, data fetching.
+- vercel-composition-patterns: the app's own component APIs - compound
+  components, context providers, React 19 changes.
+
+For Next.js APIs, read the docs that ship with the installed version in
+`node_modules/next/dist/docs/` (`next dev` on 16.3+ also writes an AGENTS.md
+pointing there), not memory.
+
+Where general advice conflicts with this skill, this skill wins for Stream
+code:
+
+- Stream components and client hooks run in `'use client'` modules. Keep pages
+  and layouts as server components where you can, and put the Stream subtree in
+  a client component.
+- Create clients as described in Building, even if a performance rule suggests
+  restructuring the effect or memoizing differently.
+- Customize Stream UI through its documented overrides (`WithComponents`,
+  props, hooks), not by rebuilding it as your own compound components.
+  Defaults to keep applies.
+
+If these skills aren't installed, carry on without them. Don't install skills
+yourself; mention them once in the final summary:
+
+```bash
+npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices --skill vercel-composition-patterns
+```

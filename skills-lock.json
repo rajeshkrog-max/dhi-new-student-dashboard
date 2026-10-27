@@ -12,6 +12,24 @@
       "sourceType": "github",
       "skillPath": "design/skills/design-system/SKILL.md",
       "computedHash": "12497053dd5456ed6a80e51826d17c584d422584a1d2f653b4038170e4a3348f"
+    },
+    "stream": {
+      "source": "getstream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream/SKILL.md",
+      "computedHash": "40029845ae96f58a935bba8a88c449e2de1a909f31e183a9f1a62d0971f0b71a"
+    },
+    "stream-docs": {
+      "source": "getstream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-docs/SKILL.md",
+      "computedHash": "a091ea29056a18d67efba38133ebc2103316536d117d07431f4aebfc41cf3342"
+    },
+    "stream-react": {
+      "source": "getstream/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/stream-react/SKILL.md",
+      "computedHash": "91a420f566b93feebffa654b5aa922160949d7a2be2546d2145b95c4b041d01e"
     }
   }
 }
