@@ -24,6 +24,8 @@
     "platform:check": "node scripts/platform-check.mjs",
     "desk:check": "node scripts/desk-check.mjs",
     "parent:check": "node scripts/parent-check.mjs",
+    "burst:check": "node scripts/burst-check.mjs",
+    "rehearsal:check": "node scripts/rehearsal-check.mjs",
     "mood:check": "node scripts/mood-check.mjs",
     "habit:check": "node scripts/habit-check.mjs",
     "sleep:check": "node scripts/sleep-check.mjs",
@@ -94,7 +96,7 @@
     "tailwindcss": "^4.3.0",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
-    "zod": "^4.4.0",
+    "zod": "^4.6.6",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
