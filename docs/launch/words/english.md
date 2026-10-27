@@ -1,6 +1,6 @@
 # Drafted words: English
 
-Every word the house shows a student, a parent or the model, in English, read from the code by `scripts/words-export.mjs` on 2026-10-27. All of them are drafts until the owner approves them; approving a room is flipping its switch (`docs/launch/OWNER-GATES.md`). Values in braces such as {name} are filled in on the screen, and a number worked out on the screen shows here as 7. The Hinglish lines are in the other file. Mark a line to change in the margin, or say which path (the code name before each line) and the new words.
+Every word the house shows a student, a parent or the model, in English, read from the code by `scripts/words-export.mjs` on 2026-10-28. All of them are drafts until the owner approves them; approving a room is flipping its switch (`docs/launch/OWNER-GATES.md`). Values in braces such as {name} are filled in on the screen, and a number worked out on the screen shows here as 7. The Hinglish lines are in the other file. Mark a line to change in the margin, or say which path (the code name before each line) and the new words.
 
 ## The house notice and the parent consent (consent screen)
 
@@ -307,6 +307,69 @@ Switch: `SCHOOL_WORDS_APPROVED` (a draft). File: `src/lib/dhi/school-words.ts`.
 - `SCHOOL_WORDS.roomsHidden`: fewer than 10
 - `SCHOOL_WORDS.refusals.bad_range`: Please pick a start day before the end day.
 - `SCHOOL_WORDS.refusals.too_long`: A report covers at most 13 weeks.
+
+## The staff houses (home, overview, counselors, a student's papers)
+
+Switch: `STAFF_WORDS_APPROVED` (a draft). File: `src/lib/dhi/staff-words.ts`.
+
+- `STAFF_WORDS.draft`: These words are drafts and may change.
+- `STAFF_WORDS.loading`: Loading…
+- `STAFF_WORDS.homeTitle`: Home
+- `STAFF_WORDS.homeIntro`: What is waiting for you. Each count opens its page.
+- `STAFF_WORDS.nothing`: Nothing is waiting.
+- `STAFF_WORDS.open`: Open
+- `STAFF_WORDS.teacher.toMark(…)`: {name} sittings to mark
+- `STAFF_WORDS.teacher.toConfirm(…)`: {name} marks to confirm for the students
+- `STAFF_WORDS.teacher.postsToReview(…)`: {name} blog posts to review
+- `STAFF_WORDS.teacher.commentsToReview(…)`: {name} comments to review
+- `STAFF_WORDS.teacher.closingSoon(…)`: {name} papers close in the next two days
+- `STAFF_WORDS.admin.parentWaiting(…)`: {name} students under 18 wait for the parent's consent on file
+- `STAFF_WORDS.admin.invitesPending(…)`: {name} invites not yet claimed
+- `STAFF_WORDS.admin.invitesExpiring(…)`: {name} invites end in the next three days
+- `STAFF_WORDS.admin.classesPaused(…)`: {name} classes have their logins paused
+- `STAFF_WORDS.dhi.filmsWaiting(…)`: {name} films wait for approval
+- `STAFF_WORDS.dhi.dishesWaiting(…)`: {name} dishes wait to be published
+- `STAFF_WORDS.dhi.deskToday(…)`: {name} desk questions reached the model today
+- `STAFF_WORDS.dhi.institutesPaused(…)`: {name} institutes are paused
+- `STAFF_WORDS.dhi.counselorInvitesPending(…)`: {name} counselor invites not yet claimed
+- `STAFF_WORDS.overviewTitle`: Institutes at a glance
+- `STAFF_WORDS.overviewIntro`: Counts only, for each institute. No names, and nothing from a student's rooms.
+- `STAFF_WORDS.cols.name`: Institute
+- `STAFF_WORDS.cols.status`: Status
+- `STAFF_WORDS.cols.classes`: Classes
+- `STAFF_WORDS.cols.students`: Students
+- `STAFF_WORDS.cols.staff`: Staff
+- `STAFF_WORDS.cols.invites`: Invites waiting
+- `STAFF_WORDS.cols.papers`: Papers this month
+- `STAFF_WORDS.cols.desk`: Desk questions this month
+- `STAFF_WORDS.status.active`: Active
+- `STAFF_WORDS.status.suspended`: Paused
+- `STAFF_WORDS.status.removed`: Paused
+- `STAFF_WORDS.counselorsTitle`: Counselors
+- `STAFF_WORDS.counselorsIntro`: Invite, pause and bring back counselors. You see how many times each has open, never their sessions or students.
+- `STAFF_WORDS.openTimes(…)`: {name} times open
+- `STAFF_WORDS.noCounselors`: No counselors yet. Invite one below.
+- `STAFF_WORDS.inviteTitle`: Invite a counselor
+- `STAFF_WORDS.name`: Name
+- `STAFF_WORDS.email`: Google email
+- `STAFF_WORDS.invite`: Invite
+- `STAFF_WORDS.invited(…)`: {name} is invited.
+- `STAFF_WORDS.pendingTitle`: Invites not yet claimed
+- `STAFF_WORDS.ends(…)`: ends {name}
+- `STAFF_WORDS.revoke`: Take back
+- `STAFF_WORDS.pause`: Pause
+- `STAFF_WORDS.bringBack`: Bring back
+- `STAFF_WORDS.paused(…)`: {name} is paused.
+- `STAFF_WORDS.back(…)`: {name} is back.
+- `STAFF_WORDS.studentTitle(…)`: Papers of {name}
+- `STAFF_WORDS.close`: Close
+- `STAFF_WORDS.studentLook`: Opening this page leaves a record the student sees in Your data. Answers are never shown here.
+- `STAFF_WORDS.noPapers`: No papers were sent to this student yet.
+- `STAFF_WORDS.due(…)`: Due {name}
+- `STAFF_WORDS.mark(…)`: {name} of {value}
+- `STAFF_WORDS.state.missed`: Missed
+- `STAFF_WORDS.state.excused`: Excused (the class was paused)
+- `STAFF_WORDS.state.waiting`: Not marked yet
 
 ## Progress (the Brain report)
 

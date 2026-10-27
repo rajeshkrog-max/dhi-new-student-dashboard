@@ -65,7 +65,7 @@ Out of scope for this pass.
 - **School report, academic support list and teacher actions**: built (spec [0025](../../specs/house/0025-school-report.md), the owner's answers of 2026-10-27): papers only plus the existing room counts, a support list with paper reasons, the institute admin and the class's teachers, CR1 only (CR2 to CR4 read the Brain and stay out)
 - **Rest of the Master Spec's 51 metrics**: added without a rebuild after row 17
 - **Parts of the Desk Design not taken by row 15**: knowledge map, question bank, learning modes and uploads, whichever the row 15 spec leaves out
-- **Full teacher, institute admin and DHI master houses**: only the small staff screens inside rows 2, 10, 12, 14 and 15 are planned here
+- **Full teacher, institute admin and DHI master houses**: built (spec [0026](../../specs/house/0026-staff-houses.md), the owner's choice of 2026-10-27): a Home of what waits for each role, a teacher's page per student, the DHI admin's overview and counselor roster
 - **Open decisions already named in the Master Spec**: trial start date, who tags questions, counseling record. Parent sharing default is taken up by row 4 and calories by row 8
 
 ## Legend
