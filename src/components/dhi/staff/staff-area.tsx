@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, BookOpen, Building2, FileText, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, Video, type LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, Building2, Gauge, HeartHandshake, Home, FileText, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, Video, type LucideIcon } from "lucide-react";
 import { HouseMenu } from "@/components/dhi/house-menu";
 import { Sheet } from "@/components/dhi/sheet";
 import { ClassListSection } from "@/components/dhi/staff/class-list-section";
@@ -10,6 +10,9 @@ import { ParentConsentSection } from "@/components/dhi/staff/parent-consent-sect
 import { PapersSection } from "@/components/dhi/staff/papers-section";
 import { ResultsSection } from "@/components/dhi/staff/results-section";
 import { SchoolReportSection } from "@/components/dhi/staff/school-report-section";
+import { StaffHomeSection } from "@/components/dhi/staff/home-section";
+import { OverviewSection } from "@/components/dhi/staff/overview-section";
+import { CounselorsSection } from "@/components/dhi/staff/counselors-section";
 import { FoodsSection } from "@/components/dhi/staff/foods-section";
 import { FilmsSection } from "@/components/dhi/staff/films-section";
 import { HourSection } from "@/components/dhi/staff/hour-section";
@@ -27,13 +30,16 @@ import { ROLE_LABEL } from "@/lib/dhi/house-words";
 import type { HouseRole } from "@/lib/entry";
 import { useStudent } from "@/lib/dhi/student";
 
-type Tab = "institutes" | "classes" | "people" | "invites" | "list" | "parent" | "results" | "report" | "papers" | "foods" | "films" | "hour" | "desk" | "counsel" | "data";
+type Tab = "home" | "overview" | "counselors" | "institutes" | "classes" | "people" | "invites" | "list" | "parent" | "results" | "report" | "papers" | "foods" | "films" | "hour" | "desk" | "counsel" | "data";
 type NavItem = { id: Tab; label: string; icon: LucideIcon; about: string };
 
 // The staff area (spec house/0002), built from the house's own frame and menu so it looks like the rest. What each role sees:
 // a DHI admin all five screens, an institute admin four (no Institutes), a teacher their classes, their students and invites for their classes.
 const NAV_ALL: NavItem[] = [
+  { id: "home", label: "Home", icon: Home, about: "What is waiting for you, with a way into each." },
+  { id: "overview", label: "Overview", icon: Gauge, about: "Every institute at a glance: counts only, no names." },
   { id: "institutes", label: "Institutes", icon: Building2, about: "Add institutes, open one to work in it, and pause or resume it." },
+  { id: "counselors", label: "Counselors", icon: HeartHandshake, about: "Invite, pause and bring back counselors. Their sessions stay theirs." },
   { id: "classes", label: "Classes", icon: BookOpen, about: "Classes of the institute, and which teachers have them." },
   { id: "people", label: "People", icon: Users, about: "Everyone who has joined. Pause someone, bring them back, or move a student." },
   { id: "invites", label: "Invites", icon: Mail, about: "Invite people by Google email. They join by pressing Join." },
@@ -55,9 +61,9 @@ function navFor(role: HouseRole): NavItem[] {
   // school report is the institute's: a DHI admin and a counselor never see it (spec house/0025).
   if (role === "counselor") return NAV_ALL.filter((n) => n.id === "counsel" || n.id === "data");
   if (role === "dhi_admin") return NAV_ALL.filter((n) => n.id !== "parent" && n.id !== "papers" && n.id !== "results" && n.id !== "report" && n.id !== "counsel");
-  if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "papers" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel");
+  if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "overview" && n.id !== "counselors" && n.id !== "institutes" && n.id !== "papers" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel");
   if (role === "teacher") {
-    return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "parent" && n.id !== "results" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel").map((n) =>
+    return NAV_ALL.filter((n) => n.id !== "overview" && n.id !== "counselors" && n.id !== "institutes" && n.id !== "parent" && n.id !== "results" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel").map((n) =>
       n.id === "classes"
         ? { ...n, label: "My classes", about: "The classes your institute gave you." }
         : n.id === "people"
@@ -188,6 +194,12 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
 
         {!current ? (
           <NothingHere />
+        ) : current.id === "home" ? (
+          <StaffHomeSection onGo={(id) => setTab(items.some((n) => n.id === id) ? (id as Tab) : "home")} />
+        ) : current.id === "overview" ? (
+          <OverviewSection />
+        ) : current.id === "counselors" ? (
+          <CounselorsSection />
         ) : current.id === "counsel" ? (
           <CounselSection />
         ) : current.id === "institutes" ? (

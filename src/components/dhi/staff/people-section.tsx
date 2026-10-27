@@ -4,6 +4,7 @@ import { api } from "@dhi/backend/api";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Chip } from "@/components/dhi/ui/chip";
+import { StudentPapers } from "@/components/dhi/staff/student-papers";
 import { ChooseInstitute, Label, ListEmpty, Outcome, Pager, SelectInput, useScope, type ClassId, type InstituteId, type MemberId } from "@/components/dhi/staff/staff-parts";
 import { ROLE_LABEL, codeOf, refusalWords } from "@/lib/dhi/house-words";
 import type { HouseRole } from "@/lib/entry";
@@ -22,6 +23,7 @@ export function PeopleSection() {
   const [role, setRole] = useState<HouseRole | "">("");
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
+  const [papersOf, setPapersOf] = useState<{ id: MemberId; name: string } | null>(null);
   const remove = useMutation(api.members.remove);
   const reinstate = useMutation(api.members.reinstate);
   const setClass = useMutation(api.members.setClass);
@@ -108,6 +110,11 @@ export function PeopleSection() {
                   </div>
                   {m.under18 === true && <Chip tone="lilac">Under 18</Chip>}
                   {m.status === "removed" && <Chip tone="gold">Paused</Chip>}
+                  {scope.role === "teacher" && m.role === "student" && m.status === "active" && (
+                    <Button variant="quiet" onClick={() => setPapersOf({ id: m._id as MemberId, name: m.name })} aria-label={`Papers of ${m.name}`} data-testid="student-papers-open">
+                      Papers
+                    </Button>
+                  )}
                 </div>
                 {isAdmin && (
                   <div className="mt-2 flex flex-wrap items-end gap-2">
@@ -173,6 +180,7 @@ export function PeopleSection() {
         )}
         <Pager status={people.status} onMore={() => people.loadMore(25)} />
       </Card>
+      {papersOf && <StudentPapers key={papersOf.id} memberId={papersOf.id} name={papersOf.name} onClose={() => setPapersOf(null)} />}
     </div>
   );
 }

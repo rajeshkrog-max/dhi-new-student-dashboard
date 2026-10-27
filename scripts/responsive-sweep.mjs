@@ -325,8 +325,8 @@ const BACK_DASHBOARD = { h1: "This page is not here", buttons: ["Back to the hou
 const staffScreen = (room, title) => ({
   auth: "staff",
   path: "/staff",
-  // The staff area opens on Classes, whatever the screen asked for; `run` then opens its own screen through the menu.
-  ready: (p) => p.getByRole("heading", { name: "Classes", level: 1 }),
+  // The staff area opens on Home (house spec 0026), whatever the screen asked for; `run` then opens its own screen through the menu.
+  ready: (p) => p.getByRole("heading", { name: "Home", level: 1 }),
   run: async (p, width) => {
     await openMenuIfDrawer(p, width);
     await p.locator(`[data-room="${room}"]:visible`).click();
@@ -351,6 +351,7 @@ const SCREENS = {
     expect: { h1: "You are not in a house yet", buttons: ["Leave"], brandBar: true },
     leakNames: [PEOPLE.stranger.name],
   },
+  "staff-home": { ...staffScreen("home", "Home"), run: (p) => p.getByTestId("staff-home").waitFor({ timeout: 20_000 }) },
   "staff-classes": staffScreen("classes", "Classes"),
   "staff-people": staffScreen("people", "People"),
   "staff-invites": staffScreen("invites", "Invites"),

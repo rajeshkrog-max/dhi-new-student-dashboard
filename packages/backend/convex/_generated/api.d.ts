@@ -154,6 +154,7 @@ import type * as sleep from "../sleep.js";
 import type * as sleepProof from "../sleepProof.js";
 import type * as sleepRoom from "../sleepRoom.js";
 import type * as sleepRules from "../sleepRules.js";
+import type * as staffHome from "../staffHome.js";
 import type * as staffRead from "../staffRead.js";
 import type * as students from "../students.js";
 import type * as studyHour from "../studyHour.js";
@@ -316,6 +317,7 @@ declare const fullApi: ApiFromModules<{
   sleepProof: typeof sleepProof;
   sleepRoom: typeof sleepRoom;
   sleepRules: typeof sleepRules;
+  staffHome: typeof staffHome;
   staffRead: typeof staffRead;
   students: typeof students;
   studyHour: typeof studyHour;

@@ -161,7 +161,8 @@ async function runHouse(browser) {
 
   await step("an institute admin lands in the staff area, which shows no student rooms", async () => {
     await admin.goto("/staff");
-    await admin.getByRole("heading", { name: "Classes", level: 1 }).waitFor({ timeout: 20_000 });
+    // The staff area opens on Home (house spec 0026).
+    await admin.getByRole("heading", { name: "Home", level: 1 }).waitFor({ timeout: 20_000 });
     expect(!(await admin.locator("body").innerText()).includes("Meal Tracker"), "the student rooms show in the staff area");
     await admin.goto("/dashboard");
     await waitForPath(admin, "/staff");
@@ -280,7 +281,8 @@ async function runHouse(browser) {
     const context = await browser.newContext({ baseURL: base.origin, storageState: teacherState });
     const page = await context.newPage();
     await page.goto("/staff");
-    await page.getByRole("heading", { name: "My classes" }).waitFor({ timeout: 20_000 });
+    await page.getByRole("heading", { name: "Home", level: 1 }).waitFor({ timeout: 20_000 });
+    expect((await page.locator('[data-room="classes"]:visible').innerText()).includes("My classes"), "a teacher has no My classes screen");
     expect((await page.locator('[data-room="institutes"]:visible').count()) === 0, "a teacher sees the Institutes screen");
     await context.close();
   });

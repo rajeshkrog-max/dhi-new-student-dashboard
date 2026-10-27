@@ -1,6 +1,6 @@
 # Drafted words: Hinglish
 
-Every word the house shows a student, a parent or the model, in Hinglish, read from the code by `scripts/words-export.mjs` on 2026-10-27. All of them are drafts until the owner approves them; approving a room is flipping its switch (`docs/launch/OWNER-GATES.md`). Values in braces such as {name} are filled in on the screen, and a number worked out on the screen shows here as 7. The English lines are in the other file. Mark a line to change in the margin, or say which path (the code name before each line) and the new words.
+Every word the house shows a student, a parent or the model, in Hinglish, read from the code by `scripts/words-export.mjs` on 2026-10-28. All of them are drafts until the owner approves them; approving a room is flipping its switch (`docs/launch/OWNER-GATES.md`). Values in braces such as {name} are filled in on the screen, and a number worked out on the screen shows here as 7. The English lines are in the other file. Mark a line to change in the margin, or say which path (the code name before each line) and the new words.
 
 ## Progress (the Brain report)
 

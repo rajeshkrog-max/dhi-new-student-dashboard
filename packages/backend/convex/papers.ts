@@ -335,6 +335,54 @@ export const resultsForClass = mutation({
   },
 });
 
+// A teacher's page for one student of their class (house spec 0026): every paper the student was sent, newest first, with its confirmed mark and
+// remarks, or whether it was missed, excused or is still waiting. Never an answer, and nothing from a room. Through `staffRead`, so the student
+// sees the look in Your data.
+export const studentForTeacher = mutation({
+  args: { memberId: v.id("members") },
+  returns: v.object({
+    name: v.string(),
+    className: v.string(),
+    papers: v.array(
+      v.object({
+        title: v.string(),
+        dueAt: v.number(),
+        state: v.union(v.literal("confirmed"), v.literal("missed"), v.literal("excused"), v.literal("waiting")),
+        total: v.number(),
+        maxTotal: v.number(),
+        remarks: v.string(),
+      }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "teacher") fail("forbidden");
+    if (!(await rateLimiter.limit(ctx, "staffOpen", { key: mc.member._id })).ok) fail("slow_down");
+    const target = await ctx.db.get(args.memberId);
+    if (!target || target.role !== "student" || target.classId === undefined || !mc.classIds.includes(target.classId)) fail("forbidden");
+    return await staffRead(ctx, mc, { kind: "academic", targetMemberIds: [target._id] }, async (allowed) => {
+      if (allowed.length === 0) fail("not_found");
+      const cls = target.classId ? await ctx.db.get(target.classId) : null;
+      const papers = [];
+      for (const row of await ctx.db.query("paperAttempts").withIndex("by_memberId", (q) => q.eq("memberId", target._id)).order("desc").take(100)) {
+        const paper = await ctx.db.get(row.paperId);
+        if (!paper) continue;
+        const questions = await ctx.db.query("paperQuestions").withIndex("by_paperId", (q) => q.eq("paperId", row.paperId)).take(50);
+        const confirmed = row.status === "confirmed";
+        papers.push({
+          title: paper.title,
+          dueAt: row.dueAt,
+          state: confirmed ? ("confirmed" as const) : row.excused === true ? ("excused" as const) : row.missed === true ? ("missed" as const) : ("waiting" as const),
+          total: confirmed ? (row.mcqCorrect ?? 0) + totalOf(row.marks ?? []) : 0,
+          maxTotal: questions.reduce((sum, q) => sum + (q.kind === "long" ? (q.maxMarks ?? 0) : 1), 0),
+          remarks: confirmed ? (row.remarks ?? "") : "",
+        });
+      }
+      return { name: target.name, className: cls ? `${cls.grade} ${cls.section}` : "", papers: papers.sort((a, b) => b.dueAt - a.dueAt) };
+    });
+  },
+});
+
 // A teacher marks a long answer by hand, with remarks. The teacher is the paper's teacher, or a teacher of the student's class.
 export const markLong = mutation({
   args: { attemptId: v.id("paperAttempts"), marks: v.array(v.object({ question: v.number(), mark: v.number() })), remarks: v.string() },

@@ -544,7 +544,9 @@ export default defineSchema({
   })
     .index("by_paperId", ["paperId"])
     // The school report finds the papers sent to one class by their due time (house spec 0025).
-    .index("by_classId_and_dueAt", ["classId", "dueAt"]),
+    .index("by_classId_and_dueAt", ["classId", "dueAt"])
+    // The DHI admin's overview counts the papers an institute sent this month (house spec 0026).
+    .index("by_instituteId_and_sentAt", ["instituteId", "sentAt"]),
 
   // One row a student has for a paper, made when the paper is sent. Answers, marks and remarks belong to the student and are erased with them.
   paperAttempts: defineTable({
@@ -901,7 +903,9 @@ export default defineSchema({
   })
     .index("by_threadId", ["threadId"])
     .index("by_memberId", ["memberId"])
-    .index("by_status_and_createdAt", ["status", "createdAt"]),
+    .index("by_status_and_createdAt", ["status", "createdAt"])
+    // The DHI admin's overview counts an institute's desk questions this month, never their words (house spec 0026).
+    .index("by_instituteId_and_createdAt", ["instituteId", "createdAt"]),
 
   // Answers kept so a repeated question costs nothing and calls no model. Scoped to one institute and keyed by the kind and the cleaned question
   // (`cacheKeyOf`). Holds no student: no member id, and a question with an email or a phone number is never stored. Kept; served for 90 days.
