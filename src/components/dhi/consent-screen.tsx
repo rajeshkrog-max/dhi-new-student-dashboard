@@ -170,6 +170,12 @@ export function LockedHouse({ me }: { me: LockedMe }) {
         <Button variant="quiet" onClick={() => setView(view === "data" ? "consent" : "data")} data-testid="toggle-data">
           {view === "data" ? "Back" : "Your data"}
         </Button>
+        {/* In Your data, Leave sits up here: below it, it would move when the page finishes loading (the responsive sweep of 2026-10-27). */}
+        {view === "data" && (
+          <Button variant="quiet" data-testid="leave" onClick={() => void leave()}>
+            Leave
+          </Button>
+        )}
       </header>
 
       {view === "data" ? (
@@ -189,11 +195,13 @@ export function LockedHouse({ me }: { me: LockedMe }) {
         </>
       )}
 
-      <div className="flex justify-center pt-2">
-        <Button variant="quiet" data-testid="leave" onClick={() => void leave()}>
-          Leave
-        </Button>
-      </div>
+      {view !== "data" && (
+        <div className="flex justify-center pt-2">
+          <Button variant="quiet" data-testid="leave" onClick={() => void leave()}>
+            Leave
+          </Button>
+        </div>
+      )}
     </Frame>
   );
 }

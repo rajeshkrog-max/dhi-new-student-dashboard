@@ -1,0 +1,6 @@
+# The headers of the static files Cloudflare serves without the Worker (the pages get theirs from src/start.ts).
+/*
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin

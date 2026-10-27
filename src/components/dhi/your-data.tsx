@@ -148,6 +148,18 @@ export function YourData({
   const myWithdrawal = gate?.state === "withdrawn" && gate.by.includes("self");
   const schoolWithdrawal = gate?.state === "withdrawn" && gate.by.includes("school");
 
+  // The page is drawn once its first answers are in, so no card moves when one of them arrives (the responsive sweep of 2026-10-27).
+  const loading =
+    state === undefined ||
+    (!reduced && (sharing === undefined || record.status === "LoadingFirstPage" || (gate?.state === "ok" && sharingOn && link === undefined)));
+  if (loading) {
+    return (
+      <p className="text-sm text-mute" data-testid="your-data-loading">
+        Loading your data…
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-3" data-testid="your-data">
       {error && (
