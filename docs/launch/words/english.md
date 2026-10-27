@@ -259,6 +259,55 @@ Switch: `COUNSEL_WORDS_APPROVED` (a draft). File: `src/lib/dhi/counsel-words.ts`
 - `counselRefusal(…)`: Something went wrong. Please try again.
 - `shownStatus(…)(…)`: {name}
 
+## School report (the staff area)
+
+Switch: `SCHOOL_WORDS_APPROVED` (a draft). File: `src/lib/dhi/school-words.ts`.
+
+- `SCHOOL_WORDS.draft`: These words are drafts and may change.
+- `SCHOOL_WORDS.title`: School report
+- `SCHOOL_WORDS.intro`: Class totals from the papers sent to this class. Nothing here comes from a student's mood, sleep, meals, habits, desk or Progress.
+- `SCHOOL_WORDS.className`: Class
+- `SCHOOL_WORDS.from`: From
+- `SCHOOL_WORDS.to`: To
+- `SCHOOL_WORDS.open`: Open the report
+- `SCHOOL_WORDS.refresh`: Open again
+- `SCHOOL_WORDS.loading`: Getting the report ready…
+- `SCHOOL_WORDS.lookNotice`: Opening the report leaves a record for each student named in the support list, which they see in Your data.
+- `SCHOOL_WORDS.students(…)`: {name} students in the class
+- `SCHOOL_WORDS.papers(…)`: {name} papers due in these days
+- `SCHOOL_WORDS.sat(…)`: {name} of {value} sittings handed in on time
+- `SCHOOL_WORDS.missed(…)`: {name} missed
+- `SCHOOL_WORDS.excused(…)`: {name} excused (the class was paused)
+- `SCHOOL_WORDS.noPapers`: No papers were due for this class in these days.
+- `SCHOOL_WORDS.subjectsTitle`: Multiple choice right, by subject
+- `SCHOOL_WORDS.subject`: Subject
+- `SCHOOL_WORDS.share`: Right
+- `SCHOOL_WORDS.change`: Change, first week to last
+- `SCHOOL_WORDS.fewer`: fewer than 5 tried
+- `SCHOOL_WORDS.heatTitle`: Topics by week
+- `SCHOOL_WORDS.heatKey`: Peach is under 50% right, gold 50 to 64%, mint 65% and up. An empty cell had fewer than 5 students.
+- `SCHOOL_WORDS.topic`: Topic
+- `SCHOOL_WORDS.week(…)`: Week of {name}
+- `SCHOOL_WORDS.actionsTitle`: Something to try
+- `SCHOOL_WORDS.reteach(…)`: Re-teach {name} ({value}). {n}% right over the last weeks, up 7 points.
+- `SCHOOL_WORDS.noActions`: Nothing to suggest from these papers.
+- `SCHOOL_WORDS.supportTitle`: Students who may need academic support
+- `SCHOOL_WORDS.supportAbout`: A to Z. Each name says why. It is not a ranking and it is not a judgement of the student.
+- `SCHOOL_WORDS.noSupport`: Nobody is on the list for these days.
+- `SCHOOL_WORDS.reasons.missed_in_a_row`: missed two papers in a row
+- `SCHOOL_WORDS.reasons.accuracy_down`: fewer right than the week before, two weeks running
+- `SCHOOL_WORDS.roomsTitle`: Who used the rooms last month
+- `SCHOOL_WORDS.roomsAbout`: How many students of the class logged anything in each room in the last full month. Shown only when 10 or more students are behind a number.
+- `SCHOOL_WORDS.rooms.mood`: Mood
+- `SCHOOL_WORDS.rooms.meals`: Meals
+- `SCHOOL_WORDS.rooms.habits`: Habits
+- `SCHOOL_WORDS.rooms.sleep`: Sleep
+- `SCHOOL_WORDS.rooms.hour`: Study hour
+- `SCHOOL_WORDS.rooms.modules`: Modules
+- `SCHOOL_WORDS.roomsHidden`: fewer than 10
+- `SCHOOL_WORDS.refusals.bad_range`: Please pick a start day before the end day.
+- `SCHOOL_WORDS.refusals.too_long`: A report covers at most 13 weeks.
+
 ## Progress (the Brain report)
 
 Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.

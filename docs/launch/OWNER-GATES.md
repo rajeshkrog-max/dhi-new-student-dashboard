@@ -4,7 +4,7 @@ Everything only the owner can close before real students enter. Written 2026-10-
 
 ## Word approvals
 
-Read the words in one sitting: `docs/launch/words/english.md` (325 lines, with counseling since 2026-10-27) and `docs/launch/words/hinglish.md` (102 lines), grouped by room. While a switch is false, its screen shows a small draft note.
+Read the words in one sitting: `docs/launch/words/english.md` (369 lines, with counseling and the school report since 2026-10-27) and `docs/launch/words/hinglish.md` (102 lines), grouped by room. While a switch is false, its screen shows a small draft note.
 
 | | Gate | File and constant | Flipping it to true changes | Decides |
 |---|---|---|---|---|
@@ -15,6 +15,7 @@ Read the words in one sitting: `docs/launch/words/english.md` (325 lines, with c
 | [ ] | The Brain report (English and Hinglish) | `src/lib/dhi/brain-words.ts`, `BRAIN_WORDS_APPROVED` | the draft note leaves Progress | owner, after the Hinglish read |
 | [ ] | The weekly parent page and the link lines | `src/lib/dhi/parent-words.ts`, `PARENT_WORDS_APPROVED` | the draft note leaves the parent page | owner, after the Hinglish read |
 | [ ] | The desk's screen words and its instructions to the model | `src/lib/dhi/desk-words.ts` and `packages/backend/convex/deskRules.ts`, `DESK_WORDS_APPROVED` (both) | the draft note leaves the desk | owner |
+| [ ] | The school report's words | `src/lib/dhi/school-words.ts`, `SCHOOL_WORDS_APPROVED` | the draft note leaves the school report | owner |
 | [ ] | Counseling words, the recording notice and the helpline | `src/lib/dhi/counsel-words.ts`, `COUNSEL_WORDS_APPROVED` | the draft note leaves the Counseling room and the counselor's Sessions | owner, after the legal check |
 
 ## The Brain's own gates
