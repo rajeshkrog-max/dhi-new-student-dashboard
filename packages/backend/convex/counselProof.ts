@@ -33,8 +33,8 @@ export const makeCounselor = internalMutation({
   },
 });
 
-// For the responsive sweep: the demo counselor has a free time tomorrow at 16:30 India and a booking by the demo student at 16:00, with a note, so
-// both screens are looked at with something on them. Kept as it is when already there.
+// For the responsive sweep: the demo counselor has a free time tomorrow at 16:30 India, a booking by the demo student at 16:00 with a note, and a
+// finished session from about two hours ago, so both screens are looked at with something on them. Kept as it is when already there.
 export const seedDemo = internalMutation({
   args: { counselorEmail: v.string(), studentEmail: v.string() },
   returns: v.null(),
@@ -54,6 +54,24 @@ export const seedDemo = internalMutation({
       .take(50);
     if (!mine.some((s) => s.startsAt === free && s.status === "open")) {
       await ctx.db.insert("counselSlots", { counselorMemberId: counselor._id, startsAt: free, endsAt: free + SLOT_MS, status: "open", createdAt: now });
+    }
+    // A finished session in the last day, so the sweep also sees the note after and the share box.
+    const past = Math.floor((now - 2 * 3600_000) / SLOT_MS) * SLOT_MS;
+    const recent = await ctx.db.query("counselBookings").withIndex("by_counselorMemberId_and_startsAt", (q) => q.eq("counselorMemberId", counselor._id).gte("startsAt", now - 20 * 3600_000).lt("startsAt", now)).take(20);
+    if (!recent.some((b) => b.status === "done")) {
+      const slotId = await ctx.db.insert("counselSlots", { counselorMemberId: counselor._id, startsAt: past, endsAt: past + SLOT_MS, status: "booked", createdAt: now });
+      await ctx.db.insert("counselBookings", {
+        slotId,
+        counselorMemberId: counselor._id,
+        memberId: student._id,
+        instituteId: student.instituteId,
+        startsAt: past,
+        note: "A made up note for the sweep.",
+        status: "done",
+        summary: "A made up summary for the sweep.",
+        summaryAt: now,
+        createdAt: now,
+      });
     }
     const open = await ctx.db.query("counselBookings").withIndex("by_memberId_and_startsAt", (q) => q.eq("memberId", student._id).gte("startsAt", now)).take(20);
     if (!open.some((b) => b.status === "booked")) {

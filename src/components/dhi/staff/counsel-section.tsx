@@ -201,7 +201,7 @@ function BookingCard({ booking: b, startsAt, endsAt, now, busy, onJoin, onCancel
           </Button>
           <CounselRecordings bookingId={b.bookingId} />
           <div className="flex flex-wrap items-end gap-2">
-            <label className="block min-w-0 flex-1">
+            <label className="block min-w-0 grow basis-60">
               <span className="mb-1 block text-xs text-ink/70">{COUNSEL_WORDS.shareLabel}</span>
               <input
                 type="email"
