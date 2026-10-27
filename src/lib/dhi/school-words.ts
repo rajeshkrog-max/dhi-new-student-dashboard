@@ -1,0 +1,47 @@
+// The words of the school report (house spec 0025). Drafts until the owner approves them: the screen says so while SCHOOL_WORDS_APPROVED is false.
+// A number is a class total; the support list gives a reason and never a score, a rank or a label of a student.
+export const SCHOOL_WORDS_APPROVED = false;
+
+export const SCHOOL_WORDS = {
+  draft: "These words are drafts and may change.",
+  title: "School report",
+  intro: "Class totals from the papers sent to this class. Nothing here comes from a student's mood, sleep, meals, habits, desk or Progress.",
+  className: "Class",
+  from: "From",
+  to: "To",
+  open: "Open the report",
+  refresh: "Open again",
+  loading: "Getting the report ready…",
+  lookNotice: "Opening the report leaves a record for each student named in the support list, which they see in Your data.",
+  students: (n: number) => `${n} ${n === 1 ? "student" : "students"} in the class`,
+  papers: (n: number) => `${n} ${n === 1 ? "paper" : "papers"} due in these days`,
+  sat: (sat: number, closed: number) => `${sat} of ${closed} sittings handed in on time`,
+  missed: (n: number) => `${n} missed`,
+  excused: (n: number) => `${n} excused (the class was paused)`,
+  noPapers: "No papers were due for this class in these days.",
+  subjectsTitle: "Multiple choice right, by subject",
+  subject: "Subject",
+  share: "Right",
+  change: "Change, first week to last",
+  fewer: "fewer than 5 tried",
+  heatTitle: "Topics by week",
+  heatKey: "Peach is under 50% right, gold 50 to 64%, mint 65% and up. An empty cell had fewer than 5 students.",
+  topic: "Topic",
+  week: (monday: string) => `Week of ${monday}`,
+  actionsTitle: "Something to try",
+  reteach: (topic: string, subject: string, pct: number, gain: number) =>
+    `Re-teach ${topic} (${subject}). ${pct}% right over the last weeks, ${gain >= 0 ? "up" : "down"} ${Math.abs(gain)} ${Math.abs(gain) === 1 ? "point" : "points"}.`,
+  noActions: "Nothing to suggest from these papers.",
+  supportTitle: "Students who may need academic support",
+  supportAbout: "A to Z. Each name says why. It is not a ranking and it is not a judgement of the student.",
+  noSupport: "Nobody is on the list for these days.",
+  reasons: {
+    missed_in_a_row: "missed two papers in a row",
+    accuracy_down: "fewer right than the week before, two weeks running",
+  } as Record<string, string>,
+  roomsTitle: "Who used the rooms last month",
+  roomsAbout: "How many students of the class logged anything in each room in the last full month. Shown only when 10 or more students are behind a number.",
+  rooms: { mood: "Mood", meals: "Meals", habits: "Habits", sleep: "Sleep", hour: "Study hour", modules: "Modules" } as Record<string, string>,
+  roomsHidden: "fewer than 10",
+  refusals: { bad_range: "Please pick a start day before the end day.", too_long: "A report covers at most 13 weeks." } as Record<string, string>,
+};

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Building2, FileText, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, Video, type LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, Building2, FileText, FileUp, GraduationCap, Mail, Menu, ShieldCheck, Users, Video, type LucideIcon } from "lucide-react";
 import { HouseMenu } from "@/components/dhi/house-menu";
 import { Sheet } from "@/components/dhi/sheet";
 import { ClassListSection } from "@/components/dhi/staff/class-list-section";
@@ -9,6 +9,7 @@ import { InvitesSection } from "@/components/dhi/staff/invites-section";
 import { ParentConsentSection } from "@/components/dhi/staff/parent-consent-section";
 import { PapersSection } from "@/components/dhi/staff/papers-section";
 import { ResultsSection } from "@/components/dhi/staff/results-section";
+import { SchoolReportSection } from "@/components/dhi/staff/school-report-section";
 import { FoodsSection } from "@/components/dhi/staff/foods-section";
 import { FilmsSection } from "@/components/dhi/staff/films-section";
 import { HourSection } from "@/components/dhi/staff/hour-section";
@@ -26,7 +27,7 @@ import { ROLE_LABEL } from "@/lib/dhi/house-words";
 import type { HouseRole } from "@/lib/entry";
 import { useStudent } from "@/lib/dhi/student";
 
-type Tab = "institutes" | "classes" | "people" | "invites" | "list" | "parent" | "results" | "papers" | "foods" | "films" | "hour" | "desk" | "counsel" | "data";
+type Tab = "institutes" | "classes" | "people" | "invites" | "list" | "parent" | "results" | "report" | "papers" | "foods" | "films" | "hour" | "desk" | "counsel" | "data";
 type NavItem = { id: Tab; label: string; icon: LucideIcon; about: string };
 
 // The staff area (spec house/0002), built from the house's own frame and menu so it looks like the rest. What each role sees:
@@ -39,6 +40,7 @@ const NAV_ALL: NavItem[] = [
   { id: "list", label: "Class list", icon: FileUp, about: "Invite a whole class at once from a list." },
   { id: "parent", label: "Parent consent", icon: ShieldCheck, about: "Say that a parent's written consent is on file for students under 18." },
   { id: "results", label: "Results", icon: FileText, about: "The confirmed marks and remarks of a class. Answers are never shown." },
+  { id: "report", label: "School report", icon: BarChart3, about: "Class totals from the papers, the topics by week, and who may need academic support." },
   { id: "hour", label: "Study hour", icon: GraduationCap, about: "Set the study hour and look at its chat." },
   { id: "desk", label: "DHI desk", icon: GraduationCap, about: "Set the coins every student gets each month for the DHI desk." },
   { id: "films", label: "Films", icon: FileText, about: "Upload films for the Modules room and approve them for students." },
@@ -49,9 +51,10 @@ const NAV_ALL: NavItem[] = [
 ];
 
 function navFor(role: HouseRole): NavItem[] {
-  // Parent consent is the school's alone: a DHI admin cannot record it (spec house/0005, AC-3). Sessions are the counselor's alone (spec house/0024).
+  // Parent consent is the school's alone: a DHI admin cannot record it (spec house/0005, AC-3). Sessions are the counselor's alone (spec house/0024). The
+  // school report is the institute's: a DHI admin and a counselor never see it (spec house/0025).
   if (role === "counselor") return NAV_ALL.filter((n) => n.id === "counsel" || n.id === "data");
-  if (role === "dhi_admin") return NAV_ALL.filter((n) => n.id !== "parent" && n.id !== "papers" && n.id !== "results" && n.id !== "counsel");
+  if (role === "dhi_admin") return NAV_ALL.filter((n) => n.id !== "parent" && n.id !== "papers" && n.id !== "results" && n.id !== "report" && n.id !== "counsel");
   if (role === "institute_admin") return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "papers" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel");
   if (role === "teacher") {
     return NAV_ALL.filter((n) => n.id !== "institutes" && n.id !== "parent" && n.id !== "results" && n.id !== "foods" && n.id !== "films" && n.id !== "hour" && n.id !== "desk" && n.id !== "counsel").map((n) =>
@@ -180,7 +183,7 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
         </header>
 
         <Notice className="shrink-0">
-          This is the staff area. Students' own rooms are not shown here. Marks and answers open only on the marking and results pages, and each look is recorded where the student can see it. Use only people made up for testing until the owner approves the consent words and the legal check is done.
+          This is the staff area. Students' own rooms are not shown here. Marks and answers open only on the marking, results and school report pages, and each look is recorded where the student can see it. Use only people made up for testing until the owner approves the consent words and the legal check is done.
         </Notice>
 
         {!current ? (
@@ -199,6 +202,8 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
           <ParentConsentSection />
         ) : current.id === "results" ? (
           <ResultsSection />
+        ) : current.id === "report" ? (
+          <SchoolReportSection role={role} />
         ) : current.id === "papers" ? (
           <PapersSection />
         ) : current.id === "foods" ? (

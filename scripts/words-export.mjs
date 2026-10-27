@@ -15,6 +15,7 @@ const ROOMS = [
   { title: "DHI desk: the screen", file: "./src/lib/dhi/desk-words.ts", gate: "DESK_WORDS_APPROVED" },
   { title: "DHI desk: the instructions given to the model", file: "./packages/backend/convex/deskRules.ts", pick: ["DESK_SYSTEM_PROMPT", "WRITE_SYSTEM_PROMPT", "PAPER_SYSTEM_PROMPT", "MOCK_SYSTEM_PROMPT", "STORY_SYSTEM_PROMPT", "DRAW_SYSTEM_PROMPT"], gate: "DESK_WORDS_APPROVED" },
   { title: "Counseling (the room, the call and the counselor's Sessions)", file: "./src/lib/dhi/counsel-words.ts", gate: "COUNSEL_WORDS_APPROVED" },
+  { title: "School report (the staff area)", file: "./src/lib/dhi/school-words.ts", gate: "SCHOOL_WORDS_APPROVED" },
   { title: "Progress (the Brain report)", file: "./src/lib/dhi/brain-words.ts", gate: "BRAIN_WORDS_APPROVED" },
   { title: "The weekly parent page and the link on Your data", file: "./src/lib/dhi/parent-words.ts", gate: "PARENT_WORDS_APPROVED" },
 ];

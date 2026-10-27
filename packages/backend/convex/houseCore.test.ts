@@ -114,6 +114,8 @@ describe("limits and codes", () => {
         "consent.parent", "consent.parentWithdrawn", "consent.parentRestored", "sharing.set", "data.erase", "totals.read",
         // Added by house spec 0022.
         "sharing.link", "sharing.unlink",
+        // Added by house spec 0025.
+        "school.report",
       ].sort(),
     );
   });

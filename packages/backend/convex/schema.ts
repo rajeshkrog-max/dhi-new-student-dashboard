@@ -56,6 +56,8 @@ export const accessActionValidator = v.union(
   v.literal("sharing.unlink"),
   v.literal("data.erase"),
   v.literal("totals.read"),
+  // A school report opened for one class (house spec 0025): class totals of papers; the named support list also writes view rows.
+  v.literal("school.report"),
 );
 
 export const styleKeyValidator = v.union(v.literal("v"), v.literal("p"), v.literal("k"));
@@ -539,7 +541,10 @@ export default defineSchema({
     opensAt: v.number(),
     dueAt: v.number(),
     sentAt: v.number(),
-  }).index("by_paperId", ["paperId"]),
+  })
+    .index("by_paperId", ["paperId"])
+    // The school report finds the papers sent to one class by their due time (house spec 0025).
+    .index("by_classId_and_dueAt", ["classId", "dueAt"]),
 
   // One row a student has for a paper, made when the paper is sent. Answers, marks and remarks belong to the student and are erased with them.
   paperAttempts: defineTable({

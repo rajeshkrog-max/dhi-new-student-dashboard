@@ -133,6 +133,8 @@ import type * as results from "../results.js";
 import type * as resultsCore from "../resultsCore.js";
 import type * as retention from "../retention.js";
 import type * as roomRegistry from "../roomRegistry.js";
+import type * as schoolReport from "../schoolReport.js";
+import type * as schoolRules from "../schoolRules.js";
 import type * as scoring from "../scoring.js";
 import type * as sessionFeedback from "../sessionFeedback.js";
 import type * as sessionRules from "../sessionRules.js";
@@ -293,6 +295,8 @@ declare const fullApi: ApiFromModules<{
   resultsCore: typeof resultsCore;
   retention: typeof retention;
   roomRegistry: typeof roomRegistry;
+  schoolReport: typeof schoolReport;
+  schoolRules: typeof schoolRules;
   scoring: typeof scoring;
   sessionFeedback: typeof sessionFeedback;
   sessionRules: typeof sessionRules;

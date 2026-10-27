@@ -136,5 +136,6 @@ export const ACCESS_CODES = [
   "sharing.unlink",
   "data.erase",
   "totals.read",
+  "school.report",
 ] as const;
 export type AccessCode = (typeof ACCESS_CODES)[number];

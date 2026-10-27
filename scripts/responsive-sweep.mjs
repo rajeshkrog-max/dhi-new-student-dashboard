@@ -356,6 +356,18 @@ const SCREENS = {
   "staff-invites": staffScreen("invites", "Invites"),
   "staff-list": staffScreen("list", "Class list"),
   "staff-parent": staffScreen("parent", "Parent consent"),
+  // The school report (spec house/0025), opened for Class 10 A of the demo institute, with the room counts below it.
+  "staff-report": {
+    ...staffScreen("report", "School report"),
+    run: async (p, width) => {
+      await openMenuIfDrawer(p, width);
+      await p.locator('[data-room="report"]:visible').click();
+      await p.getByTestId("school-class").selectOption({ label: "Class 10 A" });
+      await p.getByTestId("school-open").click();
+      await p.getByTestId("school-rooms").waitFor({ timeout: 30_000 });
+      await p.waitForTimeout(800);
+    },
+  },
   // The counselor's Sessions (spec house/0024), as the demo counselor, with a free time and the demo student's booking (`counselProof:seedDemo`).
   "staff-counsel": {
     auth: "counselor",
