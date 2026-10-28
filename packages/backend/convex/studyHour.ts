@@ -360,6 +360,11 @@ export const hideMessage = mutation({
   },
 });
 
+// Whether `sweep` has a seat to look at (the minute tick, minuteTick.ts): any seat still open.
+export async function sweepHasWork(ctx: QueryCtx | MutationCtx): Promise<boolean> {
+  return (await ctx.db.query("seats").withIndex("by_leftAt", (q) => q.eq("leftAt", undefined)).first()) !== null;
+}
+
 // The scheduled sweep (every minute): drops every seat whose heartbeat stopped for 60 seconds, and every seat of an hour that has closed. It
 // writes the presence events as the system. It goes through every open seat in pages of 200 and schedules itself for the next page, so seats that
 // are still live never hold up the stale ones behind them (review of 2026-10-26).

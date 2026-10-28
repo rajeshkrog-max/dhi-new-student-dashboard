@@ -526,7 +526,7 @@ describe("coins (AC-2, AC-4, AC-5)", () => {
   test("covers AC-4: no function lets a student buy coins or change their own balance", async () => {
     const w = await world();
     const desk = await import("./desk");
-    const names = Object.keys(desk).filter((n) => !["deskReady"].includes(n));
+    const names = Object.keys(desk).filter((n) => !["deskReady", "sweepPendingHasWork"].includes(n)); // helpers, not functions
     expect(names.sort()).toEqual(["abandon", "allot", "allotment", "begin", "finish", "open", "removeThread", "sweepPending", "thread", "threads", "wallet"]);
     expect(await refusal(w.s.as.mutation(api.desk.allot, { monthlyCoins: 1000 }))).toBe("forbidden");
   });

@@ -132,6 +132,14 @@ export async function closeIfDue(ctx: MutationCtx, attempt: Doc<"paperAttempts">
 }
 
 // Every minute: close the sittings whose window has ended, so a paper nobody opens again still becomes a miss and the teacher sees the real state.
+// Whether `sweep` has anything to close: one read of each status (the minute tick, minuteTick.ts).
+export async function sweepHasWork(ctx: QueryCtx | MutationCtx, now: number): Promise<boolean> {
+  for (const status of ["assigned", "open"] as const) {
+    if (await ctx.db.query("paperAttempts").withIndex("by_status_and_dueAt", (q) => q.eq("status", status).lte("dueAt", now)).first()) return true;
+  }
+  return false;
+}
+
 export const sweep = internalMutation({
   args: {},
   returns: v.number(),

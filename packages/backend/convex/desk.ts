@@ -379,6 +379,11 @@ export const abandon = internalMutation({
 });
 
 // The minute job: a question whose action died before it could answer or give up is given up here, and its coins go back.
+// Whether `sweepPending` has a question to give up (the minute tick, minuteTick.ts).
+export async function sweepPendingHasWork(ctx: MutationCtx, now: number): Promise<boolean> {
+  return (await ctx.db.query("deskTurns").withIndex("by_status_and_createdAt", (q) => q.eq("status", "pending").lt("createdAt", now - PENDING_STALE_MS)).first()) !== null;
+}
+
 export const sweepPending = internalMutation({
   args: {},
   returns: v.number(),

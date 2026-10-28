@@ -59,6 +59,28 @@ export async function computeDay(ctx: MutationCtx, member: Doc<"members">, day: 
   return "written";
 }
 
+// Whether `run` has events to read (the minute tick, minuteTick.ts): the same range the pass reads, one row.
+export async function runHasWork(ctx: MutationCtx, now: number): Promise<boolean> {
+  const state = await ctx.db.query("brainState").withIndex("by_key", (q) => q.eq("key", "events")).first();
+  const cursor = state?.cursor ?? 0;
+  const from = state?.capped === true ? cursor : Math.max(0, cursor - LOOKBACK_MS);
+  const to = now - QUIET_MS;
+  const row = await ctx.db
+    .query("events")
+    .withIndex("by_creation_time", (q) => (state?.capped === true ? q.gte("_creationTime", from).lt("_creationTime", to) : q.gt("_creationTime", from).lt("_creationTime", to)))
+    .first();
+  return row !== null;
+}
+
+// Whether `rebuildStale` should start a pass: a day stored under an older formula, and either no complete pass yet for this formula, or the last one a
+// day ago. The days a pass leaves behind cannot be rebuilt now (a student who withdrew or was removed), so they are tried once a day, not each time.
+export const REBUILD_RETRY_MS = 24 * 60 * 60 * 1000;
+export async function rebuildHasWork(ctx: MutationCtx, now: number): Promise<boolean> {
+  const state = await ctx.db.query("brainState").withIndex("by_key", (q) => q.eq("key", "rebuild")).first();
+  if (state?.doneVersion === METRIC_VERSION && state.doneAt !== undefined && now - state.doneAt < REBUILD_RETRY_MS) return false;
+  return (await ctx.db.query("brainDays").withIndex("by_version", (q) => q.lt("version", METRIC_VERSION)).first()) !== null;
+}
+
 // Every minute: the days touched by the events written since the last pass.
 export const run = internalMutation({
   args: {},
@@ -95,7 +117,12 @@ export const run = internalMutation({
       if (member) await computeDay(ctx, member, day, now);
     }
     const more = cut || batch.length === EVENT_BATCH;
-    await ctx.db.patch(state._id, { cursor: last, capped: more });
+    // Nothing new: nothing is written, and the next pass reads the same empty range (2026-10-28: the free plan's reads).
+    if (batch.length === 0) return { events: 0, days: 0, more: false };
+    // A complete pass moves the cursor to the end of the range it read, so the look back covers each event at most once more. (It used to stop at the
+    // last event, so the newest event was read again and its day rebuilt every minute for ever, the largest steady read of the deployment.) A pass that
+    // stopped early keeps the last event it covered, so nothing is skipped.
+    await ctx.db.patch(state._id, { cursor: more ? last : Math.max(last, to), capped: more });
     if (more) await ctx.scheduler.runAfter(0, internal.brainRollup.run, {});
     return { events: covered, days: pairs.size, more };
   },
@@ -145,7 +172,7 @@ export const rebuildStale = internalMutation({
       if (!member) continue;
       if ((await computeDay(ctx, member, row.day, now)) !== "skipped") rebuilt += 1;
     }
-    await ctx.db.patch(state._id, { token: page.isDone ? undefined : page.continueCursor });
+    await ctx.db.patch(state._id, page.isDone ? { token: undefined, doneVersion: METRIC_VERSION, doneAt: now } : { token: page.continueCursor });
     if (!page.isDone) await ctx.scheduler.runAfter(0, internal.brainRollup.rebuildStale, {});
     return rebuilt;
   },

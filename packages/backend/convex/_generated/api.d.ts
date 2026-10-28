@@ -108,6 +108,7 @@ import type * as meals from "../meals.js";
 import type * as mealsRoom from "../mealsRoom.js";
 import type * as members from "../members.js";
 import type * as metricRules from "../metricRules.js";
+import type * as minuteTick from "../minuteTick.js";
 import type * as moduleRules from "../moduleRules.js";
 import type * as moodProof from "../moodProof.js";
 import type * as moodRoom from "../moodRoom.js";
@@ -276,6 +277,7 @@ declare const fullApi: ApiFromModules<{
   mealsRoom: typeof mealsRoom;
   members: typeof members;
   metricRules: typeof metricRules;
+  minuteTick: typeof minuteTick;
   moduleRules: typeof moduleRules;
   moodProof: typeof moodProof;
   moodRoom: typeof moodRoom;

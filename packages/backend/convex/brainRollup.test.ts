@@ -237,6 +237,27 @@ describe("checks and rebuilds (AC-5, AC-6)", () => {
   });
 });
 
+describe("the cursor (2026-10-28, the free plan's reads)", () => {
+  test("an event is read in at most two passes, and an idle pass reads and writes nothing", async () => {
+    const w = await world();
+    await mood(w.s, "happy");
+    expect(await run(w)).toMatchObject({ events: 1, days: 1 });
+    // Before the fix the newest event stayed in the look back and its day was rebuilt on every pass for ever.
+    vi.setSystemTime(Date.now() + 60 * 1000);
+    const second = await run(w);
+    vi.setSystemTime(Date.now() + 60 * 1000);
+    const third = await run(w);
+    expect(second.events + third.events).toBeLessThanOrEqual(1);
+    for (let i = 0; i < 5; i += 1) {
+      vi.setSystemTime(Date.now() + 60 * 1000);
+      expect(await run(w)).toEqual({ events: 0, days: 0, more: false });
+    }
+    // A new event is still picked up.
+    await mood(w.s, "content");
+    expect(await run(w)).toMatchObject({ events: 1, days: 1 });
+  });
+});
+
 describe("the quiet time, a paused class and the paged rebuild (review fixes)", () => {
   test("covers AC-4: a pass leaves out events newer than 10 seconds, and picks them up once they are older", async () => {
     const w = await world();

@@ -8,7 +8,7 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { internalMutation, internalQuery, mutation, query, type MutationCtx } from "./_generated/server";
+import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { isHeldByPicture, pictureFor } from "./avatarState";
 import { getSignedInUser, requireStudent } from "./helpers";
 import { rateLimiter } from "./limits";
@@ -275,15 +275,16 @@ export const attach = internalMutation({
 });
 
 // Is there work for the job? Used by the minute cron so it starts the action only when something is due or stuck.
+export async function reportHasWork(ctx: QueryCtx | MutationCtx, now: number): Promise<boolean> {
+  const due = await ctx.db.query("reportFiles").withIndex("by_state_and_nextAttemptAt", (q) => q.eq("state", "queued").lte("nextAttemptAt", now)).first();
+  if (due) return true;
+  return (await ctx.db.query("reportFiles").withIndex("by_state_and_nextAttemptAt", (q) => q.eq("state", "making")).first()) !== null;
+}
+
 export const hasWork = internalQuery({
   args: {},
   returns: v.boolean(),
-  handler: async (ctx) => {
-    const now = Date.now();
-    const due = await ctx.db.query("reportFiles").withIndex("by_state_and_nextAttemptAt", (q) => q.eq("state", "queued").lte("nextAttemptAt", now)).first();
-    if (due) return true;
-    return (await ctx.db.query("reportFiles").withIndex("by_state_and_nextAttemptAt", (q) => q.eq("state", "making")).first()) !== null;
-  },
+  handler: async (ctx) => await reportHasWork(ctx, Date.now()),
 });
 
 // The daily clean up: a stored file that no row holds, older than a day, is deleted (AC-11). A page at a time; it continues itself.

@@ -35,6 +35,11 @@ export async function touchSitting(ctx: MutationCtx, member: Doc<"members">, now
 }
 
 // The minute job: a sitting idle for more than 15 minutes has ended.
+// Whether `closeSittings` has a sitting to end (the minute tick, minuteTick.ts).
+export async function closeSittingsHasWork(ctx: MutationCtx, now: number): Promise<boolean> {
+  return (await ctx.db.query("deskSittings").withIndex("by_feedbackStatus_and_lastAt", (q) => q.eq("feedbackStatus", undefined).lt("lastAt", now - DESK_GAP_MS)).first()) !== null;
+}
+
 export const closeSittings = internalMutation({
   args: {},
   returns: v.number(),

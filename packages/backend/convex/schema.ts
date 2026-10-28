@@ -666,6 +666,10 @@ export default defineSchema({
     checked: v.optional(v.number()),
     mismatches: v.optional(v.number()),
     at: v.optional(v.number()),
+    // The rebuild of stale days: the formula version and the time of its last complete pass. The rows left behind (a student who withdrew) are tried
+    // again a day later, not every ten minutes (2026-10-28, the free plan's reads; house spec 0029).
+    doneVersion: v.optional(v.number()),
+    doneAt: v.optional(v.number()),
   }).index("by_key", ["key"]),
 
   // The food table (spec house/0009). The catalog (status "catalog") is loaded only after its source licence is checked, so it starts empty. A
