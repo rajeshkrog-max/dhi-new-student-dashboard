@@ -113,3 +113,6 @@ New cron jobs, which start with the backend deploy: drop idle study hour seats (
 | Desk questions to the model today against the cap | Staff, DHI desk (DHI admin): "Today x of y new questions have gone to the model" | daily | DHI admin |
 | Desk spend | the OpenAI account's usage page for the new key | weekly | the owner |
 | The pilot class | the class's students and their teacher, the staff review of spec 0021 | per the checklist | the owner, the teacher, DHI staff |
+| The free plan's usage (calls, reads and writes, team wide) | Convex dashboard, team subs-dhi, Usage | weekly; the CLI said "above the free plan limits" on 2026-10-28 | the owner |
+| Written practice answers waiting for a teacher | Staff, Papers and review, "Written practice answers to mark" (house spec 0031) | each school day | the class's teacher |
+| The desk's practice rows | Convex dashboard, Data: `learnAnswers` and `learnTopics` row counts against the estimate of spec 0031 (about 9,000 answers a month for one class) | weekly | the owner |

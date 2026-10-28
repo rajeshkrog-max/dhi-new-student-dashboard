@@ -12,9 +12,9 @@ _These are recommendations to keep your build orderly, not requirements. Skip an
 
 | Epic | File | Rows | Rollup |
 |---|---|---|---|
-| Platform and safety | [platform.md](platform.md) | 2 to 4 | 0 of 3 done, 3 in progress (rows 2, 3 and 4, designed) |
-| The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23, 25 | 4 of 15 done (rows 1, 5, 6, 25), 11 in progress (rows 7 to 16 and row 23, built or designed), 0 planned, plus 1 existing for context |
-| The Brain | [brain.md](brain.md) | 17 to 22, 24 | 0 of 7 done, 7 in progress (rows 17 to 22 built, row 24 started) |
+| Platform and safety | [platform.md](platform.md) | 2 to 4 | 3 of 3 done in code (rows 2, 3, 4); rows 2 and 4 wait on the owner's words and legal check |
+| The rooms | [rooms.md](rooms.md) | A, 1, 5 to 16, 23, 25, 27 | 16 of 16 done in code; 4 fully done (rows 1, 5, 6, 25); the rest wait only on owner gates (words, licences, accounts), plus 1 existing for context |
+| The Brain | [brain.md](brain.md) | 17 to 22, 24, 26 | 7 of 8 done in code (rows 17 to 22, 26), waiting on owner gates; row 24, the pilot, has every builder item done and waits on the owner and a real class |
 
 Row numbers run across all three files, so a row keeps one number wherever it lives.
 
@@ -24,30 +24,32 @@ Row numbers run across all three files, so a row keeps one number wherever it li
 |---|---------|-------|--------|
 | A | Student house screens on demo data | Existing | existing |
 | 1 | Make the app responsive | Slice 1 | done |
-| 2 | People, roles, invites and institutes | Foundation | in-progress |
-| 3 | Room event log and day rules | Foundation | in-progress |
-| 4 | Consent, privacy and access record for minors' house data | Foundation | in-progress |
+| 2 | People, roles, invites and institutes | Foundation | done (code); waits on the owner: claim the DHI admin invite, the house notice words and the legal check |
+| 3 | Room event log and day rules | Foundation | done |
+| 4 | Consent, privacy and access record for minors' house data | Foundation | done (code); waits on the owner: the notice and parent wording (`HOUSE_WORDS_APPROVED`) and the legal check |
 | 25 | One professional look for every page, the menu and loading screens | Look and feel | done |
 | 5 | Mood room, real, with the Vedic lens | Slice 2 | done |
 | 6 | Habits room, real | Slice 3 | done |
-| 7 | Sleep log | Slice 3 | in-progress |
-| 8 | Food table and the Indian plate catalog | Slice 3 | in-progress (built, catalog empty) |
-| 9 | Meals room, real | Slice 3 | in-progress (built) |
-| 10 | Papers: teachers build, send and mark | Slice 4 | in-progress (built) |
-| 11 | Exams room, real | Slice 4 | in-progress (built) |
-| 12 | Modules: DHI uploads, students watch and keep | Slice 4 | in-progress (built, stand-in host) |
-| 13 | Blog room, real, with teacher review | Slice 4 | in-progress (built, with photo) |
-| 14 | Study hour: admin clock, live seats and chat | Slice 4 | in-progress (built) |
-| 15 | DHI desk: real model, coins and answer cache | Slice 4 | in-progress (built for chat and clarify) |
-| 16 | After session feeling card | Slice 4 | in-progress |
-| 17 | Daily values from room events | Slice 5 | in-progress (built) |
-| 18 | Pattern engine and the first chain: low mood and missed habits | Slice 5 | in-progress (built) |
-| 19 | Chains for study hours, meals and papers | Slice 5 | in-progress (built, meals chain off) |
-| 20 | Expression note and the support availability flag | Slice 5 | in-progress (built) |
-| 21 | Growth lamps: Sadhana, Niyam, Viveka | Slice 5 | in-progress (built) |
-| 22 | Brain report for the student | Slice 5 | in-progress (built) |
-| 23 | Home and DHI score, real | Slice 6 | in-progress (built) |
-| 24 | First class pilot | Go live | in-progress (pause built, checklist open) |
+| 7 | Sleep log | Slice 3 | done (code); waits on the owner: the sleep words (`SLEEP_WORDS_APPROVED`) |
+| 8 | Food table and the Indian plate catalog | Slice 3 | done (code); waits on the owner: the food catalog licences and the first import |
+| 9 | Meals room, real | Slice 3 | done (code); waits on the owner: the meals wording check |
+| 10 | Papers: teachers build, send and mark | Slice 4 | done (code); no owner gate (suggested marks stay held by the owner's answer) |
+| 11 | Exams room, real | Slice 4 | done (code); no owner gate |
+| 12 | Modules: DHI uploads, students watch and keep | Slice 4 | done (code); waits on the owner: a Cloudflare Stream account (a stand-in host until then) |
+| 13 | Blog room, real, with teacher review | Slice 4 | done (code); waits on the owner: the final blog tag list |
+| 14 | Study hour: admin clock, live seats and chat | Slice 4 | done (code); waits on the owner: confirm the 30 day chat keep and moderation without a record |
+| 15 | DHI desk: real model, coins and answer cache | Slice 4 | done (code); waits on the owner: the desk words (`DESK_WORDS_APPROVED`), the notice line, and `DESK_LIVE` on production |
+| 16 | After session feeling card | Slice 4 | done (code); no owner gate |
+| 17 | Daily values from room events | Slice 5 | done (code); waits on the owner: the Brain words (`BRAIN_WORDS_APPROVED`) |
+| 18 | Pattern engine and the first chain: low mood and missed habits | Slice 5 | done (code); waits on the owner: the pattern sources (`PATTERN_SOURCES_CONFIRMED`) and the Brain words |
+| 19 | Chains for study hours, meals and papers | Slice 5 | done (code); waits on the owner: the pattern sources, and the meals chain stays off (`FOOD_PATTERN_ON`) |
+| 20 | Expression note and the support availability flag | Slice 5 | done (code); waits on the owner: the Brain words |
+| 21 | Growth lamps: Sadhana, Niyam, Viveka | Slice 5 | done (code); waits on the owner: Viveka's four films in four weeks, and the Brain words |
+| 22 | Brain report for the student | Slice 5 | done (code); waits on the owner: the Brain words and the Hinglish read |
+| 23 | Home and DHI score, real | Slice 6 | done (code); waits on the owner: the Brain words |
+| 26 | The remaining Master Spec measures (19 more) | Slice 5 | done (code); waits on the owner: the Brain and habits words |
+| 27 | The desk's learning loop: topic map, bank, Fix, Remember, Plan, written marking | Slice 4 | done (code); waits on the owner: the desk words; a book licence for the library and uploads (D1 ingestion, D6) |
+| 24 | First class pilot | Go live | in-progress (every builder item done 2026-10-28; the open items are the owner's, the school's and counsel's: the words, the legal check, the real class and its consent, the review sessions, the free plan) |
 
 Build order is the row order within each phase. Rows 2 to 4 come first, then row 25 (the look) so later rooms start on the finished look. Rows 6 to 16 can go in the order that suits you once row 5 has proven the thread, but 17 onward need the rooms they read.
 
@@ -63,8 +65,8 @@ Out of scope for this pass.
 - **Link a funnel profile to a house member**: built (owner, 2026-10-26): the student's own tap on Your data (`funnelLink.link`) records the link by the same Google account; the download then holds their answers to the check. Link and download only: erasing in the house leaves the check, because the funnel never deletes results or consents, and the card says so · from spec 0002
 - **Statistical connections (Master Spec pairs P1 to P6)**: all six built (spec [0023](../../specs/house/0023-statistical-connections.md)): bedtime and papers, breakfast and focus, bedtime and mood, late study room and the next day's feeling; and with the topic and subject tags (spec [0028](../../specs/house/0028-topic-and-subject-tags.md), owner 2026-10-28: teachers tag papers, students tap on the cards) a desk sitting and the next paper on that topic, and a subject and how the sessions felt
 - **School report, academic support list and teacher actions**: built (spec [0025](../../specs/house/0025-school-report.md), the owner's answers of 2026-10-27): papers only plus the existing room counts, a support list with paper reasons, the institute admin and the class's teachers, CR1 only (CR2 to CR4 read the Brain and stay out)
-- **Rest of the Master Spec's 51 metrics**: added without a rebuild after row 17
-- **Parts of the Desk Design not taken by row 15**: knowledge map, question bank, learning modes and uploads, whichever the row 15 spec leaves out
+- **Rest of the Master Spec's 51 metrics**: built as row 26 (spec [0030](../../specs/house/0030-the-remaining-measures.md), 2026-10-28): every measure the house can feed, plain measures that feed no lamp (owner's choice). Not built: the insight rule library, the parent report beyond spec 0022, and the school cohort rules CR2 to CR4 (they read the Brain, closed by the owner)
+- **Parts of the Desk Design not taken by row 15**: built as row 27 (spec [0031](../../specs/house/0031-desk-learning-loop.md), 2026-10-28): the topic map (topics only), the question bank, practice, Fix, Remember, Plan, Use it, search and written marking. Waiting on a book licence (owner, 2026-10-28): book ingestion and passages, prerequisite links, uploads and pre-generation (D1 ingestion, D6)
 - **Full teacher, institute admin and DHI master houses**: built (spec [0026](../../specs/house/0026-staff-houses.md), the owner's choice of 2026-10-27): a Home of what waits for each role, a teacher's page per student, the DHI admin's overview and counselor roster
 - **Open decisions already named in the Master Spec**: trial start date, who tags questions, counseling record. Parent sharing default is taken up by row 4 and calories by row 8
 

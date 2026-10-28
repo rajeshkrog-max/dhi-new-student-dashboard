@@ -47,27 +47,29 @@ Before the whole institute enters, one real class goes first: a teacher, about 1
 
 ## The pilot checklist
 
-Not code. Each item names who closes it.
+Not code. Each item names who closes it. Updated 2026-10-28: the builder closed every item it can (marked done, with where it is proven); the rest only the owner, the school or counsel can close.
 
-| # | Item | Who |
-|---|---|---|
-| 1 | Approve the consent notice and the parent wording (`HOUSE_WORDS_APPROVED`), the guna lines and tips, and the drafted words of the Mood, Habits, Sleep and Brain rooms | Owner |
-| 2 | The legal check on verifiable parental consent through the school's record (DPDP), and name the production Convex region in the notice | Owner and counsel |
-| 3 | Production setup: set `ERASURE_HASH_SECRET`, create the first DHI admin with `bootstrap:dhiAdmin`, keep `TEST_SIGNIN_ENABLED` off | Owner |
-| 4 | Read the sources of the Brain's patterns and confirm or remove each (`PATTERN_SOURCES_CONFIRMED`); decide whether the meals chain ever turns on | DHI team and owner |
-| 5 | Choose one class and its teacher; invite the teacher and about 10 students by Google email through the staff area | Institute admin |
-| 6 | For each student under 18, record the parent's written consent on the school's side (Parent consent) before the student can enter | Institute admin |
-| 7 | Run the checks that apply: the backend suite, the copy tests, the browser proofs (`enter:check`, `consent:check`, `mood:check`, `habit:check`, `sleep:check`, `exams:check`, `meals:check`, `modules:check`, `hour:check`, `brain:check`), lint, typecheck, `build:all` | Builder |
-| 8 | A fresh explicit yes for the production Convex deploy and for `pnpm deploy:house`; a Cloudflare account that owns `dhirise` | Owner |
-| 9 | Practice the pause: pause the pilot class, see a student refused, resume, see them back | Institute admin and owner |
-| 10 | Two weeks in: the supervised review sessions (above), with the fixes made before the second class | Teacher and a DHI staff member |
-| 11 | The class enters; counseling is not part of the pilot, so the support message names the helpline only | Owner |
+| # | Item | Who | State |
+|---|---|---|---|
+| 1 | Approve the consent notice and the parent wording (`HOUSE_WORDS_APPROVED`) and every room's drafted words (`docs/launch/OWNER-GATES.md`, the words export in `docs/launch/words/`) | Owner | open |
+| 2 | The legal check on verifiable parental consent through the school's record (DPDP), the production Convex region in the notice, and the notice lines for the desk (and its outside model provider, which now also marks written practice answers), counseling and the study hour call (`docs/launch/legal-check.md`) | Owner and counsel | open |
+| 3 | Production setup: `ERASURE_HASH_SECRET` set, the first DHI admin's `bootstrap:dhiAdmin` invite made, `TEST_SIGNIN_ENABLED` off | Owner (done on the owner's yes, 2026-10-27); the owner claims the DHI admin invite with subs.dhi@gmail.com | invite to claim |
+| 4 | Read the sources of the Brain's patterns and confirm or remove each (`PATTERN_SOURCES_CONFIRMED`); decide whether the meals chain ever turns on | DHI team and owner | open |
+| 5 | Choose one real class and its teacher; invite the teacher and about 10 students by Google email through the staff area | Institute admin | open (rehearsed on development: `pnpm pilot:setup` made Pilot School rykbtm, Class 10 P, an admin, a teacher and 10 made up students on 2026-10-28) |
+| 6 | For each student under 18, record the parent's written consent on the school's side before the student can enter | Institute admin | open (rehearsed: 6 made up minors in the pilot setup, and `rehearsal:check`) |
+| 7 | Run the checks: the backend suite, the copy tests, typecheck, lint, `build:all`, and the browser proofs (`enter`, `consent`, `platform`, `mood`, `habit`, `sleep`, `meals`, `exams`, `modules`, `hour`, `brain`, `parent`, `desk`, `topics`, `learn`, `staff`, `school`, `counsel`, `hourcall`, `rehearsal`), the responsive sweep and axe | Builder | done 2026-10-28 for the latest code (`docs/launch/PROGRESS.md`, phase 14); rerun before the real class |
+| 8 | The production Convex deploy and `pnpm deploy:house`; a Cloudflare account that owns `dhirise` | Owner's yes, builder runs | done 2026-10-28 (backend from 7f66286, Worker 105370d9) |
+| 9 | Practice the pause: pause the pilot class, see a student refused, resume, see them back | Institute admin and owner | rehearsed on development (pilot setup and `rehearsal:check`); the owner repeats it on production with the real class |
+| 10 | Two weeks in: the supervised review sessions (above), with the fixes made before the second class | Teacher and a DHI staff member | open |
+| 11 | The class enters; counseling is built (spec 0024) but opens only after its words and notice line, so until then the support message names the helpline only | Owner | open |
+| 12 | Watch the deployment for the first two weeks with the list in `docs/launch/HARDENING.md` section 10 (errors, crons, the Brain's check, the desk's count, the teachers' written answer queue, the free plan's usage) | Owner, or the person they name | open |
+| 13 | The free plan: the Convex CLI said on 2026-10-28 that the team is above the free plan limits. Look at the usage page (team subs-dhi) and decide between the paid plan and cutting use before real students | Owner | open |
 
 ## Build plan
 
 1. [x] The class login pause on the server, with its tests (`classPause.test.ts`, 4). Satisfies **AC-1** to **AC-4**.
 2. [x] The pause and resume buttons and chip on the staff Classes screen.
-3. [ ] The checklist, item by item. Satisfies **AC-5**.
+3. [ ] The checklist, item by item. Satisfies **AC-5**. Every builder item is done (2026-10-28); the open ones are the owner's, the school's and counsel's.
 
 ## Consequences
 

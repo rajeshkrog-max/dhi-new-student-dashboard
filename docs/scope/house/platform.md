@@ -4,7 +4,7 @@ The ground every room stands on: real accounts and roles, the one event log ever
 
 ## Foundations
 
-### 2. People, roles, invites and institutes · in-progress
+### 2. People, roles, invites and institutes · done (code); waits on the owner: claim the DHI admin invite, the house notice words and the legal check
 Real accounts for the house: institutes, the five roles (student, teacher, institute admin, DHI admin, counselor), invite only entry, and one check that every server function makes so a person only ever reads their own institute's rows. It replaces the demo gate and the fixed demo student. The counselor role exists but has no screens yet. It builds on the shared sign in and the one account row in the [repo wide scope](../_root/scope.md) (rows 2 and 4).
 **Done when:** an invited student signs in with Google and lands in their own house, a person with no invite is turned away, a student cannot read another student's or another institute's rows by any route, and the demo gate and the fixed demo id are gone from the running app.
 - [x] Design it (spec): `/architect people, roles, invites and institutes`
@@ -20,7 +20,7 @@ Real accounts for the house: institutes, the five roles (student, teacher, insti
 - [x] Document it: `/document people, roles, invites and institutes`
 Spec [0002](../../specs/house/0002-people-roles-invites-institutes/index.md) · code in `packages/backend/convex/{members,invites,classes,institutes,bootstrap,demo,houseAuth,houseCore,inviteCore}.ts`, `src/routes/{join,staff,dashboard}.tsx`, `src/components/dhi/{join-page,house-screens,house-session,staff/}`, `src/lib/dhi/{house-words,class-list}.ts`, `scripts/{test-student,enter-check,responsive-sweep}.mjs`. Runs on the development deployment with synthetic people only until row 4. Cannot start until the repo wide rows 16 (the shared backend package) and 6 (the house on the shared sign in) are built, because the house tables land in that package and the join page reads the shared session.
 
-### 3. Room event log and day rules · in-progress
+### 3. Room event log and day rules · done
 The one contract every room writes through: each finished action becomes an event with who did it, when it happened, which day it counts for and what it says. It fixes the day boundary (04:00 to 04:00 India time), how a day with no log is kept (not logged, never zero), how late entries are marked, and that a rerun never counts twice. Every number the Brain shows is rebuilt from these events. (basis: the Master Spec storage rules; an event log means a changed formula never loses data)
 **Done when:** a room can add an event and read it back by student and day, a meal at 01:00 counts for the day before, an unlogged day reads as not logged, and the same event sent twice is stored once.
 - [x] Design it (spec): `/architect room event log and day rules`
@@ -36,7 +36,7 @@ The one contract every room writes through: each finished action becomes an even
 - [x] Document it: `/document room event log and day rules`
 Spec [0004](../../specs/house/0004-room-event-log-and-day-rules/index.md) · code in `packages/backend/convex/{dayRules,eventShapes,eventRegistry,eventLog,eventProof}.ts`, `packages/backend/convex/eventTypes/test.ts`, tests `dayRules.test.ts` and `eventLog.test.ts`, `src/lib/dhi/day-rules.test.ts`. Built 2026-10-19; the table and its three indexes are live on the development deployment, and the live race check passed there with `eventProof:race` (one stored event for one key at 2 to 14 callers at once; 20 different keys for one student and day at once ran out of Convex retries, as the spec's tradeoff expects). Builds on row 2 (members and `joinedAt`). Runs on the development deployment with synthetic people only until row 4. Every room row after this one calls it.
 
-### 4. Consent, privacy and access record for minors' house data · in-progress
+### 4. Consent, privacy and access record for minors' house data · done (code); waits on the owner: the notice and parent wording (`HOUSE_WORDS_APPROVED`) and the legal check
 Before any real student logs a mood or a meal: recorded parent consent for students under 18, what each person may see (student, parent, teacher, institute), the parent sharing switch (the Master Spec recommends off until the student turns it on), a record of who looked at a student's personal data, export and erasure of house data, and the privacy notice saying where the data is stored. It reuses the funnel's consent rules rather than inventing new ones.
 **Done when:** a student under 18 cannot enter without recorded parent consent, mood notes and meal logs are never shown to staff or parents beyond what the student shares, every staff read of personal data leaves a record with no personal data inside the record itself, and export and erasure work for house data.
 - [x] Design it (spec): `/architect consent, privacy and access record for minors' house data`
