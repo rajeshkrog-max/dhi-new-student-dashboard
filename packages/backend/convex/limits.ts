@@ -107,6 +107,11 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   funnelLink: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
   deskAsk: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
   deskClarify: { kind: "token bucket", rate: 20, period: HOUR, capacity: 20 },
+  // The desk's learning loop (house spec 0031): rounds, answers and plans, 600 an hour for each student; written answers sent for marking, 10 an hour.
+  learnCall: { kind: "token bucket", rate: 600, period: HOUR, capacity: 120 },
+  learnMark: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
+  // The weekly habit check, a film's checks, a helpful comment and a resolved doubt (house spec 0030): 60 an hour for each student.
+  measureWrite: { kind: "token bucket", rate: 60, period: HOUR, capacity: 30 },
   // Each student's share of the deployment's daily cap (owner, 2026-10-26): 20 questions to the model in one India day, so one student can never use
   // up the day for everyone. The window starts at 04:00 India time, with the house day. Taken only on the way to the model (desk.begin).
   // Counseling (spec house/0024): a counselor opens or closes slots and writes links and summaries 120 times an hour; a student books, cancels or

@@ -10,6 +10,7 @@ import { NOTE_MAX, OPEN_SLOTS_MAX, SHARES_MAX, SLOT_MS, STUDENT_DAYS_SHOWN, SUMM
 import { fail } from "./helpers";
 import { requireMember, type MemberContext } from "./houseAuth";
 import { rateLimiter } from "./limits";
+import { recordEvent } from "./eventLog";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const refused = v.object({ ok: v.literal(false), code: v.string() });
@@ -238,6 +239,13 @@ export const book = mutation({
       status: "booked",
       createdAt: now,
     });
+    // Asked for help (the Master Spec's E17; house spec 0030): an event with nothing in it, read only by the student's own Brain as a count. A refusal of
+    // the log never stops the booking.
+    try {
+      await recordEvent(ctx, { by: mc, memberId: mc.member._id, room: "counsel", type: "counsel.asked", payload: {}, occurredAt: now, eventKey: `counsel:${bookingId}-0`, about: `counsel:${bookingId}` });
+    } catch {
+      // The booking stands.
+    }
     return { ok: true as const, bookingId };
   },
 });

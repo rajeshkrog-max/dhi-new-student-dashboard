@@ -2,7 +2,7 @@
 // written beside it, and the rules that keep the numbers honest: a week is the sum of the tops over the sum of the bottoms, a day with nothing to
 // measure has no value, and only a thing that was expected and did not happen is a zero, once the day is over.
 import { describe, expect, test } from "vitest";
-import { METRIC_IDS, METRIC_SHAPE, METRIC_VERSION, didSomething, houseHour, loggedOn, medianOf, periodOf, shareOf, valuesOfDay, type DayFacts, type DayRow, type EventRow, type MetricId } from "./metricRules";
+import { METRIC_IDS, METRIC_SHAPE, METRIC_VERSION, deskTimeBySubject, didSomething, filmEffectOf, forgivingStreakOf, stressBandOf, weakFollowUpOf, houseHour, loggedOn, medianOf, periodOf, shareOf, valuesOfDay, type DayFacts, type DayRow, type EventRow, type MetricId } from "./metricRules";
 
 const at = (iso: string) => Date.parse(iso);
 const open: DayFacts = { openHabits: 0, hourOpen: false, finished: true };
@@ -54,6 +54,26 @@ const FIXTURES: { id: MetricId; events: EventRow[]; facts?: DayFacts; expected: 
   { id: "H03S", events: [ev("meals.logged", { meal: "snack", group: "fruit", processing: "home_cooked" }, "2026-10-20T17:30:00+05:30")], expected: { num: 1050, den: 1 } },
   { id: "H03D", events: [ev("meals.logged", { meal: "dinner", group: "dal", processing: "home_cooked" }, "2026-10-21T01:00:00+05:30")], expected: { num: 1500, den: 1 } },
   { id: "H11", events: [ev("hour.present", { minutes: 60, lateMinutes: 15 }), ev("hour.present", { minutes: 30, lateMinutes: 10 })], expected: { num: 25, den: 1 }, absent: { events: [ev("hour.present", { minutes: 60 })] } },
+  // The measures added in version 9 (house spec 0030).
+  { id: "E04", events: [ev("mood.logged", { mood: "heavy" })], expected: { num: 1, den: 1 }, absent: { events: [ev("habits.ticked", { habit: "water" })] } },
+  { id: "E07P", events: [ev("mood.logged", { mood: "stressed" })], facts: { ...open, paperDueNext: true }, expected: { num: 1, den: 1 }, absent: { events: [ev("mood.logged", { mood: "happy" })] } },
+  { id: "E07T", events: [ev("mood.logged", { mood: "sad" }), ev("hour.present", { minutes: 120 }), ev("desk.present", { minutes: 60 })], expected: { num: 1, den: 1 } },
+  { id: "E07O", events: [ev("mood.logged", { mood: "anxious" }), ev("hour.present", { minutes: 120 })], expected: { num: 1, den: 1 } },
+  { id: "E17", events: [ev("counsel.asked", {})], expected: { num: 1, den: 1 } },
+  { id: "A03", events: [ev("exams.remarked", { rubricSum: 18, rubricN: 6 })], expected: { num: 18, den: 6 } },
+  { id: "A04", events: [ev("desk.answered", { topic: "t1", right: true, mode: "practice", seen7: true, pastWrong: false }), ev("desk.answered", { topic: "t1", right: false, mode: "recall", seen7: true, pastWrong: false }), ev("desk.answered", { topic: "t1", right: true, mode: "practice", seen7: false, pastWrong: false })], expected: { num: 1, den: 2 } },
+  { id: "A05", events: [ev("desk.answered", { topic: "t1", right: true, mode: "fix", seen7: false, pastWrong: true }), ev("desk.answered", { topic: "t1", right: true, mode: "practice", seen7: false, pastWrong: false })], expected: { num: 1, den: 1 } },
+  { id: "A07M", events: [ev("exams.submitted", { auto: false, mcqTried: 4, mcqRight: 1, longDone: 0, hints: 0, wrongMisread: 1, wrongCareless: 0, wrongConcept: 2 })], expected: { num: 1, den: 3 } },
+  { id: "A07C", events: [ev("exams.submitted", { auto: false, mcqTried: 4, mcqRight: 2, longDone: 0, hints: 0, wrongMisread: 0, wrongCareless: 1, wrongConcept: 1 })], expected: { num: 1, den: 2 } },
+  { id: "A07K", events: [ev("exams.submitted", { auto: false, mcqTried: 4, mcqRight: 2, longDone: 0, hints: 0, wrongMisread: 0, wrongCareless: 1, wrongConcept: 1 })], expected: { num: 1, den: 2 }, absent: { events: [ev("exams.submitted", { auto: false, mcqTried: 4, mcqRight: 4, longDone: 0, hints: 0 })] } },
+  { id: "A08", events: [ev("exams.submitted", { auto: false, mcqTried: 4, mcqRight: 4, longDone: 0, hints: 0, paceSec: 120, paceN: 4 })], expected: { num: 120, den: 4 } },
+  { id: "A09", events: [ev("desk.mastered", { topic: "t1" }), ev("desk.mastered", { topic: "t2" })], expected: { num: 2, den: 1 } },
+  { id: "A13", events: [ev("desk.answered", { topic: "t1", right: true, mode: "recall", seen7: false, pastWrong: false }), ev("desk.answered", { topic: "t2", right: false, mode: "recall", seen7: false, pastWrong: false })], expected: { num: 1, den: 2 } },
+  { id: "A16", events: [ev("modules.checked", { right: 1, asked: 2 })], expected: { num: 1, den: 2 } },
+  { id: "A18", events: [ev("desk.mode", { turns: 4, active: 0, doubts: 3 }), ev("desk.resolved", {})], expected: { num: 1, den: 3 }, absent: { events: [ev("desk.mode", { turns: 2, active: 2 })] } },
+  { id: "A19", events: [ev("blog.helped", {})], expected: { num: 1, den: 1 } },
+  { id: "A20", events: [ev("exams.submitted", { auto: false, mcqTried: 10, mcqRight: 8, longDone: 0, hints: 0, gain: 30 })], expected: { num: 30, den: 1 }, absent: { events: [ev("exams.submitted", { auto: false, mcqTried: 10, mcqRight: 8, longDone: 0, hints: 0 })] } },
+  { id: "H10", events: [ev("habits.rated", { habit: "water", score: 20 })], expected: { num: 20, den: 4 } },
 ];
 
 describe("one fixture for each measure (AC-1)", () => {
@@ -108,8 +128,55 @@ describe("one fixture for each measure (AC-1)", () => {
 });
 
 describe("the second formula (AC-4)", () => {
-  test("covers AC-4: the formula is version 8", () => {
-    expect(METRIC_VERSION).toBe(8);
+  test("covers AC-4: the formula is version 9", () => {
+    expect(METRIC_VERSION).toBe(9);
+  });
+
+  test("version 9: measures worked out from another log, the teacher's rubric, a helpful mark and the desk's practice are not a logged day", () => {
+    for (const id of ["E04", "E07P", "E07T", "E07O", "A03", "A04", "A05", "A07M", "A07C", "A07K", "A08", "A09", "A13", "A18", "A19", "A20"] as const) expect(didSomething(id, { num: 1, den: 1 }), id).toBe(false);
+    for (const id of ["E17", "H10", "A16"] as const) expect(didSomething(id, { num: 1, den: 1 }), id).toBe(true);
+    // The teacher's rubric and a helpful mark are not the student's doing, so they do not make a day of showing up.
+    expect(valuesOfDay([ev("exams.remarked", { rubricSum: 4, rubricN: 3 }), ev("blog.helped", {})], open).C01).toBeUndefined();
+    // E07 counts a stressed day in one context only, in the Master Spec's order: the paper first.
+    const both = valuesOfDay([ev("mood.logged", { mood: "stressed" }), ev("hour.present", { minutes: 200 })], { ...open, paperDueNext: true });
+    expect([both.E07P, both.E07T, both.E07O]).toEqual([{ num: 1, den: 1 }, { num: 0, den: 1 }, { num: 0, den: 1 }]);
+    expect(valuesOfDay([ev("mood.logged", { mood: "happy" })], { ...open, paperDueNext: true }).E07P).toBeUndefined();
+    // A18 never counts more answers resolved than doubts asked that day.
+    expect(valuesOfDay([ev("desk.mode", { turns: 1, active: 0, doubts: 1 }), ev("desk.resolved", {}), ev("desk.resolved", {})], open).A18).toEqual({ num: 1, den: 1 });
+  });
+
+  test("version 9: the stress word, the forgiving streak, desk time by subject, a film's effect and the weak topic follow up", () => {
+    expect([stressBandOf(null), stressBandOf(0.1), stressBandOf(0.15), stressBandOf(0.35), stressBandOf(0.36)]).toEqual([null, "low", "moderate", "moderate", "high"]);
+    const logged = { E01: { num: 1, den: 1 } };
+    const days = (list: string[]): DayRow[] => list.map((day) => ({ day, v: logged }));
+    // Days with one gap make one streak; a second gap within seven days breaks it.
+    expect(forgivingStreakOf(days(["2026-10-01", "2026-10-02", "2026-10-04", "2026-10-05"]), "2026-10-05")).toEqual({ current: 4, longest: 4 });
+    expect(forgivingStreakOf(days(["2026-10-01", "2026-10-03", "2026-10-05", "2026-10-06"]), "2026-10-06")).toEqual({ current: 2, longest: 2 });
+    // Today with no log yet is not a miss.
+    expect(forgivingStreakOf(days(["2026-10-04", "2026-10-05"]), "2026-10-06")).toEqual({ current: 2, longest: 2 });
+    expect(forgivingStreakOf([], "2026-10-06")).toEqual({ current: 0, longest: 0 });
+    // A day of only desk practice is not a log of its own.
+    expect(forgivingStreakOf([{ day: "2026-10-06", v: { A13: { num: 1, den: 1 } } }], "2026-10-06")).toEqual({ current: 0, longest: 0 });
+
+    const desk: DayRow[] = [{ day: "2026-10-05", v: { X02: { num: 60, den: 1 } }, t: { "m:maths": { num: 30, den: 1 }, "m:science": { num: 15, den: 1 } } }];
+    expect(deskTimeBySubject(desk)).toEqual([{ subject: "maths", minutes: 30, share: 0.5 }, { subject: "science", minutes: 15, share: 0.25 }]);
+    expect(deskTimeBySubject([])).toEqual([]);
+
+    const film: DayRow[] = [
+      { day: "2026-10-03", v: {}, t: { "p:t1": { num: 1, den: 4 } } },
+      { day: "2026-10-05", v: {}, t: { "f:t1": { num: 1, den: 1 } } },
+      { day: "2026-10-08", v: {}, t: { "p:t1": { num: 3, den: 4 } } },
+    ];
+    expect(filmEffectOf(film)).toEqual([{ topic: "t1", before: 0.25, after: 0.75 }]);
+    expect(filmEffectOf(film.slice(1))).toEqual([]);
+
+    const weak: DayRow[] = [
+      { day: "2026-10-01", v: {}, t: { "p:t1": { num: 1, den: 2 }, "p:t2": { num: 0, den: 1 }, "p:t3": { num: 2, den: 2 } } },
+      { day: "2026-10-03", v: {}, t: { "q:t1": { num: 1, den: 1 } } },
+      { day: "2026-10-09", v: {}, t: { "p:t4": { num: 0, den: 1 } } },
+    ];
+    // t1 was studied in time, t2 was not and its days are over, t3 was right, and t4's days are not over yet so it is left out.
+    expect(weakFollowUpOf(weak, "2026-10-10")).toEqual({ studied: 1, wrong: 2 });
   });
 
   test("covers AC-4: A10 is a desk study day only for a sitting of 3 questions, A12 is the share of sittings with an active kind, and neither is a logged day", () => {

@@ -47,7 +47,8 @@
     "lint:house": "eslint src scripts vite.config.ts eslint.config.mjs",
     "lint": "pnpm lint:house && node scripts/check-catalog.mjs && pnpm --recursive --workspace-concurrency=1 --if-present --filter \"./apps/*\" --filter \"./packages/*\" run lint",
     "format": "prettier --write src scripts vite.config.ts eslint.config.mjs",
-    "format:check": "prettier --check src scripts vite.config.ts eslint.config.mjs"
+    "format:check": "prettier --check src scripts vite.config.ts eslint.config.mjs",
+    "learn:check": "node scripts/learn-check.mjs"
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.12.5",

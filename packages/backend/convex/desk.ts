@@ -17,6 +17,7 @@ import {
   cacheKeyOf,
   dailyCapOf,
   cleanQuestion,
+  isCachedKind,
   isDeskKind,
   isLiveKind,
   looksDistressed,
@@ -24,6 +25,7 @@ import {
   titleOf,
 } from "./deskRules";
 import { touchSitting } from "./deskSitting";
+import { recordEvent } from "./eventLog";
 import { hasOpenSitting } from "./examLock";
 import { fail } from "./helpers";
 import { requireDhiAdmin, requireMember } from "./houseAuth";
@@ -52,7 +54,7 @@ async function monthlyCoins(ctx: Pick<MutationCtx, "db">): Promise<number> {
 }
 
 // The student's wallet, made at the first visit and topped up once a month. The month is the India month of the house day, and unused coins roll over.
-async function walletFor(ctx: MutationCtx, member: Doc<"members">, now: number): Promise<Doc<"deskWallets">> {
+export async function walletFor(ctx: MutationCtx, member: Doc<"members">, now: number): Promise<Doc<"deskWallets">> {
   const month = dayOf(now).slice(0, 7);
   const coins = await monthlyCoins(ctx);
   const row = await ctx.db.query("deskWallets").withIndex("by_memberId", (q) => q.eq("memberId", member._id)).first();
@@ -116,6 +118,7 @@ const turnView = v.object({
   coinsSpent: v.number(),
   cached: v.boolean(),
   createdAt: v.number(),
+  resolved: v.boolean(),
 });
 
 // One of the student's own talks, or null. A malformed id, a missing row and another student's talk read the same.
@@ -141,6 +144,7 @@ export const thread = query({
         coinsSpent: x.coinsSpent,
         cached: x.cached,
         createdAt: x.createdAt,
+        resolved: x.resolvedAt !== undefined,
       })),
     };
   },
@@ -199,6 +203,19 @@ export const allot = mutation({
     return { ok: true as const, monthlyCoins: args.monthlyCoins };
   },
 });
+
+// The deployment's daily cap and the student's share of it, counted on the way to the model (desk questions and written answer marking, house spec 0031).
+// Returns the refusal code, or null after counting the call.
+export async function reserveModelCall(ctx: MutationCtx, member: Doc<"members">, now: number): Promise<string | null> {
+  const today = dayOf(now);
+  const daily = await ctx.db.query("deskDaily").withIndex("by_day", (q) => q.eq("day", today)).first();
+  if ((daily?.questions ?? 0) >= dailyCapOf(env.DESK_DAILY_CAP)) return "desk_day_full";
+  const share = await rateLimiter.limit(ctx, "deskStudentDay", { key: member._id });
+  if (!share.ok) return "desk_my_day_full";
+  if (daily) await ctx.db.patch(daily._id, { questions: daily.questions + 1 });
+  else await ctx.db.insert("deskDaily", { day: today, questions: 1 });
+  return null;
+}
 
 // The coins of a turn go back to the wallet and the turn is marked failed. Idempotent: a turn that is not pending is left alone.
 async function refund(ctx: MutationCtx, turn: Doc<"deskTurns">): Promise<number | null> {
@@ -277,9 +294,9 @@ export const begin = internalMutation({
     const wallet = await walletFor(ctx, member, now);
     const instituteId = member.instituteId as NonNullable<typeof member.instituteId>;
 
-    // The cache (a repeated question). Only a stand alone chat question is stored and reused; a clarifying question depends on its talk.
+    // The cache (a repeated question, house spec 0031: every kind that is not the student's own writing or a clarifying question, which depends on its talk).
     const key = await hashedKey(cacheKeyOf(kind, question));
-    if (kind === "chat" && !looksPersonal(question)) {
+    if (isCachedKind(kind) && !looksPersonal(question)) {
       const hit = await ctx.db.query("deskCache").withIndex("by_instituteId_and_key", (q) => q.eq("instituteId", instituteId).eq("key", key)).first();
       if (hit && now - hit.createdAt <= CACHE_DAYS * DAY_MS) {
         const threadId = existing?._id ?? (await ctx.db.insert("deskThreads", { memberId: member._id, instituteId, title: titleOf(question), lastAt: now }));
@@ -306,13 +323,8 @@ export const begin = internalMutation({
     if (wallet.balance < price) return { ok: false as const, code: "not_enough_coins" };
     // The daily cap for the whole deployment, counted only here, on the way to the model. A question that later fails still counts: the cap is a
     // ceiling on calls, and a failed call may still cost.
-    const today = dayOf(now);
-    const daily = await ctx.db.query("deskDaily").withIndex("by_day", (q) => q.eq("day", today)).first();
-    if ((daily?.questions ?? 0) >= dailyCapOf(env.DESK_DAILY_CAP)) return { ok: false as const, code: "desk_day_full" };
-    const share = await rateLimiter.limit(ctx, "deskStudentDay", { key: member._id });
-    if (!share.ok) return { ok: false as const, code: "desk_my_day_full" };
-    if (daily) await ctx.db.patch(daily._id, { questions: daily.questions + 1 });
-    else await ctx.db.insert("deskDaily", { day: today, questions: 1 });
+    const capped = await reserveModelCall(ctx, member, now);
+    if (capped) return { ok: false as const, code: capped };
     const threadId = existing?._id ?? (await ctx.db.insert("deskThreads", { memberId: member._id, instituteId, title: titleOf(question), lastAt: now }));
     if (existing) await ctx.db.patch(existing._id, { lastAt: now });
     if (price > 0) await ctx.db.patch(wallet._id, { balance: wallet.balance - price });
@@ -354,8 +366,8 @@ export const finish = internalMutation({
     if (turn.status !== "pending") return { ok: false as const, code: "expired" };
     const answer = args.answer.slice(0, answerMaxFor(turn.kind));
     await ctx.db.patch(turn._id, { status: "answered", answer, model: args.model, tokensIn: args.tokensIn, tokensOut: args.tokensOut });
-    if (turn.kind === "chat" && !looksPersonal(turn.question)) {
-      const key = await hashedKey(cacheKeyOf("chat", turn.question));
+    if (isDeskKind(turn.kind) && isCachedKind(turn.kind) && !looksPersonal(turn.question)) {
+      const key = await hashedKey(cacheKeyOf(turn.kind, turn.question));
       const row = await ctx.db.query("deskCache").withIndex("by_instituteId_and_key", (q) => q.eq("instituteId", turn.instituteId).eq("key", key)).first();
       const now = Date.now();
       if (row) await ctx.db.patch(row._id, { answer, createdAt: now });
@@ -381,7 +393,8 @@ export const abandon = internalMutation({
 // The minute job: a question whose action died before it could answer or give up is given up here, and its coins go back.
 // Whether `sweepPending` has a question to give up (the minute tick, minuteTick.ts).
 export async function sweepPendingHasWork(ctx: MutationCtx, now: number): Promise<boolean> {
-  return (await ctx.db.query("deskTurns").withIndex("by_status_and_createdAt", (q) => q.eq("status", "pending").lt("createdAt", now - PENDING_STALE_MS)).first()) !== null;
+  if ((await ctx.db.query("deskTurns").withIndex("by_status_and_createdAt", (q) => q.eq("status", "pending").lt("createdAt", now - PENDING_STALE_MS)).first()) !== null) return true;
+  return (await ctx.db.query("writtenAnswers").withIndex("by_status_and_createdAt", (q) => q.eq("status", "marking").lt("createdAt", now - PENDING_STALE_MS)).first()) !== null;
 }
 
 export const sweepPending = internalMutation({
@@ -393,6 +406,39 @@ export const sweepPending = internalMutation({
       .withIndex("by_status_and_createdAt", (q) => q.eq("status", "pending").lt("createdAt", Date.now() - PENDING_STALE_MS))
       .take(100);
     for (const t of old) await refund(ctx, t);
-    return old.length;
+    // A written answer whose marking never came back (house spec 0031): its coins go back and it waits for a teacher.
+    const marking = await ctx.db
+      .query("writtenAnswers")
+      .withIndex("by_status_and_createdAt", (q) => q.eq("status", "marking").lt("createdAt", Date.now() - PENDING_STALE_MS))
+      .take(50);
+    for (const r of marking) {
+      const w = await ctx.db.query("deskWallets").withIndex("by_memberId", (q) => q.eq("memberId", r.memberId)).first();
+      if (w && r.coinsSpent > 0) await ctx.db.patch(w._id, { balance: w.balance + r.coinsSpent });
+      await ctx.db.patch(r._id, { status: "teacher", coinsSpent: 0 });
+    }
+    return old.length + marking.length;
+  },
+});
+
+// The student marks an answer as solving their doubt, once (the Master Spec's A18; house spec 0030). Only a plain question's answer, within the week the
+// event log accepts; the event lands on the day the question was asked.
+export const RESOLVE_DAYS = 6;
+export const resolve = mutation({
+  args: { turnId: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true) }), refused),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    if (!(await rateLimiter.limit(ctx, "measureWrite", { key: mc.member._id })).ok) return { ok: false as const, code: "rate_limited" };
+    const id = ctx.db.normalizeId("deskTurns", args.turnId);
+    const turn = id ? await ctx.db.get(id) : null;
+    if (!turn || turn.memberId !== mc.member._id) return { ok: false as const, code: "not_found" };
+    if (turn.kind !== "chat" || turn.status !== "answered") return { ok: false as const, code: "not_a_doubt" };
+    if (turn.resolvedAt !== undefined) return { ok: true as const };
+    const now = Date.now();
+    if (now - turn.createdAt > RESOLVE_DAYS * DAY_MS) return { ok: false as const, code: "too_old" };
+    await ctx.db.patch(turn._id, { resolvedAt: now });
+    await recordEvent(ctx, { by: mc, memberId: mc.member._id, room: "desk", type: "desk.resolved", payload: {}, occurredAt: turn.createdAt, eventKey: `resolved:${turn._id}-0`, about: `resolved:${turn._id}` });
+    return { ok: true as const };
   },
 });

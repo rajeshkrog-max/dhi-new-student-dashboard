@@ -10,7 +10,7 @@ export const EXAMS_EVENT_TYPES = [
   defineEvent({
     room: "exams",
     type: "exams.submitted",
-    version: 2,
+    version: 3,
     payload: {
       auto: { kind: "boolean" },
       mcqTried: { kind: "int", min: 0, max: 50 },
@@ -20,7 +20,18 @@ export const EXAMS_EVENT_TYPES = [
       topics: { kind: "list", of: { kind: "id" }, max: 10, optional: true },
       topicTried: { kind: "list", of: { kind: "int", min: 0, max: 50 }, max: 10, optional: true },
       topicRight: { kind: "list", of: { kind: "int", min: 0, max: 50 }, max: 10, optional: true },
+      // Version 3 (house spec 0030): why the wrong multiple choice answers went wrong (A07), the seconds of the timed answers and how many (A08), and the
+      // gain in points over the earlier paper this one repeats (A20), all counts.
+      wrongMisread: { kind: "int", min: 0, max: 50, optional: true },
+      wrongCareless: { kind: "int", min: 0, max: 50, optional: true },
+      wrongConcept: { kind: "int", min: 0, max: 50, optional: true },
+      paceSec: { kind: "int", min: 0, max: 30000, optional: true },
+      paceN: { kind: "int", min: 0, max: 50, optional: true },
+      gain: { kind: "int", min: -100, max: 100, optional: true },
     },
   }),
+  // `exams.remarked`: a teacher confirmed a mark with the rubric on written answers (A03; house spec 0030): the sum of the scores given (each 0 to 4) and how
+  // many were given. Written by the teacher, so it is not the student's own log.
+  defineEvent({ room: "exams", type: "exams.remarked", version: 1, payload: { rubricSum: { kind: "int", min: 0, max: 600 }, rubricN: { kind: "int", min: 1, max: 150 } } }),
   defineEvent({ room: "exams", type: "exams.missed", version: 1, payload: {} }),
 ];

@@ -513,8 +513,9 @@ export default defineSchema({
     teacherMemberId: v.id("members"),
     instituteId: v.id("institutes"),
     title: v.string(),
-    status: v.string(), // "draft" or "sent"
+    status: v.string(), // "draft", "sent", or "bank" (a practice bank paper, never sent: its questions are for the desk at once; house spec 0031)
     createdAt: v.number(),
+    matchOf: v.optional(v.id("papers")), // the earlier paper of the same teacher this one repeats, for the day 21 gain (A20; house spec 0030)
   }).index("by_teacherMemberId", ["teacherMemberId"]),
 
   paperQuestions: defineTable({
@@ -531,7 +532,10 @@ export default defineSchema({
     rubric: v.optional(v.string()), // long only
     hint: v.optional(v.string()), // the teacher's hint, server only until a student opens it in a sitting (exams.hint)
     topicId: v.optional(v.id("paperTopics")), // the topic row of this subject and topic (house spec 0028); a question from before it has none
-  }).index("by_paperId", ["paperId"]),
+  })
+    .index("by_paperId", ["paperId"])
+    // The desk's question bank (house spec 0031): the questions of one topic.
+    .index("by_topicId", ["topicId"]),
 
   // The topics of an institute's papers (house spec 0028): one row for each subject code and topic, in the words of the teacher who first wrote it,
   // found again by its key (the words in lower case with single spaces). A student's event and Brain day name a topic only by this row's id. Erase
@@ -541,6 +545,9 @@ export default defineSchema({
     subject: v.string(), // a code from SUBJECTS (sessionRules.ts)
     key: v.string(),
     name: v.string(),
+    // The topic map (Desk Design D1, house spec 0031): the chapter a teacher put the topic in, and whether a teacher added it to the syllabus map.
+    chapter: v.optional(v.string()),
+    inMap: v.optional(v.boolean()),
   }).index("by_instituteId_and_subject_and_key", ["instituteId", "subject", "key"]),
 
   // Which topics were sent to a class, so a student's card offers only the topics of their own class's papers (house spec 0028). One row for each
@@ -592,11 +599,18 @@ export default defineSchema({
     markedAt: v.optional(v.number()),
     confirmedAt: v.optional(v.number()),
     acceptedAt: v.optional(v.number()), // when the student accepted the teacher's feedback, set once (exams.acceptFeedback)
+    // House spec 0030: the seconds each multiple choice answer took (from the previous first answer or the start, up to 10 minutes), kept for A08 and
+    // A07's careless rule; and the teacher's rubric on written answers (understanding, structure, expression, each 0 to 4), for A03.
+    paceLog: v.optional(v.array(v.object({ question: v.number(), sec: v.number() }))),
+    lastAnswerAt: v.optional(v.number()), // the last time an answer was saved, the start of the next answer's time
+    rubrics: v.optional(v.array(v.object({ question: v.number(), u: v.number(), s: v.number(), e: v.number() }))),
   })
     .index("by_memberId", ["memberId"])
     .index("by_paperId_and_memberId", ["paperId", "memberId"])
     .index("by_memberId_and_status", ["memberId", "status"]) // the exam lock (examLock.ts) finds an open sitting
-    .index("by_status_and_dueAt", ["status", "dueAt"]),
+    .index("by_status_and_dueAt", ["status", "dueAt"])
+    // The Brain's "day before a paper" (E07, house spec 0030): a student's attempts due in one house day, read as a range.
+    .index("by_memberId_and_dueAt", ["memberId", "dueAt"]),
 
   // The blog room (spec house/0014). A post is written by a student and stays pending until a teacher of the author's class approves it. Only an
   // approved post is read by classmates in the institute; the author always sees their own. The body is cleaned on the server (blogRules.ts)
@@ -628,6 +642,7 @@ export default defineSchema({
     reviewedBy: v.optional(v.id("members")),
     createdAt: v.number(),
     countedAt: v.optional(v.number()), // the first approval, set once: the moment the Brain counts the comment (written and received)
+    helpfulAt: v.optional(v.number()), // the post's author marked it helpful, set once (A19, house spec 0030)
   })
     .index("by_postId", ["postId"])
     .index("by_authorMemberId", ["authorMemberId"])
@@ -727,6 +742,9 @@ export default defineSchema({
     uploadedBy: v.id("members"),
     approvedBy: v.optional(v.id("members")),
     createdAt: v.number(),
+    // An academic film's subject code and topic words (house spec 0030), so its checks name the topic in the student's own institute (A17).
+    subject: v.optional(v.string()),
+    topic: v.optional(v.string()),
   }).index("by_status", ["status"]),
 
   filmChecks: defineTable({
@@ -747,6 +765,9 @@ export default defineSchema({
     lastAt: v.optional(v.number()),
     scored: v.boolean(),
     scoredAt: v.optional(v.number()),
+    checkAnswers: v.optional(v.array(v.number())), // the student's answers to the film's two checks, once (A16, house spec 0030)
+    checkRight: v.optional(v.number()),
+    checkedAt: v.optional(v.number()),
   })
     .index("by_memberId_and_filmId", ["memberId", "filmId"])
     .index("by_memberId", ["memberId"]),
@@ -848,6 +869,124 @@ export default defineSchema({
     .index("by_planId_and_day", ["planId", "day"])
     .index("by_memberId", ["memberId"]),
 
+  // The weekly habit feels check (Master Spec H10; house spec 0030): one row a habit a week, four answers of 1 to 7. Erase class `erased`.
+  habitRatings: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    planId: v.id("habitPlans"),
+    week: v.string(), // the Monday of the India week, YYYY-MM-DD
+    items: v.array(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_memberId_and_week", ["memberId", "week"])
+    .index("by_planId_and_week", ["planId", "week"]),
+
+  // The desk's learning loop (Desk Design D3 and D5; house spec 0031). All of it is the student's own, seen by the student alone, and erased with them.
+  // One row a student has for a topic they answered on: mastery (0 to 1), the recall gap and next time, the last three answers, and when the current run
+  // at 0.85 or more began. The level is worked out from the mastery and is never shown as a label of the student.
+  learnTopics: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    topicId: v.id("paperTopics"),
+    subject: v.string(),
+    mastery: v.number(),
+    attempts: v.number(),
+    right: v.number(),
+    recent: v.array(v.boolean()),
+    gapDays: v.number(),
+    nextReviewAt: v.number(),
+    lastAt: v.number(),
+    heldSince: v.optional(v.number()),
+    heldAt: v.optional(v.number()), // the first time the topic was held (A09 counts it once)
+  })
+    .index("by_memberId_and_topicId", ["memberId", "topicId"])
+    .index("by_memberId_and_nextReviewAt", ["memberId", "nextReviewAt"])
+    .index("by_memberId_and_subject", ["memberId", "subject"]),
+
+  // One row a student: their newest multiple choice answer times, for their own median (A07's careless rule). No other student is compared.
+  learnStats: defineTable({
+    memberId: v.id("members"),
+    paceRecent: v.array(v.number()),
+  }).index("by_memberId", ["memberId"]),
+
+  // Every multiple choice answer of the student on a bank question: from a paper (at submission), the desk's practice, Fix or recall.
+  learnAnswers: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    questionId: v.id("paperQuestions"),
+    topicId: v.id("paperTopics"),
+    source: v.string(), // "paper", "practice", "fix" or "recall"
+    chosen: v.number(),
+    right: v.boolean(),
+    sec: v.optional(v.number()),
+    at: v.number(),
+  })
+    .index("by_memberId_and_questionId", ["memberId", "questionId"])
+    .index("by_memberId_and_at", ["memberId", "at"]),
+
+  // How hard each bank question has been for the students of its institute (Desk Design question_stats), so the bank calibrates itself. Counts only.
+  questionStats: defineTable({
+    questionId: v.id("paperQuestions"),
+    attempts: v.number(),
+    correct: v.number(),
+  }).index("by_questionId", ["questionId"]),
+
+  // A wrong answer to go back over (Desk Design, Fix): open until the student answers it right, then fixed. Erase class `erased`.
+  fixItems: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    questionId: v.id("paperQuestions"),
+    topicId: v.id("paperTopics"),
+    status: v.string(), // "open" or "fixed"
+    openedAt: v.number(),
+    fixedAt: v.optional(v.number()),
+  })
+    .index("by_memberId_and_status_and_openedAt", ["memberId", "status", "openedAt"])
+    .index("by_memberId_and_questionId", ["memberId", "questionId"]),
+
+  // One round of questions the desk gave the student (practice, Fix or recall), so an answer is only taken for a question of the student's own round.
+  learnRounds: defineTable({
+    memberId: v.id("members"),
+    mode: v.string(), // "practice", "fix" or "recall"
+    topicId: v.optional(v.id("paperTopics")),
+    questionIds: v.array(v.id("paperQuestions")),
+    answered: v.array(v.id("paperQuestions")),
+    startedAt: v.number(),
+  }).index("by_memberId_and_startedAt", ["memberId", "startedAt"]),
+
+  // A written practice answer marked by the model against the teacher's key points (Desk Design; house spec 0031). A teacher of the student's class marks
+  // it when the model is unsure or the student asks, and the teacher's mark replaces the model's. Erase class `erased`.
+  writtenAnswers: defineTable({
+    memberId: v.id("members"),
+    instituteId: v.id("institutes"),
+    classId: v.optional(v.id("classes")),
+    questionId: v.id("paperQuestions"),
+    topicId: v.id("paperTopics"),
+    text: v.string(),
+    status: v.string(), // "marking", "marked", "teacher" (waiting for a teacher), "teacher_marked" or "failed"
+    points: v.optional(v.array(v.string())),
+    marks: v.optional(v.number()),
+    maxMarks: v.number(),
+    confidence: v.optional(v.number()),
+    disputed: v.optional(v.boolean()),
+    teacherMarks: v.optional(v.number()),
+    teacherId: v.optional(v.id("members")),
+    coinsSpent: v.number(),
+    createdAt: v.number(),
+    markedAt: v.optional(v.number()),
+  })
+    .index("by_memberId_and_createdAt", ["memberId", "createdAt"])
+    .index("by_classId_and_status", ["classId", "status"])
+    .index("by_status_and_createdAt", ["status", "createdAt"]),
+
+  // A student's study plan for a test (Desk Design, mode Plan), built by code from their topics: the subject and the test day. One a subject. Erased.
+  studyPlans: defineTable({
+    memberId: v.id("members"),
+    subject: v.string(),
+    testDay: v.string(),
+    createdAt: v.number(),
+  }).index("by_memberId_and_subject", ["memberId", "subject"]),
+
   // Counseling (spec house/0024). A counselor opens their own 30 minute slots; a student books one. A slot holds the counselor and the time only.
   // `status` is "open", "booked" or "closed" (the counselor took it back before anyone booked). Erase class `kept` (no student in it).
   counselSlots: defineTable({
@@ -941,6 +1080,7 @@ export default defineSchema({
     tokensIn: v.optional(v.number()),
     tokensOut: v.optional(v.number()),
     createdAt: v.number(),
+    resolvedAt: v.optional(v.number()), // the student marked this answer as solving their doubt, once (A18, house spec 0030)
   })
     .index("by_threadId", ["threadId"])
     .index("by_memberId", ["memberId"])
@@ -976,6 +1116,7 @@ export default defineSchema({
     // Questions asked in the sitting, and how many of them were an active learning kind (write, paper or mock). Counts only, for the Brain's A10 and A12.
     turns: v.optional(v.number()),
     activeTurns: v.optional(v.number()),
+    doubts: v.optional(v.number()), // plain questions (chat) in the sitting, A18's bottom part (house spec 0030)
   })
     .index("by_memberId_and_lastAt", ["memberId", "lastAt"])
     .index("by_feedbackStatus_and_lastAt", ["feedbackStatus", "lastAt"]),

@@ -58,6 +58,7 @@ import { useMediaQuery } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
 import { HabitCompose } from "./habit-compose";
 import { HabitSlide } from "./habit-slide";
+import { HabitFeels } from "./habit-feels";
 
 const glass = "rounded-card border border-white/80 bg-white/70 shadow-sm backdrop-blur-xl";
 
@@ -497,6 +498,8 @@ export function HabitTracker() {
           onToggle={() => void toggle(selected.id)}
         />
       )}
+
+      {rows !== undefined && running.length > 0 && <HabitFeels habits={running.map((p) => ({ id: p.id, title: p.title }))} />}
 
       {!HABIT_WORDS_APPROVED && (
         <p className="text-xs text-mute touch:text-sm" data-testid="habit-draft">

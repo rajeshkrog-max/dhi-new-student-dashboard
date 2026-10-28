@@ -31,11 +31,25 @@ export const habitRoom: RoomEntry = {
     const page = plans.slice(0, size);
     const rows = [];
     for (const p of page) {
-      rows.push({ title: p.title, kind: p.kind, color: p.color, startOn: p.startOn, endOn: p.endOn, removedOn: p.removedOn ?? null, ticks: await ticksOf(ctx, p) });
+      // The weekly feels answers of the habit (house spec 0030), each week with its four answers.
+      const ratings = await ctx.db.query("habitRatings").withIndex("by_planId_and_week", (q) => q.eq("planId", p._id)).take(60);
+      rows.push({
+        title: p.title,
+        kind: p.kind,
+        color: p.color,
+        startOn: p.startOn,
+        endOn: p.endOn,
+        removedOn: p.removedOn ?? null,
+        ticks: await ticksOf(ctx, p),
+        feels: ratings.map((r) => ({ week: r.week, answers: r.items })),
+      });
     }
     return { rows, next: plans.length > size ? String(page[page.length - 1]._creationTime) : null };
   },
   eraser: async (ctx: MutationCtx, memberId: Id<"members">, limit: number) => {
+    const ratings = await ctx.db.query("habitRatings").withIndex("by_memberId_and_week", (q) => q.eq("memberId", memberId)).take(limit);
+    for (const r of ratings) await ctx.db.delete("habitRatings", r._id);
+    if (ratings.length >= limit) return { deleted: ratings.length, done: false };
     const checks = await ctx.db.query("habitChecks").withIndex("by_memberId", (q) => q.eq("memberId", memberId)).take(limit);
     for (const c of checks) await ctx.db.delete("habitChecks", c._id);
     if (checks.length >= limit) return { deleted: checks.length, done: false };

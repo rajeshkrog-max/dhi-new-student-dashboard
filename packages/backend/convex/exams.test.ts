@@ -198,7 +198,8 @@ describe("hints, events, the close sweep and the feedback (spec house/0012)", ()
     await w.s.as.mutation(api.exams.submit, { attemptId: attempt._id });
     const done = await eventsOf(w, "exams.submitted");
     expect(done).toHaveLength(1);
-    expect(done[0].payload).toEqual({ auto: false, mcqTried: 1, mcqRight: 1, longDone: 1, hints: 1, topics: [expect.any(String)], topicTried: [1], topicRight: [1] });
+    // Version 3 (house spec 0030): why answers went wrong (none here) and the answer time when it was kept.
+    expect(done[0].payload).toMatchObject({ auto: false, mcqTried: 1, mcqRight: 1, longDone: 1, hints: 1, topics: [expect.any(String)], topicTried: [1], topicRight: [1], wrongMisread: 0, wrongCareless: 0, wrongConcept: 0 });
     expect(await eventsOf(w, "exams.missed")).toHaveLength(0);
 
     const other = await open(w, w.s2);
@@ -223,7 +224,10 @@ describe("hints, events, the close sweep and the feedback (spec house/0012)", ()
     expect(await w.attemptOf(w.s2.memberId)).toMatchObject({ status: "submitted", autoSubmitted: true, missed: true });
     const done = await eventsOf(w, "exams.submitted");
     expect(done).toHaveLength(1);
-    expect(done[0].payload).toEqual({ auto: true, mcqTried: 1, mcqRight: 0, longDone: 0, hints: 0, topics: [expect.any(String)], topicTried: [1], topicRight: [0] });
+    expect(done[0].payload).toMatchObject({ auto: true, mcqTried: 1, mcqRight: 0, longDone: 0, hints: 0, topics: [expect.any(String)], topicTried: [1], topicRight: [0] });
+    // The one wrong answer has one reason (house spec 0030).
+    const why = done[0].payload as { wrongMisread: number; wrongCareless: number; wrongConcept: number };
+    expect(why.wrongMisread + why.wrongCareless + why.wrongConcept).toBe(1);
     expect(done[0].occurredAt).toBe(DUE);
     expect(await eventsOf(w, "exams.missed")).toHaveLength(1);
   });

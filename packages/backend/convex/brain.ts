@@ -27,7 +27,8 @@ import {
   windowDays,
   dayMapOf,
 } from "./brainRules";
-import { DAY_MS, todayOf } from "./dayRules";
+import { DAY_MS, shiftDay, todayOf } from "./dayRules";
+import { measuresOf } from "./metricRules";
 import { fail } from "./helpers";
 import { requireMember } from "./houseAuth";
 import { rateLimiter } from "./limits";
@@ -36,6 +37,31 @@ const inputView = v.object({ metric: v.string(), value: v.union(v.number(), v.nu
 const lampView = v.object({ lamp: v.string(), value: v.union(v.number(), v.null()), movement: v.union(v.string(), v.null()), loggedDays: v.number(), inputs: v.array(inputView) });
 const evidenceView = v.array(v.object({ day: v.string(), items: v.array(v.object({ item: v.string(), room: v.string() })) }));
 const connectionView = v.object({ id: v.string(), a: v.number(), b: v.number(), nA: v.number(), nB: v.number(), subject: v.optional(v.string()) });
+const pairView = v.object({ num: v.number(), den: v.number() });
+// The version 9 measures (house spec 0030), the student's own, plain measures that feed no lamp.
+const measuresView = v.object({
+  stress: v.union(v.string(), v.null()),
+  stressDays: v.number(),
+  stressWhen: v.object({ paper: v.number(), hours: v.number(), other: v.number() }),
+  streak: v.object({ current: v.number(), longest: v.number() }),
+  pace: v.union(v.number(), v.null()),
+  paceAnswers: v.number(),
+  deskBySubject: v.array(v.object({ subject: v.string(), share: v.number() })),
+  wrongWhy: v.object({ misread: v.number(), careless: v.number(), concept: v.number() }),
+  paperGain: v.union(v.number(), v.null()),
+  helpAsked: v.number(),
+  understanding: v.union(v.number(), v.null()),
+  habitFeel: v.union(v.number(), v.null()),
+  filmCheck: pairView,
+  filmEffect: v.array(v.object({ topic: v.string(), before: v.number(), after: v.number() })),
+  helpGiven: v.number(),
+  doubts: pairView,
+  recall7: pairView,
+  oldMistakes: pairView,
+  recallRounds: pairView,
+  held: v.number(),
+  weakFollowUp: v.object({ studied: v.number(), wrong: v.number() }),
+});
 const patternView = v.object({ id: v.string(), kind: v.string(), params: v.record(v.string(), v.union(v.number(), v.string())), evidence: evidenceView });
 
 export const report = query({
@@ -53,6 +79,7 @@ export const report = query({
     expression: v.union(v.object({ runDays: v.array(v.string()), postDay: v.string() }), v.null()),
     support: v.union(v.object({ lowDays: v.number() }), v.null()),
     draft: v.object({ sources: v.boolean() }),
+    measures: measuresView,
   }),
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
@@ -68,7 +95,17 @@ export const report = query({
     const note = expressionNote(rows, today);
     // The connections read every finished day of the last four months, not only the chain window.
     // One more than the window, because today is in the rows and the connections drop it: 120 finished days (review of 2026-10-26).
-    const connected = connectionsOf(await windowRows(ctx, mc.member, now, CONNECTION_WINDOW + 1), today);
+    const longRows = await windowRows(ctx, mc.member, now, CONNECTION_WINDOW + 1);
+    const connected = connectionsOf(longRows, today);
+    const recent = rows.filter((r) => r.day > shiftDay(today, -LAMP_WINDOW));
+    const measured = measuresOf(recent, longRows, today);
+    // A film's effect names its topic by the words of the student's own institute.
+    const filmEffect = [];
+    for (const e of measured.filmEffect.slice(0, 5)) {
+      const id = ctx.db.normalizeId("paperTopics", e.topic);
+      const t = id ? await ctx.db.get(id) : null;
+      if (t && t.instituteId === mc.member.instituteId) filmEffect.push({ topic: t.name, before: e.before, after: e.after });
+    }
     const hidden = [...fired.map((p) => p.id as string), ...connected.map((c) => c.id as string), ...(note ? ["expression"] : [])].filter((id) => hiddenNow.has(id));
     const support = supportOffer(rows, today);
     const { score, lamps } = lampsOf(rows, today);
@@ -88,6 +125,7 @@ export const report = query({
       expression: note && !hiddenNow.has("expression") ? note : null,
       support: support ? { lowDays: support.lowDays } : null,
       draft: { sources: !PATTERN_SOURCES_CONFIRMED },
+      measures: { ...measured, filmEffect },
     };
   },
 });

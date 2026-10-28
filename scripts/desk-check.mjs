@@ -100,10 +100,10 @@ try {
   await step("feedback on writing costs 2 coins", async () => askKind(page, "write", "My summer holiday was fun. We went to my grandmother's village and I learnt to swim in the river.", 2));
   await step("practice questions on a topic cost 2 coins", async () => askKind(page, "paper", "Fractions for class 6", 2));
   await step("a longer practice set costs 4 coins", async () => askKind(page, "mock", "The water cycle", 4));
-  await step("a study story costs 5 coins", async () => askKind(page, "story", "Why the moon has phases", 5));
+  await step("a study story costs 5 coins", async () => askKind(page, "story", `Why the moon has phases (proof ${tag})`, 5));
 
   await step("a diagram costs 8 coins and is shown only as a checked picture, never as raw markup", async () => {
-    await askKind(page, "draw", "The parts of a plant cell", 8);
+    await askKind(page, "draw", `The parts of a plant cell (proof ${tag})`, 8);
     const src = await page.getByTestId("desk-diagram").last().getAttribute("src");
     expect(src?.startsWith("data:image/svg+xml"), `the diagram is not a picture: ${String(src).slice(0, 40)}`);
     expect((await page.locator('[data-testid="desk-turns"] svg').count()) === 0, "an svg was put into the page itself");

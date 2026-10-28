@@ -7,7 +7,7 @@ import { internal } from "./_generated/api";
 import { action, env } from "./_generated/server";
 import { answerMaxFor, cleanSvg, maxTokensFor, systemPromptFor, userTextFor } from "./deskRules";
 
-const DEFAULT_MODEL = "gpt-4o-mini";
+export const DEFAULT_MODEL = "gpt-4o-mini";
 const TIMEOUT_MS = 60 * 1000; // under the sweep's 2 minutes, so a late answer never meets a turn that was already given up
 
 const refused = v.object({ ok: v.literal(false), code: v.string() });
@@ -21,7 +21,7 @@ const answered = v.object({
   balance: v.union(v.number(), v.null()),
 });
 
-type Message = { role: "system" | "user" | "assistant"; content: string };
+export type Message = { role: "system" | "user" | "assistant"; content: string };
 // What `desk.begin` and `desk.finish` return, written out here so this file's own type does not depend on its own references (the circularity note in the Convex guidelines).
 type Begin =
   | { ok: false; code: string }
@@ -33,7 +33,7 @@ type Reply = { ok: false; code: string } | { ok: true; threadId: string; turnId:
 type ModelReply = { answer: string; tokensIn: number; tokensOut: number } | null;
 
 // One call to the model. Any failure (no key, a timeout, a refusal from the provider, an empty or odd reply) is null, and the caller returns the coins.
-async function callModel(model: string, messages: Message[], maxTokens: number): Promise<ModelReply> {
+export async function callModel(model: string, messages: Message[], maxTokens: number): Promise<ModelReply> {
   const key = (env.OPENAI_API_KEY ?? "").trim();
   if (!key) return null;
   const ctl = new AbortController();

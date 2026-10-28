@@ -9,6 +9,9 @@ import {
   INPUT_COPY,
   ITEM_COPY,
   LAMP_COPY,
+  MEASURES_UI,
+  measureLines,
+  type Measures,
   LANGS,
   MOVE_COPY,
   PATTERN_COPY,
@@ -195,5 +198,41 @@ test("spec house/0020: the meals chain's words never judge the food or tell anyo
       const all = `${t.title} ${t.text} ${t.note}`;
       assert.ok(!/\b(more|less|stop|avoid|cut|reduce|instead|switch)\b/i.test(all.replace(/half or more/gi, "").replace(/aadhe ya zyada/gi, "")), `advice in ${lang}: ${all}`);
     }
+  }
+});
+
+// Your measures (house spec 0030): every row in both languages passes the same lint, and a student with nothing has no row.
+test("the measures rows pass the copy lint in both languages and show only what has something behind it", () => {
+  const full: Measures = {
+    stress: "moderate",
+    stressDays: 12,
+    stressWhen: { paper: 2, hours: 1, other: 1 },
+    streak: { current: 5, longest: 9 },
+    pace: 41.6,
+    paceAnswers: 18,
+    deskBySubject: [{ subject: "maths", share: 0.5 }],
+    wrongWhy: { misread: 1, careless: 2, concept: 3 },
+    paperGain: 12,
+    helpAsked: 1,
+    understanding: 2.75,
+    habitFeel: 5.25,
+    filmCheck: { num: 1, den: 2 },
+    filmEffect: [{ topic: "Fractions", before: 0.4, after: 0.7 }],
+    helpGiven: 2,
+    doubts: { num: 3, den: 5 },
+    recall7: { num: 4, den: 6 },
+    oldMistakes: { num: 2, den: 3 },
+    recallRounds: { num: 7, den: 9 },
+    held: 2,
+    weakFollowUp: { studied: 1, wrong: 3 },
+  };
+  for (const lang of LANGS) {
+    const rows = measureLines(full, lang);
+    assert.equal(rows.length, 19, lang);
+    for (const r of [...rows.map((x) => `${x.label}: ${x.value}`), MEASURES_UI[lang].title, MEASURES_UI[lang].intro, MEASURES_UI[lang].none]) {
+      for (const rule of [RANKING, CLINICAL, FOOD, CAUSE, ORDERS]) assert.equal(strip(r).match(rule), null, `${lang}: "${r}"`);
+    }
+    const empty = measureLines({ ...full, stress: null, stressWhen: { paper: 0, hours: 0, other: 0 }, streak: { current: 0, longest: 0 }, pace: null, paceAnswers: 0, deskBySubject: [], wrongWhy: { misread: 0, careless: 0, concept: 0 }, paperGain: null, helpAsked: 0, understanding: null, habitFeel: null, filmCheck: { num: 0, den: 0 }, filmEffect: [], helpGiven: 0, doubts: { num: 0, den: 0 }, recall7: { num: 0, den: 0 }, oldMistakes: { num: 0, den: 0 }, recallRounds: { num: 0, den: 0 }, held: 0, weakFollowUp: { studied: 0, wrong: 0 } }, lang);
+    assert.deepEqual(empty, []);
   }
 });

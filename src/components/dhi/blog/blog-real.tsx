@@ -176,11 +176,12 @@ type Post = {
   mine: boolean;
   authorName: string;
   photoUrl: string | null;
-  comments: { commentId: string; text: string; status: string; mine: boolean }[];
+  comments: { commentId: string; text: string; status: string; mine: boolean; helpful: boolean }[];
 };
 
 function PostCard({ post }: { post: Post }) {
   const comment = useMutation(api.blog.comment);
+  const markHelpful = useMutation(api.blog.markHelpful);
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const approved = post.status === "approved";
@@ -212,6 +213,20 @@ function PostCard({ post }: { post: Post }) {
         {post.comments.map((c) => (
           <li key={c.commentId} className="text-mute">
             {c.mine ? "You" : "Comment"} ({STATUS[c.status] ?? c.status}): <span dangerouslySetInnerHTML={{ __html: c.text }} />
+            {/* The post's author can say a classmate's comment helped (house spec 0030). It counts only on the commenter's own Progress page. */}
+            {c.helpful ? (
+              <span className="ml-2 text-xs text-grove" data-testid="blog-helpful-done">
+                Helped
+              </span>
+            ) : (
+              post.mine &&
+              !c.mine &&
+              c.status === "approved" && (
+                <Button variant="link" className="ml-2" onClick={() => void markHelpful({ commentId: c.commentId as GenericId<"blogComments"> }).catch(() => {})} data-testid="blog-helpful">
+                  This helped me
+                </Button>
+              )
+            )}
           </li>
         ))}
       </ul>

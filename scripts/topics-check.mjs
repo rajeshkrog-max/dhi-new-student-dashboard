@@ -56,7 +56,8 @@ try {
     await page.getByTestId("desk-subject-maths").click();
     await page.getByTestId("desk-topic").first().waitFor({ timeout: 20_000 });
     const names = await page.getByTestId("desk-topic").allInnerTexts();
-    expect(names.join(",") === "Decimals,Fractions", `the topics read ${names.join(",")}`);
+    // The class may hold more maths topics from other proofs (the Learn proof adds Ratios); these two must be there, the newer first.
+    expect(names.includes("Decimals") && names.includes("Fractions") && names.indexOf("Decimals") < names.indexOf("Fractions"), `the topics read ${names.join(",")}`);
     await page.getByTestId("desk-topic").filter({ hasText: "Fractions" }).click();
     expect((await page.getByTestId("desk-topic").filter({ hasText: "Fractions" }).getAttribute("aria-pressed")) === "true", "the topic tap did not hold");
   });

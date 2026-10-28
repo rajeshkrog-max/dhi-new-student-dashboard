@@ -10,7 +10,7 @@ import { fail } from "./helpers";
 import { requireMember, teacherClassIds } from "./houseAuth";
 import { refuseWhileSitting } from "./examLock";
 import { dayOf, shiftDay, todayOf } from "./dayRules";
-import { MAX_AGE_DAYS, recordEvent } from "./eventLog";
+import { MAX_AGE_DAYS, recordEvent, recordSystemEvent } from "./eventLog";
 import { rateLimiter } from "./limits";
 import { MAX_COMMENT, bodyProblem, cleanBody, hasList, hasParagraphs, isPostTag, movingTtr, photoFileProblem, titleProblem, wordsOf } from "./blogRules";
 
@@ -84,7 +84,7 @@ export const list = query({
       mine: v.boolean(),
       authorName: v.string(),
       photoUrl: v.union(v.string(), v.null()),
-      comments: v.array(v.object({ commentId: v.id("blogComments"), text: v.string(), status: v.string(), mine: v.boolean() })),
+      comments: v.array(v.object({ commentId: v.id("blogComments"), text: v.string(), status: v.string(), mine: v.boolean(), helpful: v.boolean() })),
     }),
   ),
   handler: async (ctx) => {
@@ -130,7 +130,7 @@ export const list = query({
         authorName: author?.name ?? "",
         // The photo is seen by the author, and by classmates only once a teacher has approved the post.
         photoUrl: post.photoId !== undefined && (post.status === "approved" || mine) ? await ctx.storage.getUrl(post.photoId) : null,
-        comments: shown.map((c) => ({ commentId: c._id, text: c.text, status: c.status, mine: c.authorMemberId === mc.member._id })),
+        comments: shown.map((c) => ({ commentId: c._id, text: c.text, status: c.status, mine: c.authorMemberId === mc.member._id, helpful: c.helpfulAt !== undefined })),
       });
     }
     return out;
@@ -162,6 +162,37 @@ export const comment = mutation({
       status: "pending",
       createdAt: Date.now(),
     });
+  },
+});
+
+// The post's author marks a classmate's approved comment on their post as helpful, once (the Master Spec's A19, help given; house spec 0030). The
+// commenter's Brain counts it; nobody else sees who marked what.
+export const markHelpful = mutation({
+  args: { commentId: v.id("blogComments") },
+  returns: v.union(v.object({ ok: v.literal(true) }), v.object({ ok: v.literal(false), code: v.string() })),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
+    if (!(await rateLimiter.limit(ctx, "measureWrite", { key: mc.member._id })).ok) return { ok: false as const, code: "slow_down" };
+    const c = await ctx.db.get(args.commentId);
+    if (!c || c.status !== "approved") return { ok: false as const, code: "not_found" };
+    const post = await ctx.db.get(c.postId);
+    if (!post || post.authorMemberId !== mc.member._id) return { ok: false as const, code: "not_found" };
+    if (c.authorMemberId === mc.member._id) return { ok: false as const, code: "own_comment" };
+    if (c.helpfulAt !== undefined) return { ok: true as const };
+    const now = Date.now();
+    await ctx.db.patch(c._id, { helpfulAt: now });
+    const author = await ctx.db.get(c.authorMemberId);
+    if (author && (await inGoodStanding(ctx, author))) {
+      try {
+        // Written by the system on the author's tap: a student never writes another student's event (eventLog.ts).
+        await recordSystemEvent(ctx, { memberId: c.authorMemberId, room: "blog", type: "blog.helped", payload: {}, occurredAt: now, eventKey: `helped:${c._id}-0`, about: `helped:${c._id}` });
+      } catch {
+        // The mark stays whatever the log says.
+      }
+    }
+    return { ok: true as const };
   },
 });
 

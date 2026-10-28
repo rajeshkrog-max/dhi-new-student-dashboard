@@ -67,7 +67,7 @@ try {
     await teacher.getByTestId("question-subject").nth(1).selectOption("english");
     await teacher.getByLabel("Topic").nth(1).fill("Story");
     await teacher.getByLabel("Question").nth(1).fill("Tell a short story.");
-    await teacher.getByLabel("Rubric (what earns the marks)").fill("Plot and ending");
+    await teacher.getByTestId("question-rubric").fill("Plot and ending");
     // A hint that names the right option is refused, and nothing is saved.
     const hints = teacher.getByLabel(/Hint for the student/);
     await hints.first().fill("The answer is two, count again.");

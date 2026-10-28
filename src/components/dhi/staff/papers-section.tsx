@@ -47,6 +47,9 @@ export function PapersSection() {
   const [classId, setClassId] = useState<GenericId<"classes"> | "">("");
   const [opens, setOpens] = useState("");
   const [due, setDue] = useState("");
+  // A practice bank paper (house spec 0031) and a repeat of an earlier paper for the day 21 gain (house spec 0030).
+  const [bank, setBank] = useState(false);
+  const [matchOf, setMatchOf] = useState<GenericId<"papers"> | "">("");
 
   function update(i: number, patch: Partial<Draft>) {
     setDrafts((list) => list.map((d, n) => (n === i ? ({ ...d, ...patch } as Draft) : d)));
@@ -58,9 +61,11 @@ export function PapersSection() {
     setError("");
     setDone("");
     try {
-      const id = await create({ title, questions: drafts.map(toInput) as never });
-      setDone("The paper is saved. Send it to a class when you are ready.");
-      setPaperId(id);
+      const id = await create({ title, questions: drafts.map(toInput) as never, ...(bank ? { bank: true } : {}), ...(!bank && matchOf ? { matchOf } : {}) });
+      setDone(bank ? "The practice questions are saved. Your classes can practise them on the desk now." : "The paper is saved. Send it to a class when you are ready.");
+      if (!bank) setPaperId(id);
+      setBank(false);
+      setMatchOf("");
       setTitle("");
       setDrafts([blankMcq()]);
     } catch (err) {
@@ -152,8 +157,16 @@ export function PapersSection() {
                   <Label text="Maximum marks (1 to 100)">
                     <TextInput type="number" min={1} max={100} value={d.maxMarks} onChange={(e) => update(i, { maxMarks: Number(e.target.value) })} />
                   </Label>
-                  <Label text="Rubric (what earns the marks)">
-                    <TextInput value={d.rubric} onChange={(e) => update(i, { rubric: e.target.value })} required maxLength={500} />
+                  <Label text="Key points that earn the marks, one a line (the desk marks written practice against these)">
+                    <textarea
+                      className="w-full rounded-control border border-home/15 bg-white/80 p-3 text-sm"
+                      rows={3}
+                      value={d.rubric}
+                      onChange={(e) => update(i, { rubric: e.target.value })}
+                      required
+                      maxLength={500}
+                      data-testid="question-rubric"
+                    />
                   </Label>
                 </>
               )}
@@ -170,6 +183,24 @@ export function PapersSection() {
               Add long answer
             </Button>
           </div>
+          <label className="tap flex items-center gap-3 text-sm">
+            <input type="checkbox" checked={bank} onChange={(e) => setBank(e.target.checked)} data-testid="paper-bank" />
+            Practice questions for the desk only (never sent as a paper; your classes see the answers after they try)
+          </label>
+          {!bank && (
+            <Label text="This paper repeats an earlier one (optional, to show the change from the first)">
+              <SelectInput value={matchOf} onChange={(e) => setMatchOf(e.target.value as GenericId<"papers">)} data-testid="paper-match">
+                <option value="">No</option>
+                {mine
+                  ?.filter((p) => p.status === "sent")
+                  .map((p) => (
+                    <option key={p.paperId} value={p.paperId}>
+                      {p.title}
+                    </option>
+                  ))}
+              </SelectInput>
+            </Label>
+          )}
           {error && (
             <Notice tone="danger" role="alert" className="px-4 py-3 text-sm">
               {error}
@@ -192,11 +223,13 @@ export function PapersSection() {
           <Label text="Paper">
             <SelectInput data-testid="send-paper" value={paperId} onChange={(e) => setPaperId(e.target.value as GenericId<"papers">)}>
               <option value="">Choose a paper</option>
-              {mine?.map((p) => (
-                <option key={p.paperId} value={p.paperId}>
-                  {p.title} ({p.status})
-                </option>
-              ))}
+              {mine
+                ?.filter((p) => p.status !== "bank")
+                .map((p) => (
+                  <option key={p.paperId} value={p.paperId}>
+                    {p.title} ({p.status})
+                  </option>
+                ))}
             </SelectInput>
           </Label>
           <Label text="Class">
@@ -222,6 +255,8 @@ export function PapersSection() {
       </Card>
 
       {paperId && <Marking paperId={paperId} />}
+      <WrittenQueue />
+      <SyllabusMap />
       <Reviews />
       <HourReview />
     </div>
@@ -250,6 +285,8 @@ function Marking({ paperId }: { paperId: GenericId<"papers"> }) {
   const [error, setError] = useState("");
   const [marks, setMarks] = useState<Record<string, Record<number, string>>>({});
   const [remarks, setRemarks] = useState<Record<string, string>>({});
+  // The rubric on each long answer (house spec 0030, A03): understanding, structure, expression, each 0 to 4, all three or none.
+  const [rubric, setRubric] = useState<Record<string, Record<number, { u?: number; s?: number; e?: number }>>>({});
 
   const load = useCallback(async () => {
     try {
@@ -272,7 +309,12 @@ function Marking({ paperId }: { paperId: GenericId<"papers"> }) {
     setError("");
     const entries = longQuestions.map((q) => ({ question: q.order, mark: Number(markShown(a, q.order) || 0) }));
     try {
-      await markLong({ attemptId: a.attemptId, marks: entries, remarks: remarksShown(a) });
+      const given = rubric[a.attemptId] ?? {};
+      const rubrics = longQuestions.flatMap((q) => {
+        const r = given[q.order];
+        return r && r.u !== undefined && r.s !== undefined && r.e !== undefined ? [{ question: q.order, u: r.u, s: r.s, e: r.e }] : [];
+      });
+      await markLong({ attemptId: a.attemptId, marks: entries, remarks: remarksShown(a), ...(rubrics.length > 0 ? { rubrics } : {}) });
       await load();
     } catch (err) {
       setError(refusalWords(codeOf(err)));
@@ -339,6 +381,30 @@ function Marking({ paperId }: { paperId: GenericId<"papers"> }) {
                     onChange={(e) => setMarks((m) => ({ ...m, [a.attemptId]: { ...(m[a.attemptId] ?? {}), [q.order]: e.target.value } }))}
                   />
                 </Label>
+              ))}
+              {longQuestions.map((q) => (
+                <div key={`r-${q.order}`} className="grid gap-2 sm:grid-cols-3" data-testid="marking-rubric">
+                  {(["u", "s", "e"] as const).map((k) => (
+                    <Label key={k} text={`Question ${q.order + 1}: ${k === "u" ? "understanding" : k === "s" ? "structure" : "expression"} (0 to 4, optional)`}>
+                      <SelectInput
+                        value={rubric[a.attemptId]?.[q.order]?.[k] ?? ""}
+                        onChange={(e) =>
+                          setRubric((r) => ({
+                            ...r,
+                            [a.attemptId]: { ...(r[a.attemptId] ?? {}), [q.order]: { ...(r[a.attemptId]?.[q.order] ?? {}), [k]: e.target.value === "" ? undefined : Number(e.target.value) } },
+                          }))
+                        }
+                      >
+                        <option value="">Not given</option>
+                        {[0, 1, 2, 3, 4].map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Label>
+                  ))}
+                </div>
               ))}
               <Label text="Remarks">
                 <textarea
@@ -436,6 +502,125 @@ function Reviews() {
         <Notice tone="danger" role="alert" className="px-4 py-3 text-sm">
           {error}
         </Notice>
+      )}
+    </Card>
+  );
+}
+
+// Written practice answers waiting for a teacher of the class (house spec 0031): the desk was unsure, could not mark, was off, or the student asked. The
+// teacher sees the question, the key points and the answer, never the student's name, and their mark replaces the desk's.
+function WrittenQueue() {
+  const queue = useQuery(api.learnMark.queue, {});
+  const mark = useMutation(api.learnMark.teacherMark);
+  const [given, setGiven] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  if (!queue || queue.length === 0) return null;
+  async function save(answerId: GenericId<"writtenAnswers">) {
+    setError("");
+    try {
+      const r = await mark({ answerId, marks: Number(given[answerId] ?? "") });
+      if (!r.ok) setError(refusalWords(r.code));
+    } catch (err) {
+      setError(refusalWords(codeOf(err)));
+    }
+  }
+  return (
+    <Card className="space-y-3" data-testid="written-queue">
+      <h2 className="text-sm font-semibold">Written practice answers to mark</h2>
+      <p className="text-xs text-mute">From the desk&apos;s practice. The student&apos;s name is not shown. Your mark replaces the desk&apos;s.</p>
+      {queue.map((a) => (
+        <div key={a.answerId} className="space-y-2 rounded-control border border-home/15 bg-white/70 p-3 text-sm" data-testid="written-item">
+          <p className="font-medium">{a.question}</p>
+          <ul className="list-disc pl-5 text-xs text-mute">
+            {a.points.map((p, i) => (
+              <li key={i}>
+                {p}
+                {a.modelPoints?.[i] ? ` (the desk said: ${a.modelPoints[i]})` : ""}
+              </li>
+            ))}
+          </ul>
+          <p className="whitespace-pre-wrap rounded-control bg-white/60 p-2">{a.text}</p>
+          {a.disputed && <p className="text-xs text-mute">The student asked for a teacher to look.</p>}
+          <div className="flex flex-wrap items-end gap-2">
+            <Label text={`Marks (0 to ${a.maxMarks})`}>
+              <TextInput type="number" min={0} max={a.maxMarks} value={given[a.answerId] ?? ""} onChange={(e) => setGiven((g) => ({ ...g, [a.answerId]: e.target.value }))} data-testid="written-marks" />
+            </Label>
+            <Button variant="quiet" onClick={() => void save(a.answerId)} disabled={(given[a.answerId] ?? "") === ""} data-testid="written-save">
+              Save mark
+            </Button>
+          </div>
+        </div>
+      ))}
+      {error && (
+        <Notice tone="danger" role="alert" className="px-4 py-3 text-sm">
+          {error}
+        </Notice>
+      )}
+    </Card>
+  );
+}
+
+// The syllabus map of a subject (Desk Design D1, map only; house spec 0031): a teacher adds a topic with its chapter for every class they teach, so their
+// students can find and practise it on the desk. No book text is stored.
+function SyllabusMap() {
+  const [subject, setSubject] = useState<string>(SUBJECTS[0]);
+  const topics = useQuery(api.topics.mapForTeacher, { subject });
+  const add = useMutation(api.topics.addToMap);
+  const [name, setName] = useState("");
+  const [chapter, setChapter] = useState("");
+  const [note, setNote] = useState("");
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setNote("");
+    try {
+      const r = await add({ subject, name, chapter });
+      if (!r.ok) setNote(refusalWords(r.code));
+      else {
+        setName("");
+        setNote("Added. Your classes can find it on the desk.");
+      }
+    } catch (err) {
+      setNote(refusalWords(codeOf(err)));
+    }
+  }
+  return (
+    <Card className="space-y-3" data-testid="syllabus-map">
+      <h2 className="text-sm font-semibold">Syllabus map</h2>
+      <p className="text-xs text-mute">The topics of a subject by chapter, for your classes&apos; desk. Topics of your papers are here too.</p>
+      <form onSubmit={save} className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+        <Label text="Subject">
+          <SelectInput value={subject} onChange={(e) => setSubject(e.target.value)} data-testid="map-subject">
+            {SUBJECTS.map((code) => (
+              <option key={code} value={code}>
+                {SUBJECT_WORDS[code]}
+              </option>
+            ))}
+          </SelectInput>
+        </Label>
+        <Label text="Chapter">
+          <TextInput value={chapter} onChange={(e) => setChapter(e.target.value)} maxLength={60} data-testid="map-chapter" />
+        </Label>
+        <Label text="Topic">
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required data-testid="map-topic" />
+        </Label>
+        <Button type="submit" variant="quiet" data-testid="map-add">
+          Add topic
+        </Button>
+      </form>
+      {note && (
+        <p className="text-sm" role="status">
+          {note}
+        </p>
+      )}
+      {topics && topics.length > 0 && (
+        <ul className="grid gap-1 text-sm sm:grid-cols-2" data-testid="map-topics">
+          {topics.map((t) => (
+            <li key={t.topicId}>
+              {t.name}
+              <span className="text-xs text-mute">{t.chapter ? ` · ${t.chapter}` : ""}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </Card>
   );

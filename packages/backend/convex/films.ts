@@ -10,6 +10,8 @@ import { fail } from "./helpers";
 import { requireDhiAdmin, requireMember, type MemberContext } from "./houseAuth";
 import { refuseWhileSitting } from "./examLock";
 import { rateLimiter } from "./limits";
+import { subjectCodeOf, topicKeyOf } from "./sessionRules";
+import { MAX_LABEL } from "./papersRules";
 import { LINK_TTL_MS, progressAfter, playUrlOf, reachedEnd, uploadProblem, CHECKS_FOR_ACADEMIC } from "./moduleRules";
 
 const coverOk = (path: string): boolean => /^\/[A-Za-z0-9_\-/.]+\.(jpg|jpeg|png|webp)$/.test(path) && !path.includes("..") && !path.includes("//");
@@ -28,6 +30,9 @@ export const upload = mutation({
     durationSec: v.number(),
     scoreValue: v.number(),
     checks: v.array(checkArg),
+    // An academic film's subject and topic (house spec 0030), optional: the topic in the teachers' words, matched in each student's own institute.
+    subject: v.optional(v.string()),
+    topic: v.optional(v.string()),
   },
   returns: v.id("films"),
   handler: async (ctx, args) => {
@@ -35,6 +40,10 @@ export const upload = mutation({
     const problem = uploadProblem(args);
     if (problem) fail(problem);
     if (!coverOk(args.cover)) fail("bad_cover");
+    const subject = args.subject === undefined ? null : subjectCodeOf(args.subject);
+    const topic = args.topic?.trim() ?? "";
+    if (args.subject !== undefined && (subject === null || args.category !== "academic")) fail("bad_subject");
+    if (topic.length > 0 && (subject === null || [...topic].length > MAX_LABEL)) fail("bad_topic");
     const filmId = await ctx.db.insert("films", {
       title: args.title.trim(),
       category: args.category,
@@ -46,6 +55,8 @@ export const upload = mutation({
       status: "pending",
       uploadedBy: mc.member._id,
       createdAt: Date.now(),
+      ...(subject !== null ? { subject } : {}),
+      ...(topic.length > 0 ? { topic } : {}),
     });
     for (const [order, c] of args.checks.entries()) {
       await ctx.db.insert("filmChecks", { filmId, order, question: c.question.trim(), options: c.options.map((o) => o.trim()), rightOption: c.rightOption });
@@ -102,6 +113,10 @@ export const list = query({
         durationSec: v.number(),
         ratio: v.number(),
         kept: v.boolean(),
+        // A kept academic film's two checks (the questions and options, never the right ones) until the student answers them, then null; and how many
+        // they got right once answered (house spec 0030).
+        checks: v.union(v.null(), v.array(v.object({ question: v.string(), options: v.array(v.string()) }))),
+        checkRight: v.union(v.null(), v.number()),
       }),
     ),
     keptCount: v.number(),
@@ -122,7 +137,11 @@ export const list = query({
         keptCount += 1;
         score += f.scoreValue;
       }
+      const ask = kept && f.category === "academic" && row?.checkedAt === undefined;
+      const checks = ask ? (await ctx.db.query("filmChecks").withIndex("by_filmId", (q) => q.eq("filmId", f._id)).take(4)).sort((a, b) => a.order - b.order) : [];
       out.push({
+        checks: ask && checks.length > 0 ? checks.map((c) => ({ question: c.question, options: c.options })) : null,
+        checkRight: row?.checkRight ?? null,
         filmId: f._id,
         title: f.title,
         category: f.category,
@@ -230,5 +249,48 @@ export const finish = mutation({
       about: `film:${row._id}`,
     });
     return { ok: true as const, score: film.scoreValue, first: true };
+  },
+});
+
+// The student answers a kept academic film's two checks, once (the Master Spec's A16; house spec 0030). The right options are read here and never sent
+// before. One `modules.checked` event holds right of asked and, when the student's institute has the film's topic, its id (A17).
+export const answerChecks = mutation({
+  args: { filmId: v.id("films"), answers: v.array(v.number()) },
+  returns: v.union(v.object({ ok: v.literal(true), right: v.number(), rightOptions: v.array(v.number()) }), v.object({ ok: v.literal(false), code: v.string() })),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    await refuseWhileSitting(ctx, mc);
+    if (!(await rateLimiter.limit(ctx, "measureWrite", { key: mc.member._id })).ok) return { ok: false as const, code: "rate_limited" };
+    const film = await ctx.db.get(args.filmId);
+    if (!film || film.status !== "approved" || film.category !== "academic") return { ok: false as const, code: "not_found" };
+    const row = await ctx.db.query("filmProgress").withIndex("by_memberId_and_filmId", (q) => q.eq("memberId", mc.member._id).eq("filmId", film._id)).first();
+    if (!row || !row.scored) return { ok: false as const, code: "not_finished" };
+    if (row.checkedAt !== undefined) return { ok: false as const, code: "already_answered" };
+    const checks = (await ctx.db.query("filmChecks").withIndex("by_filmId", (q) => q.eq("filmId", film._id)).take(4)).sort((a, b) => a.order - b.order);
+    if (checks.length === 0 || args.answers.length !== checks.length) return { ok: false as const, code: "bad_answers" };
+    if (!args.answers.every((a, i) => Number.isInteger(a) && a >= 0 && a < checks[i].options.length)) return { ok: false as const, code: "bad_answers" };
+    const right = checks.filter((c, i) => args.answers[i] === c.rightOption).length;
+    const now = Date.now();
+    await ctx.db.patch(row._id, { checkAnswers: args.answers, checkRight: right, checkedAt: now });
+    let topic: Id<"paperTopics"> | null = null;
+    if (film.subject !== undefined && film.topic !== undefined && mc.member.instituteId !== undefined) {
+      const found = await ctx.db
+        .query("paperTopics")
+        .withIndex("by_instituteId_and_subject_and_key", (q) => q.eq("instituteId", mc.member.instituteId!).eq("subject", film.subject!).eq("key", topicKeyOf(film.topic!)))
+        .first();
+      topic = found?._id ?? null;
+    }
+    await recordEvent(ctx, {
+      by: mc,
+      memberId: mc.member._id,
+      room: "modules",
+      type: "modules.checked",
+      payload: { right, asked: checks.length, ...(topic !== null ? { topic } : {}) },
+      occurredAt: now,
+      eventKey: `filmcheck:${row._id}-0`,
+      about: `filmcheck:${row._id}`,
+    });
+    return { ok: true as const, right, rightOptions: checks.map((c) => c.rightOption) };
   },
 });

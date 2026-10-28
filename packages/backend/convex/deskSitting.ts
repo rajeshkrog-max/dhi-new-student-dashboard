@@ -19,9 +19,10 @@ const minutesOf = (s: Pick<Doc<"deskSittings">, "startedAt" | "lastAt">) => Math
 // Starts a sitting, or extends the open one when the gap since the last question is 15 minutes or less.
 export async function touchSitting(ctx: MutationCtx, member: Doc<"members">, now: number, kind: string): Promise<void> {
   const active = isActiveKind(kind) ? 1 : 0;
+  const doubt = kind === "chat" ? 1 : 0;
   const last = await ctx.db.query("deskSittings").withIndex("by_memberId_and_lastAt", (q) => q.eq("memberId", member._id)).order("desc").first();
   if (last && last.feedbackStatus === undefined && now - last.lastAt <= DESK_GAP_MS) {
-    await ctx.db.patch(last._id, { lastAt: now, turns: (last.turns ?? 0) + 1, activeTurns: (last.activeTurns ?? 0) + active });
+    await ctx.db.patch(last._id, { lastAt: now, turns: (last.turns ?? 0) + 1, activeTurns: (last.activeTurns ?? 0) + active, doubts: (last.doubts ?? 0) + doubt });
     return;
   }
   await ctx.db.insert("deskSittings", {
@@ -31,6 +32,7 @@ export async function touchSitting(ctx: MutationCtx, member: Doc<"members">, now
     lastAt: now,
     turns: 1,
     activeTurns: active,
+    doubts: doubt,
   });
 }
 
@@ -57,7 +59,7 @@ export const closeSittings = internalMutation({
       try {
         const turns = s.turns ?? 0;
         if (turns >= 1) {
-          await recordSystemEvent(ctx, { memberId: s.memberId, room: "desk", type: "desk.mode", payload: { turns: Math.min(turns, 100), active: Math.min(s.activeTurns ?? 0, 100) }, occurredAt: s.lastAt, eventKey: `desk:${s._id}-1`, about: `desk:${s._id}` });
+          await recordSystemEvent(ctx, { memberId: s.memberId, room: "desk", type: "desk.mode", payload: { turns: Math.min(turns, 100), active: Math.min(s.activeTurns ?? 0, 100), doubts: Math.min(s.doubts ?? 0, 100) }, occurredAt: s.lastAt, eventKey: `desk:${s._id}-1`, about: `desk:${s._id}` });
         }
         if (minutes >= 1) {
           await recordSystemEvent(ctx, { memberId: s.memberId, room: "desk", type: "desk.present", payload: { minutes: Math.min(minutes, 480) }, occurredAt: s.lastAt, eventKey: `desk:${s._id}-0`, about: `desk:${s._id}` });
@@ -112,6 +114,7 @@ export const answer = mutation({
         focus: args.focus,
         time: timeBandOf(s.startedAt),
         length: lengthBandOf(minutesOf(s)),
+        minutes: Math.min(minutesOf(s), 480),
         ...(args.subject !== undefined ? { subject: args.subject } : {}),
         ...(args.topicId !== undefined ? { topic: args.topicId } : {}),
       },

@@ -5,10 +5,13 @@
 // its words. `forCard` is the one public function: the student's own class, one subject, the newest topics. No staff function reads a student's tap.
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { fail } from "./helpers";
-import { requireMember } from "./houseAuth";
-import { isSubject, topicKeyOf, type Subject } from "./sessionRules";
+import { requireMember, teacherClassIds } from "./houseAuth";
+import { rateLimiter } from "./limits";
+import { CHAPTER_MAX } from "./learnRules";
+import { MAX_LABEL } from "./papersRules";
+import { isSubject, subjectCodeOf, topicKeyOf, type Subject } from "./sessionRules";
 
 // The most topics a card offers for one subject: the newest sent.
 export const CARD_TOPICS = 12;
@@ -63,5 +66,45 @@ export const forCard = query({
       if (topic && topic.instituteId === mc.member.instituteId) out.push({ topicId: topic._id, name: topic.name });
     }
     return out;
+  },
+});
+
+// ---- The topic map (Desk Design D1, map only; house spec 0031; owner 2026-10-28: no book is ingested until DHI holds a licence) ----
+
+// A teacher adds a topic to the syllabus map of a subject, with its chapter, for every class they teach. The topic is the same row a paper question with
+// the same words uses, so the map and the papers meet. The chapter is the teacher's words, up to 60 letters.
+export const addToMap = mutation({
+  args: { subject: v.string(), name: v.string(), chapter: v.string() },
+  returns: v.union(v.object({ ok: v.literal(true), topicId: v.id("paperTopics") }), v.object({ ok: v.literal(false), code: v.string() })),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "teacher" || mc.member.instituteId === undefined) fail("forbidden");
+    if (!(await rateLimiter.limit(ctx, "examWrite", { key: mc.member._id })).ok) return { ok: false as const, code: "slow_down" };
+    const subject = subjectCodeOf(args.subject);
+    const name = args.name.trim();
+    const chapter = args.chapter.trim();
+    if (subject === null) return { ok: false as const, code: "bad_subject" };
+    if (name.length === 0 || [...name].length > MAX_LABEL) return { ok: false as const, code: "bad_topic" };
+    if ([...chapter].length > CHAPTER_MAX) return { ok: false as const, code: "bad_chapter" };
+    const topicId = await ensureTopic(ctx, mc.member.instituteId, subject, name);
+    await ctx.db.patch(topicId, { inMap: true, ...(chapter.length > 0 ? { chapter } : {}) });
+    for (const classId of await teacherClassIds(ctx, mc.member._id)) await noteSent(ctx, classId, [{ topicId, subject }], Date.now());
+    return { ok: true as const, topicId };
+  },
+});
+
+// The map of one subject as the teacher's institute has it: every topic with its chapter and whether it was added to the map. No student in it.
+export const mapForTeacher = query({
+  args: { subject: v.string() },
+  returns: v.array(v.object({ topicId: v.id("paperTopics"), name: v.string(), chapter: v.union(v.string(), v.null()), inMap: v.boolean() })),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "teacher" || mc.member.instituteId === undefined) fail("forbidden");
+    if (!isSubject(args.subject)) return [];
+    const rows = await ctx.db
+      .query("paperTopics")
+      .withIndex("by_instituteId_and_subject_and_key", (q) => q.eq("instituteId", mc.member.instituteId!).eq("subject", args.subject))
+      .take(300);
+    return rows.map((t) => ({ topicId: t._id, name: t.name, chapter: t.chapter ?? null, inMap: t.inMap === true }));
   },
 });

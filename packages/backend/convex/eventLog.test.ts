@@ -721,7 +721,9 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
   // eventProof.ts is the development proof of the retry rule (AC-4); it needs the read helper to count what a race stored.
   // staffRead.ts counts, for a class total, which students have data of a kind in a month (house spec 0005, AC-23).
   const READ_HELPER_IMPORTERS: string[] = ["./eventProof.ts", "./staffRead.ts", "./moods.ts", "./habits.ts", "./sleep.ts", "./meals.ts", "./brainDay.ts"]; // moods.ts and sleep.ts read the current event to replace it (house specs 0006 and 0008)
-  const RECORD_ONLY_IMPORTERS: string[] = [];
+  // House specs 0030 and 0031: the paper's rubric on a confirmed mark, a resolved doubt, the desk's practice answers and a counseling booking write an
+  // event and read none.
+  const RECORD_ONLY_IMPORTERS: string[] = ["./papers.ts", "./desk.ts", "./learn.ts", "./counsel.ts"];
 
   test("covers AC-10: no app code updates or deletes an event, and only the log inserts one", () => {
     for (const [name, text] of app) {
@@ -752,7 +754,7 @@ describe("source scans (AC-10, AC-12, AC-14)", () => {
       }
       // eventProof.ts is the development proof; studyHour.ts writes presence minutes from its minute sweep when a seat is dropped (house spec 0015);
       // exams.ts closes the sittings whose window ended from its minute sweep (house spec 0012).
-      if (/\brecordSystemEvent\b/.test(c)) expect(name, "the system wrapper is for internal jobs").toMatch(/^\.\/(eventProof|studyHour|exams|deskSitting)\.ts$/);
+      if (/\brecordSystemEvent\b/.test(c)) expect(name, "the system wrapper is for internal jobs").toMatch(/^\.\/(eventProof|studyHour|exams|deskSitting|blog)\.ts$/); // blog.ts: a comment marked helpful by the post's author (house spec 0030)
     }
   });
 

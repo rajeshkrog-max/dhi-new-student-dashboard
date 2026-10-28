@@ -17,6 +17,8 @@ import {
   INPUT_COPY,
   ITEM_COPY,
   LAMP_COPY,
+  MEASURES_UI,
+  measureLines,
   LANGS,
   LANG_NAME,
   MOVE_COPY,
@@ -233,6 +235,23 @@ export function BrainReport({ onOpen }: { onOpen: (room: string) => void }) {
                 );
               })}
             </div>
+          </Card>
+
+          <Card className="space-y-3" data-testid="brain-measures">
+            <h2 className="text-base font-semibold">{MEASURES_UI[lang].title}</h2>
+            <p className="text-xs text-mute">{MEASURES_UI[lang].intro}</p>
+            {measureLines(data.measures, lang).length === 0 ? (
+              <p className="text-sm text-mute">{MEASURES_UI[lang].none}</p>
+            ) : (
+              <dl className="grid gap-2 sm:grid-cols-2">
+                {measureLines(data.measures, lang).map((r, i) => (
+                  <div key={`${r.id}-${i}`} className="rounded-control border border-home/15 bg-white/70 px-3 py-2" data-testid={`measure-${r.id}`}>
+                    <dt className="text-xs text-mute">{r.label}</dt>
+                    <dd className="text-sm font-medium">{r.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </Card>
 
           <Card className="space-y-3" data-testid="brain-log">

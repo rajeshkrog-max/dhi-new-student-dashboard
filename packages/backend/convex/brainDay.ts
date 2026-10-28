@@ -43,6 +43,14 @@ async function previousLightness(ctx: Reader, member: Doc<"members">, day: strin
   return undefined;
 }
 
+// Whether a paper sent to the student is due on a house day (E07's "day before a paper", house spec 0030). Read only on a day with a mood, from the
+// student's own attempts due that day, an indexed range (a few rows at most).
+async function paperDueOn(ctx: Reader, member: Doc<"members">, day: string): Promise<boolean> {
+  const { start, end } = dayBounds(day);
+  const attempts = await ctx.db.query("paperAttempts").withIndex("by_memberId_and_dueAt", (q) => q.eq("memberId", member._id).gte("dueAt", start).lt("dueAt", end)).take(10);
+  return attempts.some((a) => a.excused !== true);
+}
+
 // One student's values for one house day, worked out from the day's current events and the two facts the events cannot say.
 export async function valuesFor(ctx: Reader, member: Doc<"members">, day: string, now: number): Promise<DayValues> {
   return (await dayFor(ctx, member, day, now)).values;
@@ -62,6 +70,7 @@ export async function dayFor(ctx: Reader, member: Doc<"members">, day: string, n
     hourOpen: (await hourOpenOn(ctx, day)) && !sitting,
     finished: day < todayOf(now) && !paused,
     prevLightness: events.some((e) => e.type === "mood.logged") ? await previousLightness(ctx, member, day) : undefined,
+    paperDueNext: events.some((e) => e.type === "mood.logged") ? await paperDueOn(ctx, member, shiftDay(day, 1)) : undefined,
   });
   return { values, tags: tagsOfDay(events) };
 }

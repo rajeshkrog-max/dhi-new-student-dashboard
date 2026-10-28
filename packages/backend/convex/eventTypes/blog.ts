@@ -22,4 +22,6 @@ export const BLOG_EVENT_TYPES = [
   // to the post's author, who did not do it, so it is not a log). Both carry nothing: the count is the whole of it.
   defineEvent({ room: "blog", type: "blog.commented", version: 1, payload: {} }),
   defineEvent({ room: "blog", type: "blog.replied", version: 1, payload: {} }),
+  // `blog.helped`: the post's author marked the student's comment helpful (A19; house spec 0030). Written to the commenter; carries nothing.
+  defineEvent({ room: "blog", type: "blog.helped", version: 1, payload: {} }),
 ];

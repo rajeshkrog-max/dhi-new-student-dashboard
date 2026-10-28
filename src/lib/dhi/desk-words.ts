@@ -66,6 +66,8 @@ export const DRAW_PLACEHOLDER = "For example: parts of a plant cell";
 export const DRAW_BUTTON = "Draw a diagram (8 coins)";
 export const DRAW_NOTE =
   "The desk draws a simple labelled diagram. It can make mistakes, so check it against your book.";
+export const MODE_USE = "Where is it used";
+export const USE_NOTE = "Two or three places the idea shows up in daily life. A classmate's earlier answer on the same topic comes free.";
 export const DRAW_ALT = "A diagram made by the desk";
 export const WRITE_NOTE =
   "The desk tells you what works and what to improve. It does not rewrite your piece, so try the rewrite yourself.";
@@ -130,6 +132,8 @@ export const NEW_LINES: string[] = [
   DRAW_BUTTON,
   DRAW_NOTE,
   DRAW_ALT,
+  MODE_USE,
+  USE_NOTE,
   MODE_STORY,
   STORY_LABEL,
   STORY_BUTTON,

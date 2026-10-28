@@ -24,6 +24,8 @@ type Film = {
   durationSec: number;
   ratio: number;
   kept: boolean;
+  checks: { question: string; options: string[] }[] | null;
+  checkRight: number | null;
 };
 
 export function ModulesReal() {
@@ -220,7 +222,61 @@ function Player({ film, onBack }: { film: Film; onBack: () => void }) {
           {error}
         </p>
       )}
+      {kept && film.category === "academic" && <FilmChecks key={`${film.filmId}-${film.checks?.length ?? 0}`} film={film} />}
       <p className="text-xs text-mute">The house owns this film. You cannot upload here. It plays from where you stopped. The score lands when it ends.</p>
     </div>
+  );
+}
+
+// A kept academic film's two check questions (the Master Spec's A16; house spec 0030), answered once. The right options come back only after the answer.
+function FilmChecks({ film }: { film: Film }) {
+  const answer = useMutation(api.films.answerChecks);
+  const [picks, setPicks] = useState<(number | null)[]>(() => (film.checks ?? []).map(() => null));
+  const [result, setResult] = useState<{ right: number; rightOptions: number[] } | null>(null);
+  const [error, setError] = useState("");
+  const checks = film.checks;
+  if (!checks && film.checkRight === null) return null;
+  if (!checks || result) {
+    const right = result?.right ?? film.checkRight ?? 0;
+    return (
+      <p className="rounded-control bg-white/80 px-4 py-3 text-sm" data-testid="film-checks-done">
+        Check questions: {right} of {result?.rightOptions.length ?? 2} right. This counts only on your own Progress page.
+      </p>
+    );
+  }
+  async function send() {
+    setError("");
+    try {
+      const r = await answer({ filmId: film.filmId, answers: picks as number[] });
+      if (!r.ok) setError(r.code === "already_answered" ? "You have answered these already." : "We could not save your answers. Please try again.");
+      else setResult({ right: r.right, rightOptions: r.rightOptions });
+    } catch {
+      setError("We could not save your answers. Please try again.");
+    }
+  }
+  return (
+    <section className="space-y-3 rounded-card bg-white/80 p-4" data-testid="film-checks">
+      <h3 className="text-sm font-semibold">Two quick check questions</h3>
+      <p className="text-xs text-mute">They help you see what stayed with you. Only you see the result, on Progress.</p>
+      {checks.map((c, i) => (
+        <fieldset key={i} className="space-y-2">
+          <legend className="text-sm font-medium">{c.question}</legend>
+          {c.options.map((o, k) => (
+            <label key={k} className="tap flex items-center gap-3 rounded-control border border-home/15 bg-white/70 px-3 py-2 text-sm">
+              <input type="radio" name={`check-${i}`} checked={picks[i] === k} onChange={() => setPicks((xs) => xs.map((x, j) => (j === i ? k : x)))} data-testid="film-check-option" />
+              <span>{o}</span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
+      <button type="button" onClick={() => void send()} disabled={picks.some((x) => x === null)} className="h-11 rounded-full bg-grove px-4 text-sm font-medium text-paper disabled:opacity-40" data-testid="film-checks-send">
+        Check my answers
+      </button>
+      {error && (
+        <p className="text-sm text-red-700" role="alert">
+          {error}
+        </p>
+      )}
+    </section>
   );
 }

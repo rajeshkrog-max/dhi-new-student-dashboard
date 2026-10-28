@@ -362,3 +362,93 @@ export function patternText(id: string, lang: Lang, params: Params): { title: st
   const copy = (PATTERN_COPY as Record<string, Record<Lang, PatternCopy> | undefined>)[id]?.[lang];
   return copy ? { title: copy.title, text: copy.text(params), note: copy.note } : null;
 }
+
+// ---- Your measures (house spec 0030): the version 9 measures over the last 28 days, the student's own, plain measures that feed no lamp ----
+
+export type Measures = {
+  stress: string | null;
+  stressDays: number;
+  stressWhen: { paper: number; hours: number; other: number };
+  streak: { current: number; longest: number };
+  pace: number | null;
+  paceAnswers: number;
+  deskBySubject: { subject: string; share: number }[];
+  wrongWhy: { misread: number; careless: number; concept: number };
+  paperGain: number | null;
+  helpAsked: number;
+  understanding: number | null;
+  habitFeel: number | null;
+  filmCheck: { num: number; den: number };
+  filmEffect: { topic: string; before: number; after: number }[];
+  helpGiven: number;
+  doubts: { num: number; den: number };
+  recall7: { num: number; den: number };
+  oldMistakes: { num: number; den: number };
+  recallRounds: { num: number; den: number };
+  held: number;
+  weakFollowUp: { studied: number; wrong: number };
+};
+
+export const MEASURES_UI: Record<Lang, { title: string; intro: string; none: string }> = {
+  en: {
+    title: "Your measures",
+    intro: "Counts from your own last 28 days. They are only for you, and none of them is a score or compared with anyone.",
+    none: "Nothing to show yet. These fill in as you use the rooms.",
+  },
+  hi: {
+    title: "Aapke maap",
+    intro: "Aapke apne pichhle 28 dinon ki ginti. Ye sirf aapke liye hain, inme se koi score nahi hai aur kisi se tulna nahi hai.",
+    none: "Abhi dikhane ko kuch nahi. Rooms use karne par ye bharte jaayenge.",
+  },
+};
+
+const STRESS_WORD: Record<Lang, Record<string, string>> = {
+  en: { low: "low", moderate: "in the middle", high: "high" },
+  hi: { low: "kam", moderate: "beech mein", high: "zyada" },
+};
+const pct = (n: number, d: number) => `${Math.round((100 * n) / d)}%`;
+const shareText = (x: { num: number; den: number }, lang: Lang) => (lang === "en" ? `${x.num} of ${x.den}` : `${x.den} mein se ${x.num}`);
+const oneDecimal = (x: number) => (Math.round(x * 10) / 10).toString();
+
+// The rows to show, each a label and a value, only for measures with something behind them. Words for the numbers the server sent and nothing else.
+export function measureLines(m: Measures, lang: Lang): { id: string; label: string; value: string }[] {
+  const en = lang === "en";
+  const out: { id: string; label: string; value: string }[] = [];
+  const add = (id: string, label: [string, string], value: string) => out.push({ id, label: en ? label[0] : label[1], value });
+  if (m.stress !== null) add("E04", ["Stressed or heavy days", "Stress ya bhaari din"], `${STRESS_WORD[lang][m.stress] ?? m.stress} · ${en ? `${m.stressDays} mood days` : `${m.stressDays} mood din`}`);
+  const when = m.stressWhen.paper + m.stressWhen.hours + m.stressWhen.other;
+  if (when >= 3)
+    add(
+      "E07",
+      ["When those days came", "Wo din kab aaye"],
+      en
+        ? `${m.stressWhen.paper} the day before a paper, ${m.stressWhen.hours} after 3 or more study hours, ${m.stressWhen.other} other days`
+        : `${m.stressWhen.paper} paper se pehle wale din, ${m.stressWhen.hours} 3 ya zyada ghante padhai ke baad, ${m.stressWhen.other} baaki din`,
+    );
+  if (m.streak.longest > 0) add("H09", ["Days in a row (one missed day a week is fine)", "Lagataar din (hafte mein ek din chhootna theek hai)"], en ? `${m.streak.current} now, ${m.streak.longest} the longest` : `abhi ${m.streak.current}, sabse lamba ${m.streak.longest}`);
+  if (m.pace !== null && m.paceAnswers > 0) add("A08", ["Time on a paper's choice question", "Paper ke choice sawaal par samay"], en ? `about ${Math.round(m.pace)} seconds an answer, over ${m.paceAnswers} answers` : `lagbhag ${Math.round(m.pace)} second ek jawab, ${m.paceAnswers} jawabon par`);
+  const wrong = m.wrongWhy.misread + m.wrongWhy.careless + m.wrongWhy.concept;
+  if (wrong > 0)
+    add(
+      "A07",
+      ["Answers to look at again", "Dobara dekhne wale jawab"],
+      en
+        ? `${m.wrongWhy.misread} read too quickly, ${m.wrongWhy.careless} a slip on a topic you know, ${m.wrongWhy.concept} an idea still settling`
+        : `${m.wrongWhy.misread} jaldi padha, ${m.wrongWhy.careless} jaane hue topic par chook, ${m.wrongWhy.concept} idea abhi baith raha hai`,
+    );
+  if (m.paperGain !== null) add("A20", ["The repeat paper against the first", "Dohraaya paper pehle ke saamne"], en ? `${m.paperGain > 0 ? "+" : ""}${m.paperGain} points` : `${m.paperGain > 0 ? "+" : ""}${m.paperGain} ank`);
+  if (m.understanding !== null) add("A03", ["Your teacher's note on written answers (out of 4)", "Likhe jawabon par teacher ka note (4 mein se)"], oneDecimal(m.understanding));
+  if (m.deskBySubject.length > 0) add("A11", ["Desk time by subject", "Vishay ke hisaab se desk ka samay"], m.deskBySubject.map((d) => `${SUBJECT_NAME[lang][d.subject] ?? d.subject} ${Math.round(d.share * 100)}%`).join(", "));
+  if (m.doubts.den > 0) add("A18", ["Doubts you marked solved", "Doubts jo aapne solve mark kiye"], shareText(m.doubts, lang));
+  if (m.recall7.den > 0) add("A04", ["Right a week or more later", "Ek hafte ya zyada baad sahi"], `${shareText(m.recall7, lang)} · ${pct(m.recall7.num, m.recall7.den)}`);
+  if (m.oldMistakes.den > 0) add("A05", ["Old wrong answers now right", "Purane galat jawab ab sahi"], shareText(m.oldMistakes, lang));
+  if (m.recallRounds.den > 0) add("A13", ["Remember rounds", "Yaad karne ke round"], `${shareText(m.recallRounds, lang)} · ${pct(m.recallRounds.num, m.recallRounds.den)}`);
+  if (m.held > 0) add("A09", ["Topics now holding in memory", "Yaad mein tike topic"], String(m.held));
+  if (m.weakFollowUp.wrong > 0) add("A14", ["Topics from a paper you went back to within 3 days", "Paper ke topic jin par 3 din mein wapas gaye"], shareText({ num: m.weakFollowUp.studied, den: m.weakFollowUp.wrong }, lang));
+  if (m.filmCheck.den > 0) add("A16", ["Film check questions right", "Film ke check sawaal sahi"], shareText(m.filmCheck, lang));
+  for (const e of m.filmEffect) add("A17", [`${e.topic} on papers, the week before a film and the week after`, `${e.topic} papers par, film se pehle ka hafta aur baad ka`], `${Math.round(e.before * 100)}% · ${Math.round(e.after * 100)}%`);
+  if (m.habitFeel !== null) add("H10", ["How automatic your habits feel (out of 7)", "Habits kitni apne aap hoti lagti hain (7 mein se)"], oneDecimal(m.habitFeel));
+  if (m.helpGiven > 0) add("A19", ["Comments a classmate found helpful", "Comments jo kisi saathi ko kaam aaye"], String(m.helpGiven));
+  if (m.helpAsked > 0) add("E17", ["Times you booked a counselor", "Counselor ke saath samay book kiya"], String(m.helpAsked));
+  return out;
+}

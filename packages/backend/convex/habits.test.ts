@@ -426,7 +426,7 @@ describe("export and erase (AC-10)", () => {
     expect(rows).toHaveLength(30);
     expect(rows[0]).toMatchObject({ title: "plan 0", removedOn: null });
     expect(rows[0].ticks).toHaveLength(3); // days 0, 2 and 4 of the six are lit
-    expect(Object.keys(rows[0]).sort()).toEqual(["color", "endOn", "kind", "removedOn", "startOn", "ticks", "title"]);
+    expect(Object.keys(rows[0]).sort()).toEqual(["color", "endOn", "feels", "kind", "removedOn", "startOn", "ticks", "title"]);
     expect(JSON.stringify(rows)).not.toContain("not mine");
   });
 

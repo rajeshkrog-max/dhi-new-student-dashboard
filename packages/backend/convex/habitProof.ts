@@ -5,10 +5,11 @@
 //   npx convex run habitProof:race '{"attempts":8}'
 // It leaves its made up student on the development deployment. Nothing here is part of the app.
 import { v } from "convex/values";
+
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { env, internalAction, internalMutation, internalQuery } from "./_generated/server";
-import { dayOf } from "./dayRules";
+import { dayOf, shiftDay } from "./dayRules";
 import { fail } from "./helpers";
 import { HABIT_COLORS } from "./habitRules";
 import { tickFor } from "./habits";
@@ -62,5 +63,19 @@ export const race = internalAction({
     );
     const c: { checks: number; events: number; currentEvents: number } = await ctx.runQuery(internal.habitProof.counts, { memberId });
     return { attempts: n, ok: results.filter((r) => r.ok).length, refused: results.filter((r) => !r.ok).length, ...c };
+  },
+});
+
+// An open made up habit for the student, so the weekly feels check shows (the habits room's own add needs the screen's form).
+export const habitFor = internalMutation({
+  args: { email: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    if (env.TEST_SIGNIN_ENABLED !== "true") fail("proof_disabled");
+    const member = await ctx.db.query("members").withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase())).first();
+    if (!member || member.role !== "student" || !member.instituteId) fail("not_found");
+    const today = dayOf(Date.now());
+    await ctx.db.insert("habitPlans", { memberId: member._id, instituteId: member.instituteId, kind: "water", title: "Drink water (made up)", color: "#3d6ea8", startOn: today, endOn: shiftDay(today, 20) });
+    return null;
   },
 });

@@ -15,6 +15,8 @@ const HABIT_REFUSALS: Record<string, string> = {
   too_many_flips: "You have changed this one many times today. Let it rest until tomorrow.",
   not_open: "This habit is not open today.",
   not_found: "We could not find that habit.",
+  already_rated: "You have answered for this habit this week. It opens again next Monday.",
+  bad_items: "Please pick a number from 1 to 7 for each line.",
   rate_limited: "That was too many taps for now. Please wait a little and try again.",
   day_full: "Today is full for now. Please try again tomorrow.",
   member_inactive: "Your access is paused. Please ask your institute.",
@@ -34,4 +36,18 @@ export const FINISHED_NOTE = "These ran their course. Their days stay as they we
 export const DRAFT_NOTE = "Draft words. The new notices on this page are not approved yet.";
 
 // Every new line, for the copy test.
-export const NEW_LINES: string[] = [...Object.values(HABIT_REFUSALS), DAY_MOVED_ON, startsOn("1 Jan"), FINISHED_TITLE, FINISHED_NOTE, DRAFT_NOTE];
+// The weekly habit feels check (the Master Spec's H10; house spec 0030): four lines about how automatic a habit feels, each 1 to 7. Only for the student.
+export const FEELS_TITLE = "How automatic does it feel?";
+export const FEELS_NOTE = "Once a week, about 20 seconds. Only you see this, on Progress.";
+export const FEELS_HABIT = "Habit";
+export const FEELS_ITEMS = [
+  "I do it without having to remember.",
+  "I do it without thinking much.",
+  "I start it before I notice.",
+  "It feels odd not to do it.",
+];
+export const FEELS_SCALE = "1 is not at all, 7 is fully";
+export const FEELS_SAVE = "Save for this week";
+export const FEELS_DONE = "Saved for this week. It opens again next Monday.";
+
+export const NEW_LINES: string[] = [...Object.values(HABIT_REFUSALS), DAY_MOVED_ON, startsOn("1 Jan"), FINISHED_TITLE, FINISHED_NOTE, DRAFT_NOTE, FEELS_TITLE, FEELS_NOTE, FEELS_HABIT, ...FEELS_ITEMS, FEELS_SCALE, FEELS_SAVE, FEELS_DONE];

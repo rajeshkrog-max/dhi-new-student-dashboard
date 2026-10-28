@@ -12,6 +12,9 @@ import { staffRead } from "./staffRead";
 import { markProblem, paperProblem, totalOf, windowProblem, type QuestionInput } from "./papersRules";
 import { subjectCodeOf } from "./sessionRules";
 import { ensureTopic, noteSent } from "./topics";
+import { recordEvent } from "./eventLog";
+
+const RUBRIC_MAX = 4;
 
 const questionArg = v.union(
   v.object({
@@ -35,9 +38,11 @@ const questionArg = v.union(
   }),
 );
 
-// Builds a paper for the teacher who signs in. Only a teacher can build one.
+// Builds a paper for the teacher who signs in. Only a teacher can build one. `bank` makes a practice bank paper (house spec 0031): it is never sent, and its
+// questions are on the desk at once for the teacher's classes. `matchOf` names an earlier paper of the same teacher, already sent, that this one repeats,
+// for the day 21 gain (A20; house spec 0030).
 export const create = mutation({
-  args: { title: v.string(), questions: v.array(questionArg) },
+  args: { title: v.string(), questions: v.array(questionArg), bank: v.optional(v.boolean()), matchOf: v.optional(v.id("papers")) },
   returns: v.id("papers"),
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
@@ -47,17 +52,25 @@ export const create = mutation({
     // The subject is one of the fixed list (house spec 0028), so a desk or study hour card can name the same one.
     if (args.questions.some((q) => subjectCodeOf(q.subject) === null)) fail("bad_question");
     const instituteId = mc.member.instituteId as NonNullable<typeof mc.member.instituteId>;
+    if (args.matchOf !== undefined) {
+      if (args.bank === true) fail("bad_match");
+      const earlier = await ctx.db.get(args.matchOf);
+      if (!earlier || earlier.teacherMemberId !== mc.member._id || earlier.instituteId !== instituteId || earlier.status !== "sent") fail("bad_match");
+    }
     const paperId = await ctx.db.insert("papers", {
       teacherMemberId: mc.member._id,
       instituteId,
       title: args.title.trim(),
-      status: "draft",
+      status: args.bank === true ? "bank" : "draft",
       createdAt: Date.now(),
+      ...(args.matchOf !== undefined ? { matchOf: args.matchOf } : {}),
     });
+    const bankTopics: { topicId: Id<"paperTopics">; subject: string }[] = [];
     for (const [order, q] of (args.questions as QuestionInput[]).entries()) {
       const hint = q.hint?.trim();
       const subject = subjectCodeOf(q.subject)!;
       const topicId = await ensureTopic(ctx, instituteId, subject, q.topic);
+      bankTopics.push({ topicId, subject });
       if (q.kind === "mcq") {
         await ctx.db.insert("paperQuestions", {
           paperId,
@@ -87,6 +100,10 @@ export const create = mutation({
         });
       }
     }
+    // A bank paper's topics are on the desk of every class the teacher teaches, at once.
+    if (args.bank === true) {
+      for (const classId of await teacherClassIds(ctx, mc.member._id)) await noteSent(ctx, classId, bankTopics, Date.now());
+    }
     return paperId;
   },
 });
@@ -115,6 +132,8 @@ export const send = mutation({
     const window = windowProblem(args.opensAt, args.dueAt, Date.now());
     if (window) fail(window);
     const paper = await ownPaper(ctx, mc.member._id, mc.member.instituteId, args.paperId);
+    // A practice bank paper's answers are shown on the desk, so it can never be sent as a paper (house spec 0031).
+    if (paper.status === "bank") fail("bank_paper");
     const mine = await teacherClassIds(ctx, mc.member._id);
 
     const students: Doc<"members">[] = [];
@@ -400,7 +419,13 @@ export const studentForTeacher = mutation({
 
 // A teacher marks a long answer by hand, with remarks. The teacher is the paper's teacher, or a teacher of the student's class.
 export const markLong = mutation({
-  args: { attemptId: v.id("paperAttempts"), marks: v.array(v.object({ question: v.number(), mark: v.number() })), remarks: v.string() },
+  args: {
+    attemptId: v.id("paperAttempts"),
+    marks: v.array(v.object({ question: v.number(), mark: v.number() })),
+    remarks: v.string(),
+    // The rubric on written answers (A03; house spec 0030), optional: understanding, structure and expression, each 0 to 4.
+    rubrics: v.optional(v.array(v.object({ question: v.number(), u: v.number(), s: v.number(), e: v.number() }))),
+  },
   returns: v.object({ ok: v.literal(true) }),
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
@@ -418,7 +443,13 @@ export const markLong = mutation({
       if (markProblem(m.mark, q.maxMarks ?? 0)) fail("bad_mark");
     }
     if ([...args.remarks].length > 1000) fail("bad_remarks");
-    await ctx.db.patch(args.attemptId, { marks: args.marks, remarks: args.remarks.trim(), status: "marked", markedBy: mc.member._id, markedAt: Date.now() });
+    const rubrics = args.rubrics ?? [];
+    if (new Set(rubrics.map((r) => r.question)).size !== rubrics.length) fail("bad_rubric");
+    for (const r of rubrics) {
+      const q = questions.find((x) => x.order === r.question);
+      if (!q || q.kind !== "long" || ![r.u, r.s, r.e].every((x) => Number.isInteger(x) && x >= 0 && x <= RUBRIC_MAX)) fail("bad_rubric");
+    }
+    await ctx.db.patch(args.attemptId, { marks: args.marks, remarks: args.remarks.trim(), status: "marked", markedBy: mc.member._id, markedAt: Date.now(), rubrics });
     return { ok: true as const };
   },
 });
@@ -434,7 +465,27 @@ export const confirm = mutation({
     if (!attempt) fail("not_found");
     await authorizeAttempt(ctx, mc.member._id, attempt);
     if (attempt.status !== "marked") fail("not_marked");
-    await ctx.db.patch(args.attemptId, { status: "confirmed", confirmedAt: Date.now() });
+    const now = Date.now();
+    await ctx.db.patch(args.attemptId, { status: "confirmed", confirmedAt: now });
+    // The rubric reaches the student's Brain as A03 (house spec 0030), written by the teacher, on the day the mark is confirmed. A refusal of the log (a
+    // student who withdrew) never stops the confirmation.
+    const rubrics = attempt.rubrics ?? [];
+    if (rubrics.length > 0) {
+      try {
+        await recordEvent(ctx, {
+          by: mc,
+          memberId: attempt.memberId,
+          room: "exams",
+          type: "exams.remarked",
+          payload: { rubricSum: rubrics.reduce((s, r) => s + r.u + r.s + r.e, 0), rubricN: rubrics.length * 3 },
+          occurredAt: now,
+          eventKey: `remark:${attempt._id}-0`,
+          about: `remark:${attempt._id}`,
+        });
+      } catch {
+        // The mark is confirmed whatever the log says.
+      }
+    }
     return { ok: true as const };
   },
 });

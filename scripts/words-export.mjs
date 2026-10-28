@@ -13,7 +13,9 @@ const ROOMS = [
   { title: "Habits room", file: "./src/lib/dhi/habits/words.ts", gate: "HABIT_WORDS_APPROVED" },
   { title: "Sleep room", file: "./src/lib/dhi/sleep-words.ts", gate: "SLEEP_WORDS_APPROVED" },
   { title: "DHI desk: the screen", file: "./src/lib/dhi/desk-words.ts", gate: "DESK_WORDS_APPROVED" },
-  { title: "DHI desk: the instructions given to the model", file: "./packages/backend/convex/deskRules.ts", pick: ["DESK_SYSTEM_PROMPT", "WRITE_SYSTEM_PROMPT", "PAPER_SYSTEM_PROMPT", "MOCK_SYSTEM_PROMPT", "STORY_SYSTEM_PROMPT", "DRAW_SYSTEM_PROMPT"], gate: "DESK_WORDS_APPROVED" },
+  { title: "DHI desk: the instructions given to the model", file: "./packages/backend/convex/deskRules.ts", pick: ["DESK_SYSTEM_PROMPT", "WRITE_SYSTEM_PROMPT", "PAPER_SYSTEM_PROMPT", "MOCK_SYSTEM_PROMPT", "STORY_SYSTEM_PROMPT", "DRAW_SYSTEM_PROMPT", "USE_SYSTEM_PROMPT"], gate: "DESK_WORDS_APPROVED" },
+  { title: "DHI desk: the Learn panel (topics, practice, Fix, Remember, written answers, the plan)", file: "./src/lib/dhi/learn-words.ts", gate: "DESK_WORDS_APPROVED" },
+  { title: "DHI desk: the instruction for marking a written answer", file: "./packages/backend/convex/learnRules.ts", pick: ["MARK_SYSTEM_PROMPT"], gate: "DESK_WORDS_APPROVED" },
   { title: "Counseling (the room, the call and the counselor's Sessions)", file: "./src/lib/dhi/counsel-words.ts", gate: "COUNSEL_WORDS_APPROVED" },
   { title: "School report (the staff area)", file: "./src/lib/dhi/school-words.ts", gate: "SCHOOL_WORDS_APPROVED" },
   { title: "The staff houses (home, overview, counselors, a student's papers)", file: "./src/lib/dhi/staff-words.ts", gate: "STAFF_WORDS_APPROVED" },
@@ -22,7 +24,7 @@ const ROOMS = [
   { title: "The weekly parent page and the link on Your data", file: "./src/lib/dhi/parent-words.ts", gate: "PARENT_WORDS_APPROVED" },
 ];
 // Not words: switches, lists of codes, helpers that return a boolean.
-const SKIP = /^(.*_APPROVED|LANGS|isLang|isEvidenceItem|PARENT_LAMP_ORDER|NEW_LINES|HELPLINE_NUMBER|gunaOf|roomName|codeOf|refusalWords|badRowWords|moodRefusal|deskRefusal)$/;
+const SKIP = /^(.*_APPROVED|LANGS|isLang|isEvidenceItem|PARENT_LAMP_ORDER|NEW_LINES|HELPLINE_NUMBER|gunaOf|roomName|codeOf|refusalWords|badRowWords|moodRefusal|deskRefusal|learnRefusal|LEARN_LINES)$/;
 // A sample value for a wording function: it reads as {value} in words and as 7 in sums, and any field of it is another sample (so {a}, {n} work).
 const sample = (label) =>
   new Proxy(function () {}, {

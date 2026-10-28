@@ -84,7 +84,7 @@ const rowsOf = (w: World, p: Person) =>
 
 describe("the pure rules", () => {
   test("prices follow the spec and a clarifying question is free", () => {
-    expect(PRICES).toEqual({ chat: 1, clarify: 0, write: 2, paper: 2, mock: 4, story: 5, draw: 8 });
+    expect(PRICES).toEqual({ chat: 1, clarify: 0, write: 2, paper: 2, mock: 4, story: 5, draw: 8, use: 2 });
   });
   test("a question is cleaned and keyed so small differences meet", () => {
     expect(cleanQuestion("  What   is torque? ")).toBe("What is torque?");
@@ -289,12 +289,12 @@ describe("a study story (the Story kind)", () => {
     for (const secret of ["Alpha", "alpha.test", String(w.s.memberId)]) expect(text).not.toContain(secret);
   });
 
-  test("never cached, refused with 4 coins, the care text applies, and a failed call returns the 5 coins", async () => {
+  test("stored once and reused for a classmate for 0 coins (house spec 0031), refused with 4 coins, the care text applies, and a failed call returns the 5 coins", async () => {
     const w = await world();
     await okAsk(w.s, "fractions", { kind: "story" });
-    await okAsk(w.s2, "fractions", { kind: "story" });
-    expect(sent).toHaveLength(2);
-    expect(await w.t.run((ctx) => ctx.db.query("deskCache").take(10))).toEqual([]);
+    expect(await okAsk(w.s2, "fractions", { kind: "story" })).toMatchObject({ cached: true, balance: 60 });
+    expect(sent).toHaveLength(1);
+    expect(await w.t.run((ctx) => ctx.db.query("deskCache").take(10))).toHaveLength(1);
     await setBalance(w, w.s, 4);
     expect(await ask(w.s, "decimals", { kind: "story" })).toEqual({ ok: false, code: "not_enough_coins" });
     await setBalance(w, w.s, 20);
@@ -402,13 +402,13 @@ describe("a diagram (the Draw kind)", () => {
     expect(turns.every((x) => x.answer === undefined)).toBe(true);
   });
 
-  test("never cached, refused with 7 coins, the care text applies, and asking about it afterwards is free", async () => {
+  test("stored once and reused for a classmate (house spec 0031), refused with 7 coins, the care text applies, and asking about it afterwards is free", async () => {
     const w = await world();
     modelContent = diagram;
     const d = await okAsk(w.s, "cell", { kind: "draw" });
-    await okAsk(w.s2, "cell", { kind: "draw" });
-    expect(sent).toHaveLength(2);
-    expect(await w.t.run((ctx) => ctx.db.query("deskCache").take(10))).toEqual([]);
+    expect(await okAsk(w.s2, "cell", { kind: "draw" })).toMatchObject({ cached: true });
+    expect(sent).toHaveLength(1);
+    expect(await w.t.run((ctx) => ctx.db.query("deskCache").take(10))).toHaveLength(1);
     modelContent = null;
     const c = await okAsk(w.s, "What is the cell wall for?", { kind: "clarify", threadId: d.threadId });
     expect(c.balance).toBe(52);
@@ -526,8 +526,9 @@ describe("coins (AC-2, AC-4, AC-5)", () => {
   test("covers AC-4: no function lets a student buy coins or change their own balance", async () => {
     const w = await world();
     const desk = await import("./desk");
-    const names = Object.keys(desk).filter((n) => !["deskReady", "sweepPendingHasWork"].includes(n)); // helpers, not functions
-    expect(names.sort()).toEqual(["abandon", "allot", "allotment", "begin", "finish", "open", "removeThread", "sweepPending", "thread", "threads", "wallet"]);
+    const names = Object.keys(desk).filter((n) => !["deskReady", "sweepPendingHasWork", "walletFor", "reserveModelCall", "RESOLVE_DAYS"].includes(n)); // helpers, not functions
+    // `resolve` marks an answer as solving a doubt (house spec 0030) and never touches the wallet.
+    expect(names.sort()).toEqual(["abandon", "allot", "allotment", "begin", "finish", "open", "removeThread", "resolve", "sweepPending", "thread", "threads", "wallet"]);
     expect(await refusal(w.s.as.mutation(api.desk.allot, { monthlyCoins: 1000 }))).toBe("forbidden");
   });
 

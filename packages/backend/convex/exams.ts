@@ -17,6 +17,7 @@ import { hasOpenSitting } from "./examLock";
 import { rateLimiter } from "./limits";
 import { isOpenAt } from "./papersRules";
 import { pausedWithin } from "./pauseHistory";
+import { MAX_ANSWER_SEC, PACE_MIN, medianOf, mistakeOf, type Mistake } from "./learnRules";
 
 const MAX_LONG_ANSWER = 2000;
 // Attempts closed in one run for each status. Closing writes the attempt and an event (about 30 documents read), so a run stays well inside a
@@ -79,8 +80,57 @@ async function tally(ctx: QueryCtx | MutationCtx, paperId: Id<"papers">, answers
 // sitting ended: the student's press, or the due time of a closed window. A sitting with nothing answered is a miss. `strict` lets the log's refusal
 // stop the call (the student's own Submit); a closing done for a window that ended carries on without the event, because the room's own row is the
 // record and a stuck close would stay open for ever. The log checks everything before it writes, so a refused event leaves nothing half written.
+// Why each wrong multiple choice answer went wrong (the Master Spec's rule 6, A07; house spec 0030), and the seconds of the timed answers (A08). The
+// careless rule reads the student's last answers on the topic and their own median time from before this paper, so it is worked out before the paper
+// enters their learning state (learn.fromPaper, scheduled below).
+async function mistakesOf(ctx: MutationCtx, attempt: Doc<"paperAttempts">, cache?: Questions) {
+  const questions = await questionsOf(ctx, attempt.paperId, cache);
+  const pace = new Map((attempt.paceLog ?? []).map((p) => [p.question, p.sec]));
+  const stats = await ctx.db.query("learnStats").withIndex("by_memberId", (q) => q.eq("memberId", attempt.memberId)).first();
+  const median = (stats?.paceRecent.length ?? 0) >= PACE_MIN ? medianOf(stats!.paceRecent) : null;
+  const recentOf = new Map<string, boolean[]>();
+  const counts: Record<Mistake, number> = { misread: 0, careless: 0, concept: 0 };
+  let paceSec = 0;
+  let paceN = 0;
+  for (const a of attempt.answers ?? []) {
+    const q = questions.find((x) => x.order === a.question);
+    if (!q || q.kind !== "mcq" || a.choice === undefined) continue;
+    const sec = pace.get(a.question) ?? null;
+    if (sec !== null) {
+      paceSec += sec;
+      paceN += 1;
+    }
+    if (a.choice === q.rightOption) continue;
+    let recent: boolean[] = [];
+    if (q.topicId) {
+      if (!recentOf.has(q.topicId)) {
+        const s = await ctx.db.query("learnTopics").withIndex("by_memberId_and_topicId", (x) => x.eq("memberId", attempt.memberId).eq("topicId", q.topicId!)).first();
+        recentOf.set(q.topicId, s?.recent ?? []);
+      }
+      recent = recentOf.get(q.topicId)!;
+    }
+    counts[mistakeOf(q.tags?.[a.choice] ?? null, recent, sec, median)] += 1;
+  }
+  return { counts, paceSec: Math.min(paceSec, 30000), paceN };
+}
+
+// The gain in points over the earlier paper this one repeats (A20, the day 21 matched paper): this paper's share right minus the earlier one's, for a
+// student who sat both with multiple choice answers. Null otherwise.
+async function gainOf(ctx: MutationCtx, attempt: Doc<"paperAttempts">, tried: number, right: number): Promise<number | null> {
+  if (tried === 0) return null;
+  const paper = await ctx.db.get(attempt.paperId);
+  if (!paper?.matchOf) return null;
+  const earlier = await ctx.db.query("paperAttempts").withIndex("by_paperId_and_memberId", (q) => q.eq("paperId", paper.matchOf!).eq("memberId", attempt.memberId)).first();
+  if (!earlier || earlier.status === "assigned" || earlier.status === "open" || earlier.missed === true || earlier.excused === true) return null;
+  const before = await tally(ctx, earlier.paperId, earlier.answers ?? []);
+  if (before.tried === 0) return null;
+  return Math.max(-100, Math.min(100, Math.round((100 * right) / tried - (100 * before.right) / before.tried)));
+}
+
 async function finishAttempt(ctx: MutationCtx, attempt: Doc<"paperAttempts">, by: Closer, at: number, auto: boolean, strict: boolean, cache?: Questions): Promise<void> {
   const { tried, right, longDone, byTopic } = await tally(ctx, attempt.paperId, attempt.answers ?? [], cache);
+  const why = tried > 0 ? await mistakesOf(ctx, attempt, cache) : null;
+  const gain = await gainOf(ctx, attempt, tried, right);
   const topics = [...byTopic.entries()].slice(0, TOPICS_IN_EVENT);
   const missed = tried + longDone === 0;
   await ctx.db.patch(attempt._id, { status: "submitted", submittedAt: at, autoSubmitted: auto, missed, mcqCorrect: right });
@@ -98,6 +148,9 @@ async function finishAttempt(ctx: MutationCtx, attempt: Doc<"paperAttempts">, by
           longDone,
           hints: (attempt.hintsOpened ?? []).length,
           ...(topics.length > 0 ? { topics: topics.map(([id]) => id), topicTried: topics.map(([, t]) => t.tried), topicRight: topics.map(([, t]) => t.right) } : {}),
+          ...(why ? { wrongMisread: why.counts.misread, wrongCareless: why.counts.careless, wrongConcept: why.counts.concept } : {}),
+          ...(why && why.paceN > 0 ? { paceSec: why.paceSec, paceN: why.paceN } : {}),
+          ...(gain !== null ? { gain } : {}),
         },
     occurredAt: at,
     eventKey: `${about}-0`,
@@ -109,6 +162,8 @@ async function finishAttempt(ctx: MutationCtx, attempt: Doc<"paperAttempts">, by
   } catch (error) {
     if (strict) throw error;
   }
+  // The paper's multiple choice answers enter the student's learning state (the desk's mastery, recall and Fix; house spec 0031) in their own step.
+  if (!missed && tried > 0) await ctx.scheduler.runAfter(0, internal.learn.fromPaper, { attemptId: attempt._id });
 }
 
 // Closes a window that has ended. An open attempt is submitted with what it holds; an attempt with no answers, or one never started, is a miss, except
@@ -263,7 +318,18 @@ export const answer = mutation({
       next = { question: args.question, text: args.text };
     }
     const others = (attempt.answers ?? []).filter((a) => a.question !== args.question);
-    await ctx.db.patch(attempt._id, { answers: [...others, next] });
+    // The time of a multiple choice answer (A08; house spec 0030): from the last answer saved (or the start) to this question's first choice, up to 10
+    // minutes. A changed choice keeps the first time.
+    const now = Date.now();
+    const pace = attempt.paceLog ?? [];
+    const timed = q.kind === "mcq" && !pace.some((p) => p.question === args.question) && !(attempt.answers ?? []).some((a) => a.question === args.question && a.choice !== undefined);
+    const since = attempt.lastAnswerAt ?? attempt.startedAt ?? now;
+    const sec = Math.round((now - since) / 1000);
+    await ctx.db.patch(attempt._id, {
+      answers: [...others, next],
+      lastAnswerAt: now,
+      ...(timed && sec > 0 && sec <= MAX_ANSWER_SEC ? { paceLog: [...pace, { question: args.question, sec }] } : {}),
+    });
     return { ok: true as const };
   },
 });

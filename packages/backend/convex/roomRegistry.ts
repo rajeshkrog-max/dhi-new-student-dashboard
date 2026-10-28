@@ -18,6 +18,7 @@ import { sleepRoom } from "./sleepRoom";
 import { brainRoom } from "./brainRoom";
 import { deskRoom } from "./deskRoom";
 import { counselRoom } from "./counselRoom";
+import { learnRoom } from "./learnRoom";
 
 export type ExportPage = { rows: unknown[]; next: string | null };
 export type ErasePage = { deleted: number; done: boolean };
@@ -33,7 +34,7 @@ export type RoomEntry = {
 };
 
 // Each room row adds its entry when the room moves to the backend. The mood room (house spec 0006) is the first; the rest still run on demo data.
-export const ROOM_ENTRIES: readonly RoomEntry[] = [moodRoom, habitRoom, sleepRoom, examRoom, blogRoom, mealsRoom, filmRoom, hourRoom, brainRoom, deskRoom, counselRoom];
+export const ROOM_ENTRIES: readonly RoomEntry[] = [moodRoom, habitRoom, sleepRoom, examRoom, blogRoom, mealsRoom, filmRoom, hourRoom, brainRoom, deskRoom, learnRoom, counselRoom];
 
 export const EXPORT_PAGE = 100;
 export const ERASE_PAGE = 100;

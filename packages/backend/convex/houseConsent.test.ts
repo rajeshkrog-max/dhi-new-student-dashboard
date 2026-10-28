@@ -691,7 +691,7 @@ describe("export (AC-12, AC-16)", () => {
       if (r.next === null) break;
       cursor = r.next;
     }
-    expect(sections.map((s) => s.section).filter((x) => x !== "events")).toEqual(["header", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk", "counsel"]); // each room adds its own (empty here) section after the events
+    expect(sections.map((s) => s.section).filter((x) => x !== "events")).toEqual(["header", "mood", "habits", "sleep", "exams", "blog", "blog", "meals", "modules", "hour", "brain", "desk", "desk", "counsel"]); // each room adds its own (empty here) section after the events
     expect(sections.filter((s) => s.section === "events")).toHaveLength(3);
     const header = sections[0].rows[0] as { profile: Record<string, unknown>; consent: unknown[]; sharing: unknown };
     expect(header.profile).toMatchObject({ name: "Asha Rao", email: "adult@alpha.test", role: "student", institute: "Alpha School", class: "Class 10 A", under18: false });

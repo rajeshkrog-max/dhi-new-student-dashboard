@@ -10,6 +10,8 @@ import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
 import { Label, SelectInput, TextInput } from "@/components/dhi/staff/staff-parts";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
+import { SUBJECTS } from "@dhi/backend/sessionRules";
+import { SUBJECT_WORDS } from "@/lib/dhi/desk-words";
 
 const CATEGORIES = [
   { value: "academic", label: "Academic" },
@@ -38,6 +40,9 @@ export function FilmsSection() {
   const approve = useMutation(api.films.approve);
   const [f, setF] = useState({ title: "", category: "self_help", blurb: "", cover: "/mood/thought.jpg", hostRef: "/landing/day.mp4", durationSec: 15, scoreValue: 10 });
   const [checks, setChecks] = useState<CheckDraft[]>([blankCheck(), blankCheck()]);
+  // An academic film's subject and topic (house spec 0030), so a student's checks name the same topic as their papers (A17). Optional.
+  const [subject, setSubject] = useState("");
+  const [topic, setTopic] = useState("");
   const [error, setError] = useState("");
   const [done, setDone] = useState("");
   const academic = f.category === "academic";
@@ -50,7 +55,7 @@ export function FilmsSection() {
       ? checks.map((c) => ({ question: c.question, options: c.options.split("\n").map((o) => o.trim()).filter((o) => o.length > 0), rightOption: c.rightOption - 1 }))
       : [];
     try {
-      await upload({ ...f, checks: sent });
+      await upload({ ...f, checks: sent, ...(academic && subject ? { subject } : {}), ...(academic && subject && topic.trim() ? { topic: topic.trim() } : {}) });
       setDone("The film is saved and waiting for approval.");
       setF({ ...f, title: "", blurb: "" });
       setChecks([blankCheck(), blankCheck()]);
@@ -102,6 +107,23 @@ export function FilmsSection() {
           <Label text="Score when kept (1 to 100)">
             <TextInput type="number" min={1} max={100} value={f.scoreValue} onChange={(e) => setF({ ...f, scoreValue: Number(e.target.value) })} required />
           </Label>
+          {academic && (
+            <>
+              <Label text="Subject (optional)">
+                <SelectInput value={subject} onChange={(e) => setSubject(e.target.value)} data-testid="film-subject">
+                  <option value="">None</option>
+                  {SUBJECTS.map((code) => (
+                    <option key={code} value={code}>
+                      {SUBJECT_WORDS[code]}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Label>
+              <Label text="Topic, in the words the teachers use (optional)">
+                <TextInput value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={60} data-testid="film-topic" />
+              </Label>
+            </>
+          )}
           {academic &&
             checks.map((c, i) => (
               <div key={i} className="space-y-2 rounded-control border border-home/15 bg-white/70 p-3 sm:col-span-2">

@@ -200,6 +200,49 @@ const SCENES = {
       await openMenuIfDrawer(page, width);
     },
   },
+  // The desk's Learn panel (house spec 0031): the topic map, a topic page with the written answer box, and a practice round. `prepare` gives the demo
+  // student's class a made up practice bank on Ratios (learnProof:bankFor).
+  "dhi-learn": {
+    room: "dhi",
+    run: async (page) => {
+      await page.getByTestId("desk-tab-learn").click();
+      await page.getByTestId("learn-topics").waitFor({ timeout: 30_000 });
+      await page.waitForTimeout(800);
+    },
+  },
+  "dhi-learn-topic": {
+    room: "dhi",
+    run: async (page) => {
+      await page.getByTestId("desk-tab-learn").click();
+      await page.getByTestId("learn-topic").filter({ hasText: "Ratios" }).first().click();
+      await page.getByTestId("learn-write").click();
+      await page.getByTestId("learn-written").waitFor({ timeout: 30_000 });
+      await page.waitForTimeout(800);
+    },
+  },
+  "dhi-learn-round": {
+    room: "dhi",
+    run: async (page) => {
+      await page.getByTestId("desk-tab-learn").click();
+      await page.getByTestId("learn-topic").filter({ hasText: "Ratios" }).first().click();
+      await page.getByTestId("learn-practise").click();
+      await page.getByTestId("learn-round").waitFor({ timeout: 30_000 });
+      await page.getByTestId("learn-option").first().check();
+      await page.getByTestId("learn-check").click();
+      await page.getByTestId("learn-result").waitFor({ timeout: 20_000 });
+      await page.waitForTimeout(800);
+    },
+  },
+  // A kept academic film's two checks (house spec 0030); `prepare` marks one watched for the demo student (learnProof:keepFilm).
+  "modules-checks": {
+    room: "modules",
+    run: async (page) => {
+      await page.getByTestId("film-card").first().waitFor({ timeout: 30_000 });
+      await page.getByTestId("film-card").filter({ hasText: KEPT_FILM.title || "" }).first().click();
+      await page.locator('[data-testid="film-checks"], [data-testid="film-checks-done"]').first().waitFor({ timeout: 30_000 });
+      await page.waitForTimeout(800);
+    },
+  },
   "mood-day": { room: "mood", run: (page, width) => openMoodDay(page, width) },
   "mood-help": {
     room: "mood",
@@ -290,6 +333,8 @@ const SCENES = {
   },
 };
 
+const KEPT_FILM = { title: "" };
+
 // Data the scenes above need, made once before the sweep with the development helpers (the sweep refuses production, and so do they).
 function prepare(selected) {
   const run = (command) => execSync(`npx convex run ${command}`, { cwd: "packages/backend", stdio: "pipe" });
@@ -304,6 +349,9 @@ function prepare(selected) {
   // The heavy fortnight with the tagged days under it (house spec 0028), so the page also holds the topic and subject connections.
   if (wants("progress")) run(`brainProof:seed "${JSON.stringify({ email: PEOPLE.student.email, scenario: "sweep" }).replace(/"/g, '\\"')}"`);
   // A pending card for the desk and for the study hour (house spec 0028: the subject and topic taps). A card stays until answered, so one is enough.
+  // A made up practice bank for the demo student's class, for the Learn scenes (house spec 0031).
+  if (wants("dhi")) run(`learnProof:bankFor "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`);
+  if (wants("modules")) KEPT_FILM.title = JSON.parse(run(`learnProof:keepFilm "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`).toString() || "null")?.title ?? "";
   if (wants("dhi")) run(`topicsProof:openDeskCard "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`);
   if (wants("hour")) run(`hourProof:addFinishedStay "${JSON.stringify({ email: PEOPLE.student.email, minutes: 25 }).replace(/"/g, '\\"')}"`);
 }
@@ -384,6 +432,8 @@ const SCREENS = {
   "staff-invites": staffScreen("invites", "Invites"),
   "staff-list": staffScreen("list", "Class list"),
   "staff-parent": staffScreen("parent", "Parent consent"),
+  // The teacher's papers screen with the builder's bank and repeat choices, the written answer queue and the syllabus map (house specs 0030, 0031).
+  "staff-papers": { ...staffScreen("papers", "Papers and review"), auth: "teacher" },
   // The school report (spec house/0025), opened for Class 10 A of the demo institute, with the room counts below it.
   "staff-report": {
     ...staffScreen("report", "School report"),
@@ -528,6 +578,7 @@ async function main() {
     const states = {
       user: await signInMember(browser, new URL(base), PEOPLE.student),
       staff: await signInMember(browser, new URL(base), PEOPLE.admin),
+      teacher: await signInMember(browser, new URL(base), PEOPLE.teacher),
       newcomer: await signInMember(browser, new URL(base), PEOPLE.newcomer, { join: false }),
       stranger: await signInMember(browser, new URL(base), PEOPLE.stranger, { join: false }),
       gate: await signInMember(browser, new URL(base), PEOPLE.gate),

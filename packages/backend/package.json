@@ -22,6 +22,7 @@
     "./foodRules": "./convex/foodRules.ts",
     "./hourRules": "./convex/hourRules.ts",
     "./deskRules": "./convex/deskRules.ts",
+    "./learnRules": "./convex/learnRules.ts",
     "./sessionRules": "./convex/sessionRules.ts",
     "./counselRules": "./convex/counselRules.ts",
     "./hourCallRules": "./convex/hourCallRules.ts",

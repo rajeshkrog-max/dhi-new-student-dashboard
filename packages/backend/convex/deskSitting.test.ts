@@ -137,7 +137,9 @@ describe("answering and skipping (AC-2, AC-3, AC-4)", () => {
     const events = (await eventsOf(w, w.s)).filter((e) => e.type === "desk.felt");
     expect(events).toHaveLength(1);
     expect(events[0].room).toBe("desk");
-    expect(events[0].payload).toEqual({ feel: "energised", focus: 4, time: "before_18", length: "under_40", subject: "maths" });
+    // Version 3 (house spec 0030) adds the whole minutes of the sitting, for desk time by subject (A11).
+    expect(events[0].payload).toEqual({ feel: "energised", focus: 4, time: "before_18", length: "under_40", subject: "maths", minutes: expect.any(Number) });
+    expect((events[0].payload as { minutes: number }).minutes).toBeGreaterThanOrEqual(10);
     const row = (await sittingsOf(w, w.s)).at(-1)!;
     expect(row).toMatchObject({ feedbackStatus: "answered", feel: "energised", focus: 4, subject: "maths" });
     expect(await w.s.as.query(api.deskSitting.pending, {})).toBeNull();
@@ -148,7 +150,7 @@ describe("answering and skipping (AC-2, AC-3, AC-4)", () => {
     const s = await sit(w, w.s, 10);
     expect(await w.s.as.mutation(api.deskSitting.answer, { sittingId: s._id, feel: "okay", focus: 3 })).toEqual({ ok: true });
     const e = (await eventsOf(w, w.s)).find((x) => x.type === "desk.felt");
-    expect(e?.payload).toEqual({ feel: "okay", focus: 3, time: "before_18", length: "under_40" });
+    expect(e?.payload).toEqual({ feel: "okay", focus: 3, time: "before_18", length: "under_40", minutes: expect.any(Number) });
   });
 
   test("covers AC-2: a bad feeling, focus or subject is refused and nothing is stored", async () => {
@@ -272,7 +274,8 @@ describe("what a sitting held (A10, A12)", () => {
     expect(e).toHaveLength(1);
     expect(e[0].room).toBe("desk");
     expect(e[0].actorId).toBe("system");
-    expect(Object.keys(e[0].payload as object).sort()).toEqual(["active", "turns"]);
+    // Version 2 (house spec 0030) adds the plain questions (doubts), A18's bottom part.
+    expect(Object.keys(e[0].payload as object).sort()).toEqual(["active", "doubts", "turns"]);
     expect((e[0].payload as { turns: number }).turns).toBeGreaterThanOrEqual(1);
     expect(JSON.stringify(e[0])).not.toContain("question");
   });
@@ -285,9 +288,9 @@ describe("what a sitting held (A10, A12)", () => {
       for (const kind of ["chat", "clarify", "write", "paper", "mock", "story", "draw"]) await touchSitting(ctx, member, now, kind);
     });
     const s = await w.t.run((ctx) => ctx.db.query("deskSittings").first());
-    expect(s).toMatchObject({ turns: 7, activeTurns: 3 });
+    expect(s).toMatchObject({ turns: 7, activeTurns: 3, doubts: 1 });
     await sit(w, w.s2, 0);
-    expect((await eventsOf(w, w.s2)).filter((x) => x.type === "desk.mode").map((x) => x.payload)).toEqual([{ turns: 1, active: 0 }]);
+    expect((await eventsOf(w, w.s2)).filter((x) => x.type === "desk.mode").map((x) => x.payload)).toEqual([{ turns: 1, active: 0, doubts: 1 }]);
   });
 
   test("covers A10: closing twice writes the event once", async () => {
@@ -303,6 +306,6 @@ describe("the event shape", () => {
     const { EVENT_DEFS } = await import("./eventRegistry");
     const def = EVENT_DEFS.find((d) => d.type === "desk.felt");
     expect(def?.room).toBe("desk");
-    expect(Object.keys(def?.payload ?? {}).sort()).toEqual(["feel", "focus", "length", "subject", "time", "topic"]);
+    expect(Object.keys(def?.payload ?? {}).sort()).toEqual(["feel", "focus", "length", "minutes", "subject", "time", "topic"]);
   });
 });

@@ -51,8 +51,12 @@ import {
   WRITE_NOTE,
   WRITE_PLACEHOLDER,
   deskRefusal,
+  MODE_USE,
+  USE_NOTE,
 } from "@/lib/dhi/desk-words";
 import { DeskFeelingCard } from "@/components/dhi/desk/desk-feeling-card";
+import { LearnPanel } from "@/components/dhi/desk/learn-panel";
+import { RESOLVED, RESOLVED_DONE, TAB_ASK, TAB_LEARN, USE_IT } from "@/lib/dhi/learn-words";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
@@ -66,6 +70,8 @@ const MODES = {
   mock: { tab: MODE_MOCK, label: PAPER_LABEL, placeholder: PAPER_PLACEHOLDER, button: MOCK_BUTTON, max: QUESTION_MAX, rows: 3, note: MOCK_NOTE as string | null },
   story: { tab: MODE_STORY, label: STORY_LABEL, placeholder: PAPER_PLACEHOLDER, button: STORY_BUTTON, max: QUESTION_MAX, rows: 3, note: STORY_NOTE as string | null },
   draw: { tab: MODE_DRAW, label: DRAW_LABEL, placeholder: DRAW_PLACEHOLDER, button: DRAW_BUTTON, max: QUESTION_MAX, rows: 3, note: DRAW_NOTE as string | null },
+  // Use it (house spec 0031): where a topic shows up in daily life, stored and reused for the institute.
+  use: { tab: MODE_USE, label: STORY_LABEL, placeholder: PAPER_PLACEHOLDER, button: USE_IT, max: QUESTION_MAX, rows: 3, note: USE_NOTE as string | null },
 };
 type Mode = keyof typeof MODES;
 
@@ -79,6 +85,8 @@ export function DeskReal() {
   const pendingCard = useQuery(api.deskSitting.pending, {});
   const openWallet = useMutation(api.desk.open);
   const removeThread = useMutation(api.desk.removeThread);
+  const resolve = useMutation(api.desk.resolve);
+  const [tab, setTab] = useState<"ask" | "learn">("ask");
   const ask = useAction(api.deskAsk.ask);
   const [threadId, setThreadId] = useState<string | null>(null);
   const talk = useQuery(api.desk.thread, threadId ? { threadId } : "skip");
@@ -149,6 +157,17 @@ export function DeskReal() {
 
       <DeskFeelingCard />
 
+      <div className="flex flex-wrap gap-2" role="group" data-testid="desk-tabs">
+        {(["ask", "learn"] as const).map((x) => (
+          <Button key={x} variant={tab === x ? "solid" : "quiet"} aria-pressed={tab === x} onClick={() => setTab(x)} data-testid={`desk-tab-${x}`}>
+            {x === "ask" ? TAB_ASK : TAB_LEARN}
+          </Button>
+        ))}
+      </div>
+
+      {tab === "learn" ? (
+        <LearnPanel live={wallet.live} />
+      ) : (
       <div className="grid gap-4 lg:grid-cols-[18rem_1fr]">
         <Card className="space-y-3">
           <div>
@@ -214,8 +233,16 @@ export function DeskReal() {
                     <p className="px-1 text-sm text-mute">{ASKING}</p>
                   ) : null}
                   {x.status === "answered" && (
-                    <p className="px-1 text-xs text-mute">
-                      {x.cached ? FROM_STORE : COINS_SPENT(x.coinsSpent)}
+                    <p className="flex flex-wrap items-center gap-x-3 px-1 text-xs text-mute">
+                      <span>{x.cached ? FROM_STORE : COINS_SPENT(x.coinsSpent)}</span>
+                      {x.kind === "chat" &&
+                        (x.resolved ? (
+                          <span data-testid="desk-resolved">{RESOLVED_DONE}</span>
+                        ) : (
+                          <Button variant="link" onClick={() => void resolve({ turnId: x.id }).catch(() => {})} data-testid="desk-resolve">
+                            {RESOLVED}
+                          </Button>
+                        ))}
                     </p>
                   )}
                 </li>
@@ -289,6 +316,7 @@ export function DeskReal() {
           <p className="text-xs text-mute">{MODEL_NOTE}</p>
         </Card>
       </div>
+      )}
     </div>
   );
 }

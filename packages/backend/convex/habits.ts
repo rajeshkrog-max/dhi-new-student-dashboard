@@ -174,3 +174,60 @@ export const remove = mutation({
     return { ok: true as const };
   },
 });
+
+// ---- The weekly habit feels check (the Master Spec's H10; house spec 0030) ----
+
+// The Monday of the India week a house day falls in, so a week turns with the house day at 04:00 on Monday.
+export function weekOf(day: string): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  const back = (d.getUTCDay() + 6) % 7;
+  return new Date(d.getTime() - back * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+export const FEEL_ITEMS = 4;
+export const FEEL_MIN = 1;
+export const FEEL_MAX = 7;
+
+// The open habits the student has already rated this week. `now` comes from the screen (a query does not read the clock), and only picks the week.
+export const ratedThisWeek = query({
+  args: { now: v.number() },
+  returns: v.array(v.string()),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    const week = weekOf(dayOf(args.now));
+    const rows = await ctx.db.query("habitRatings").withIndex("by_memberId_and_week", (q) => q.eq("memberId", mc.member._id).eq("week", week)).take(MAX_OPEN_HABITS + 5);
+    return rows.map((r) => r.planId as string);
+  },
+});
+
+// The student rates how automatic one open habit feels: four answers, each 1 to 7, once a week. One `habits.rated` event holds the kind and the sum.
+export const rate = mutation({
+  args: { planId: v.string(), items: v.array(v.number()) },
+  returns: v.union(v.object({ ok: v.literal(true) }), refused),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    const memberId = mc.member._id;
+    if (!(await rateLimiter.limit(ctx, "measureWrite", { key: memberId })).ok) return { ok: false as const, code: "rate_limited" };
+    if (args.items.length !== FEEL_ITEMS || !args.items.every((x) => Number.isInteger(x) && x >= FEEL_MIN && x <= FEEL_MAX)) return { ok: false as const, code: "bad_items" };
+    const plan = await ownPlan(ctx, memberId, args.planId);
+    if (!plan) return { ok: false as const, code: "not_found" };
+    const now = Date.now();
+    const day = dayOf(now);
+    if (plan.removedOn !== undefined || day < plan.startOn || day > plan.endOn) return { ok: false as const, code: "not_open" };
+    const week = weekOf(day);
+    if (await ctx.db.query("habitRatings").withIndex("by_planId_and_week", (q) => q.eq("planId", plan._id).eq("week", week)).first()) return { ok: false as const, code: "already_rated" };
+    const id = await ctx.db.insert("habitRatings", { memberId, instituteId: plan.instituteId, planId: plan._id, week, items: args.items, createdAt: now });
+    await recordEvent(ctx, {
+      by: mc,
+      memberId,
+      room: "habits",
+      type: "habits.rated",
+      payload: { habit: plan.kind, score: args.items.reduce((s, x) => s + x, 0) },
+      occurredAt: now,
+      eventKey: `habitfeel:${id}-0`,
+      about: `habitfeel:${id}`,
+    });
+    return { ok: true as const };
+  },
+});
