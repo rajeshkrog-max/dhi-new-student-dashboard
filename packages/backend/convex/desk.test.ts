@@ -3,7 +3,7 @@
 // sent, so the coin, cache and care rules are proven without a real model. Time is fixed with a fake clock.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api, internal } from "./_generated/api";
-import { cacheKeyOf, cleanQuestion, cleanSvg, dailyCapOf, DESK_DAILY_CAP, isLiveKind, looksDistressed, looksPersonal, PRICES } from "./deskRules";
+import { attachFileProblem, cacheKeyOf, cleanQuestion, cleanSvg, dailyCapOf, DESK_DAILY_CAP, isLiveKind, looksDistressed, looksPersonal, PRICES } from "./deskRules";
 import { deskReady } from "./desk";
 import { deskRoom } from "./deskRoom";
 import { makeBackend } from "../tests/convexTestUtils";
@@ -528,7 +528,7 @@ describe("coins (AC-2, AC-4, AC-5)", () => {
     const desk = await import("./desk");
     const names = Object.keys(desk).filter((n) => !["deskReady", "sweepPendingHasWork", "walletFor", "reserveModelCall", "RESOLVE_DAYS"].includes(n)); // helpers, not functions
     // `resolve` marks an answer as solving a doubt (house spec 0030) and never touches the wallet.
-    expect(names.sort()).toEqual(["abandon", "allot", "allotment", "begin", "finish", "open", "removeThread", "resolve", "sweepPending", "thread", "threads", "wallet"]);
+    expect(names.sort()).toEqual(["abandon", "allot", "allotment", "attachUploadUrl", "begin", "finish", "open", "removeThread", "resolve", "sweepPending", "thread", "threads", "wallet"]);
     expect(await refusal(w.s.as.mutation(api.desk.allot, { monthlyCoins: 1000 }))).toBe("forbidden");
   });
 
@@ -868,3 +868,81 @@ describe("review of 2026-10-26: the desk", () => {
   });
 });
 
+
+describe("attach a picture or a PDF to a question", () => {
+  type Att = Reply;
+  const store = (w: World, type: string, bytes = 32, at = NOW) =>
+    w.t.run(async (ctx) => {
+      vi.setSystemTime(at);
+      const id = await ctx.storage.store(new Blob([new Uint8Array(bytes).fill(7)], { type }));
+      vi.setSystemTime(NOW);
+      return id;
+    });
+  const askWith = (p: Person, question: string, attachmentId: string, kind = "chat") =>
+    p.as.action(api.deskAsk.ask, { kind, question, attachmentId: attachmentId as never }) as Promise<Att>;
+  const gone = (w: World, id: string) => w.t.run(async (ctx) => (await ctx.storage.get(id as never)) === null);
+
+  test("a picture goes to the model with the question, costs one more coin, is not cached, and is deleted after the answer", async () => {
+    const w = await world();
+    await w.s.as.mutation(api.desk.open, {});
+    const id = await store(w, "image/png");
+    const r = await askWith(w.s, "What does this diagram show?", id);
+    expect(r).toMatchObject({ ok: true, cached: false, balance: 58 });
+    const last = sent[sent.length - 1].messages[sent[sent.length - 1].messages.length - 1] as unknown as { content: { type: string; image_url?: { url: string } }[] };
+    expect(last.content[0]).toMatchObject({ type: "text" });
+    expect(last.content[1].type).toBe("image_url");
+    expect(last.content[1].image_url?.url.startsWith("data:image/png;base64,")).toBe(true);
+    expect(await gone(w, id)).toBe(true);
+    if (!r.ok) throw new Error("not ok");
+    const talk = await w.s.as.query(api.desk.thread, { threadId: r.threadId });
+    expect(talk?.turns[0].attachment).toBe("image");
+    // The same words from a classmate, with no file, are not answered from the student's page.
+    const calls = sent.length;
+    await w.s2.as.mutation(api.desk.open, {});
+    const again = await ask(w.s2, "What does this diagram show?");
+    expect(again).toMatchObject({ ok: true, cached: false });
+    expect(sent.length).toBe(calls + 1);
+  });
+
+  test("a PDF goes as a file part", async () => {
+    const w = await world();
+    await w.s.as.mutation(api.desk.open, {});
+    const id = await store(w, "application/pdf");
+    expect(await askWith(w.s, "Explain the first question on this page", id)).toMatchObject({ ok: true });
+    const last = sent[sent.length - 1].messages.at(-1) as unknown as { content: { type: string; file?: { file_data: string } }[] };
+    expect(last.content[1].type).toBe("file");
+    expect(last.content[1].file?.file_data.startsWith("data:application/pdf;base64,")).toBe(true);
+    expect(await gone(w, id)).toBe(true);
+  });
+
+  test("a file comes only with a plain question, of an allowed type and size, uploaded in the last hour; a refusal takes no coins", async () => {
+    const w = await world();
+    await w.s.as.mutation(api.desk.open, {});
+    expect(await askWith(w.s, "fractions", await store(w, "image/png"), "paper")).toEqual({ ok: false, code: "attach_chat_only" });
+    // A file whose bytes are not a picture or a PDF is refused before the model, and its coins go back.
+    expect(await askWith(w.s, "What is this?", await store(w, "text/plain"))).toEqual({ ok: false, code: "bad_attachment" });
+    expect(await askWith(w.s, "What is this?", await store(w, "image/png", 0))).toEqual({ ok: false, code: "bad_attachment" });
+    expect(await askWith(w.s, "What is this?", await store(w, "image/png", 4 * 1024 * 1024 + 1))).toEqual({ ok: false, code: "bad_attachment" });
+    // A file older than an hour (the test backend cannot store one in the past, so the rule itself is checked).
+    expect(attachFileProblem({ size: 32, contentType: "image/png", _creationTime: NOW - 2 * 60 * 60 * 1000 }, NOW)).toBe("bad_attachment");
+    expect(attachFileProblem({ size: 32, contentType: "image/png", _creationTime: NOW - 60 * 1000 }, NOW)).toBeNull();
+    expect(sent.length).toBe(0);
+    expect(await balanceOf(w.s)).toBe(60);
+  });
+
+  test("when the model fails the coins go back and the file is still deleted", async () => {
+    const w = await world();
+    await w.s.as.mutation(api.desk.open, {});
+    modelStatus = 500;
+    const id = await store(w, "image/jpeg");
+    expect(await askWith(w.s, "What is this?", id)).toEqual({ ok: false, code: "model_failed" });
+    expect(await balanceOf(w.s)).toBe(60);
+    expect(await gone(w, id)).toBe(true);
+  });
+
+  test("only a student gets an upload address", async () => {
+    const w = await world();
+    expect(typeof (await w.s.as.mutation(api.desk.attachUploadUrl, {}))).toBe("string");
+    expect(await refusal(w.teacher.as.mutation(api.desk.attachUploadUrl, {}))).toBe("forbidden");
+  });
+});

@@ -24,7 +24,9 @@ export function PausedHouse({ kind }: { kind: "removed" | "suspended" }) {
       <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-2xl font-medium">Your data</h1>
-          <p className="text-sm text-mute touch:text-base">Your access is paused. You can still download or erase what the house holds about you.</p>
+          <p className="text-sm text-mute touch:text-base">
+            Your access is paused. You can still download or erase what the house holds about you.
+          </p>
         </div>
         <Button variant="quiet" onClick={() => setView("paused")} data-testid="paused-back">
           Back
@@ -35,7 +37,8 @@ export function PausedHouse({ kind }: { kind: "removed" | "suspended" }) {
   );
 }
 
-export type LockedMe = { state: "consentNeeded"; missing: Missing } | { state: "withdrawn"; by: By };
+export type LockedMe =
+  { state: "consentNeeded"; missing: Missing } | { state: "withdrawn"; by: By };
 
 // The page around the consent screen and Your data. It shows no student name, class or room: until consent is in place nothing of the house is
 // shown (spec house/0005, AC-1).
@@ -52,7 +55,8 @@ function Frame({ children }: { children: React.ReactNode }) {
 function DraftMark() {
   return (
     <Notice tone="danger" data-testid="draft-mark" className="px-4 py-3 text-sm">
-      Draft words. The owner has not approved this notice yet, so use only people made up for testing.
+      Draft words. The owner has not approved this notice yet, so use only people made up for
+      testing.
     </Notice>
   );
 }
@@ -95,9 +99,12 @@ function AgreeCard() {
   return (
     <Card>
       <h2 className="font-display text-xl font-medium">The house notice</h2>
-      <p className="mt-1 text-sm text-mute touch:text-base">Please read it to the end. Then you can agree.</p>
-      {/* Shown while the notice is still arriving too, so the page does not move when it lands (and the safe default is to say draft). */}
-      {(!notice || !notice.approved) && (
+      <p className="mt-1 text-sm text-mute touch:text-base">
+        Please read it to the end. Then you can agree.
+      </p>
+      {/* Shown only once the notice says its words are not approved. The words are approved (owner, 2026-10-28), so the mark no longer shows while the
+          notice is arriving and then vanishes, which moved the page. */}
+      {notice && !notice.approved && (
         <div className="mt-3">
           <DraftMark />
         </div>
@@ -111,10 +118,19 @@ function AgreeCard() {
         data-testid="notice-box"
         className="mt-3 h-[50dvh] space-y-3 overflow-y-auto rounded-control border border-home/15 bg-white/80 p-4 text-sm touch:text-base"
       >
-        {notice ? notice.lines.map((l, i) => <p key={i}>{l}</p>) : <p className="text-mute">Loading…</p>}
+        {notice ? (
+          notice.lines.map((l, i) => <p key={i}>{l}</p>)
+        ) : (
+          <p className="text-mute">Loading…</p>
+        )}
       </div>
       {error && (
-        <Notice tone="danger" role="alert" data-testid="agree-error" className="mt-3 px-4 py-3 text-sm">
+        <Notice
+          tone="danger"
+          role="alert"
+          data-testid="agree-error"
+          className="mt-3 px-4 py-3 text-sm"
+        >
           {error}
         </Notice>
       )}
@@ -122,7 +138,9 @@ function AgreeCard() {
         <Button disabled={!notice || !atEnd || busy} onClick={press} data-testid="agree">
           {busy ? "Saving…" : "I agree"}
         </Button>
-        {!atEnd && notice && <span className="text-xs text-mute touch:text-sm">Scroll to the end to unlock.</span>}
+        {!atEnd && notice && (
+          <span className="text-xs text-mute touch:text-sm">Scroll to the end to unlock.</span>
+        )}
       </div>
     </Card>
   );
@@ -133,8 +151,8 @@ function ParentWaiting() {
     <Card data-testid="parent-waiting">
       <h2 className="font-display text-xl font-medium">Waiting for your school</h2>
       <p className="mt-2 text-sm text-mute touch:text-base">
-        You are under 18, so your school must record that your parent or guardian has agreed. Please ask your school. You can come back and the house opens as soon as it is
-        recorded.
+        You are under 18, so your school must record that your parent or guardian has agreed. Please
+        ask your school. You can come back and the house opens as soon as it is recorded.
       </p>
     </Card>
   );
@@ -152,11 +170,24 @@ export function LockedHouse({ me }: { me: LockedMe }) {
     <Frame>
       {failed && <LeaveFailedNotice />}
       <header className="flex flex-wrap items-center gap-3">
-        <span className="grid size-11 place-items-center rounded-control bg-white shadow-sm" aria-hidden>
-          {me.state === "withdrawn" ? <PauseCircle className="size-6" /> : <FileCheck2 className="size-6" />}
+        <span
+          className="grid size-11 place-items-center rounded-control bg-white shadow-sm"
+          aria-hidden
+        >
+          {me.state === "withdrawn" ? (
+            <PauseCircle className="size-6" />
+          ) : (
+            <FileCheck2 className="size-6" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-medium">{view === "data" ? "Your data" : me.state === "withdrawn" ? "The house is paused for you" : "Before you enter"}</h1>
+          <h1 className="font-display text-2xl font-medium">
+            {view === "data"
+              ? "Your data"
+              : me.state === "withdrawn"
+                ? "The house is paused for you"
+                : "Before you enter"}
+          </h1>
           <p className="text-sm text-mute touch:text-base">
             {view === "data"
               ? "Your rights over what the house holds."
@@ -167,7 +198,11 @@ export function LockedHouse({ me }: { me: LockedMe }) {
                 : "The house opens after the steps below."}
           </p>
         </div>
-        <Button variant="quiet" onClick={() => setView(view === "data" ? "consent" : "data")} data-testid="toggle-data">
+        <Button
+          variant="quiet"
+          onClick={() => setView(view === "data" ? "consent" : "data")}
+          data-testid="toggle-data"
+        >
           {view === "data" ? "Back" : "Your data"}
         </Button>
         {/* In Your data, Leave sits up here: below it, it would move when the page finishes loading (the responsive sweep of 2026-10-27). */}

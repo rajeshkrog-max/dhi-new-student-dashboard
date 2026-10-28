@@ -106,6 +106,7 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
   // Linking the DhiRise check to the house account (the student's own tap): 10 tries an hour for each student.
   funnelLink: { kind: "token bucket", rate: 10, period: HOUR, capacity: 10 },
   deskAsk: { kind: "token bucket", rate: 30, period: HOUR, capacity: 30 },
+  deskAttach: { kind: "token bucket", rate: 12, period: HOUR, capacity: 12 },
   deskClarify: { kind: "token bucket", rate: 20, period: HOUR, capacity: 20 },
   // The desk's learning loop (house spec 0031): rounds, answers and plans, 600 an hour for each student; written answers sent for marking, 10 an hour.
   learnCall: { kind: "token bucket", rate: 600, period: HOUR, capacity: 120 },

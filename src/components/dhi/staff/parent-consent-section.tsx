@@ -6,12 +6,24 @@ import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Chip } from "@/components/dhi/ui/chip";
 import { Notice } from "@/components/dhi/ui/notice";
-import { Label, ListEmpty, Outcome, Pager, SelectInput, type ClassId, type MemberId } from "@/components/dhi/staff/staff-parts";
+import {
+  Label,
+  ListEmpty,
+  Outcome,
+  Pager,
+  SelectInput,
+  type ClassId,
+  type MemberId,
+} from "@/components/dhi/staff/staff-parts";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
 
 type RecordResult = FunctionReturnType<typeof api.consent.recordParent>;
 type Status = "needed" | "onFile" | "schoolWithdrew";
-const STATUS_WORDS: Record<Status, string> = { needed: "Not recorded", onFile: "On file", schoolWithdrew: "Withdrawn by school" };
+const STATUS_WORDS: Record<Status, string> = {
+  needed: "Not recorded",
+  onFile: "On file",
+  schoolWithdrew: "Withdrawn by school",
+};
 const SKIP_WORDS: Record<string, string> = {
   adult: "marked 18 or over",
   other_institute: "not in this institute",
@@ -39,7 +51,10 @@ export function ParentConsentSection() {
   const [done, setDone] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function run(call: () => Promise<{ ok: boolean; code?: string } | unknown>, ok: (r: unknown) => string) {
+  async function run(
+    call: () => Promise<{ ok: boolean; code?: string } | unknown>,
+    ok: (r: unknown) => string,
+  ) {
     setError("");
     setDone("");
     setBusy(true);
@@ -76,7 +91,9 @@ export function ParentConsentSection() {
         cursor = r.continueCursor;
       }
       const skips = Object.entries(skipped).map(([k, n]) => `${n} ${SKIP_WORDS[k] ?? k}`);
-      setDone(`Recorded for ${recorded} student${recorded === 1 ? "" : "s"}.${skips.length ? ` Left out: ${skips.join(", ")}.` : ""}`);
+      setDone(
+        `Recorded for ${recorded} student${recorded === 1 ? "" : "s"}.${skips.length ? ` Left out: ${skips.join(", ")}.` : ""}`,
+      );
     } catch (e) {
       setError(refusalWords(codeOf(e)));
     }
@@ -87,21 +104,37 @@ export function ParentConsentSection() {
     <div className="space-y-3">
       <Card>
         <h2 className="text-sm font-semibold">What the school says</h2>
-        {(!notice || !notice.approved) && (
+        {/* Only once the notice says its words are not approved, so the card does not move when an approved notice arrives. */}
+        {notice && !notice.approved && (
           <Notice tone="danger" data-testid="draft-mark" className="mt-2 px-4 py-3 text-sm">
-            Draft words. The owner has not approved them, and a legal check on a school recording a parent&apos;s consent is still owed. Use only people made up for testing.
+            Draft words. The owner has not approved them, and a legal check on a school recording a
+            parent&apos;s consent is still owed. Use only people made up for testing.
           </Notice>
         )}
-        <div className="mt-3 min-h-52 space-y-2 rounded-control border border-home/15 bg-white/80 p-4 text-sm touch:text-base" data-testid="parent-words">
-          {notice ? notice.lines.map((l, i) => <p key={i}>{l}</p>) : <p className="text-mute">Loading…</p>}
+        <div
+          className="mt-3 min-h-52 space-y-2 rounded-control border border-home/15 bg-white/80 p-4 text-sm touch:text-base"
+          data-testid="parent-words"
+        >
+          {notice ? (
+            notice.lines.map((l, i) => <p key={i}>{l}</p>)
+          ) : (
+            <p className="text-mute">Loading…</p>
+          )}
         </div>
-        <p className="mt-2 text-xs text-mute touch:text-sm">Press Record only when the parent or guardian&apos;s written consent is on file at your school. DHI keeps who recorded it, when and which wording, and nothing about the parent.</p>
+        <p className="mt-2 text-xs text-mute touch:text-sm">
+          Press Record only when the parent or guardian&apos;s written consent is on file at your
+          school. DHI keeps who recorded it, when and which wording, and nothing about the parent.
+        </p>
       </Card>
 
       <Card>
         <div className="grid gap-3 sm:grid-cols-2">
           <Label text="Class">
-            <SelectInput value={classId} onChange={(e) => setClassId(e.target.value as ClassId | "")} data-testid="parent-class">
+            <SelectInput
+              value={classId}
+              onChange={(e) => setClassId(e.target.value as ClassId | "")}
+              data-testid="parent-class"
+            >
               <option value="">All classes</option>
               {classes.results.map((c) => (
                 <option key={c._id} value={c._id}>
@@ -111,7 +144,11 @@ export function ParentConsentSection() {
             </SelectInput>
           </Label>
           <Label text="Show">
-            <SelectInput value={status} onChange={(e) => setStatus(e.target.value as Status | "")} data-testid="parent-status">
+            <SelectInput
+              value={status}
+              onChange={(e) => setStatus(e.target.value as Status | "")}
+              data-testid="parent-status"
+            >
               <option value="">Everyone under 18</option>
               <option value="needed">Not recorded</option>
               <option value="onFile">On file</option>
@@ -146,23 +183,58 @@ export function ParentConsentSection() {
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{s.name}</p>
-                    {s.className && <p className="truncate text-xs text-mute touch:text-sm">{s.className}</p>}
+                    {s.className && (
+                      <p className="truncate text-xs text-mute touch:text-sm">{s.className}</p>
+                    )}
                   </div>
-                  <Chip tone={s.status === "onFile" ? "mint" : s.status === "needed" ? "gold" : "lilac"}>{STATUS_WORDS[s.status]}</Chip>
+                  <Chip
+                    tone={s.status === "onFile" ? "mint" : s.status === "needed" ? "gold" : "lilac"}
+                  >
+                    {STATUS_WORDS[s.status]}
+                  </Chip>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {s.status === "needed" && (
-                    <Button disabled={busy} aria-label={`Record consent for ${s.name}`} onClick={() => run(() => record({ memberIds: [s.memberId as MemberId] }), () => `Recorded for ${s.name}.`)}>
+                    <Button
+                      disabled={busy}
+                      aria-label={`Record consent for ${s.name}`}
+                      onClick={() =>
+                        run(
+                          () => record({ memberIds: [s.memberId as MemberId] }),
+                          () => `Recorded for ${s.name}.`,
+                        )
+                      }
+                    >
                       Record consent
                     </Button>
                   )}
                   {s.status === "onFile" && (
-                    <Button variant="quiet" disabled={busy} aria-label={`Record that a parent of ${s.name} withdrew`} onClick={() => run(() => withdrew({ memberId: s.memberId as MemberId }), () => `Withdrawal recorded for ${s.name}.`)}>
+                    <Button
+                      variant="quiet"
+                      disabled={busy}
+                      aria-label={`Record that a parent of ${s.name} withdrew`}
+                      onClick={() =>
+                        run(
+                          () => withdrew({ memberId: s.memberId as MemberId }),
+                          () => `Withdrawal recorded for ${s.name}.`,
+                        )
+                      }
+                    >
                       Parent withdrew
                     </Button>
                   )}
                   {s.status === "schoolWithdrew" && (
-                    <Button variant="quiet" disabled={busy} aria-label={`Record that a parent of ${s.name} restored consent`} onClick={() => run(() => restored({ memberId: s.memberId as MemberId }), () => `Consent restored for ${s.name}.`)}>
+                    <Button
+                      variant="quiet"
+                      disabled={busy}
+                      aria-label={`Record that a parent of ${s.name} restored consent`}
+                      onClick={() =>
+                        run(
+                          () => restored({ memberId: s.memberId as MemberId }),
+                          () => `Consent restored for ${s.name}.`,
+                        )
+                      }
+                    >
                       Parent restored
                     </Button>
                   )}

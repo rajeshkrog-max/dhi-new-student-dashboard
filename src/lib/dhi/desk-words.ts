@@ -17,13 +17,18 @@ const DESK_REFUSALS: Record<string, string> = {
   desk_day_full:
     "The desk has answered all the new questions it can for today. Questions you asked before still answer for free. No coin was taken. Please try again tomorrow.",
   not_open_yet: "That part of the desk is not open yet.",
-  bad_question: "Please type a question of up to 600 letters, or a piece of writing of up to 1500 letters.",
+  bad_question:
+    "Please type a question of up to 600 letters, or a piece of writing of up to 1500 letters.",
   nothing_to_clarify: "Ask a question first, then you can ask for it to be said again.",
   thread_full: "This talk is full. Please start a new one.",
   model_failed: "The desk could not answer just now. No coin was taken. Please try again.",
   rate_limited: "That was too many questions for now. Please wait a little and try again.",
   expired: "That answer came too late and was not kept. No coin was taken. Please ask again.",
   not_found: "That talk was not found.",
+  attach_chat_only: "A picture or a PDF goes with Ask a question only.",
+  bad_attachment:
+    "That file could not be read. Please attach a JPEG, PNG or WebP picture, or a PDF, of up to 4 MB. No coin was taken.",
+  slow_down: "That was a lot of files for now. Please wait a little and try again.",
 };
 
 export function deskRefusal(error: unknown): string {
@@ -68,7 +73,8 @@ export const DRAW_BUTTON = "Draw a diagram (8 coins)";
 export const DRAW_NOTE =
   "The desk draws a simple labelled diagram. It can make mistakes, so check it against your book.";
 export const MODE_USE = "Where is it used";
-export const USE_NOTE = "Two or three places the idea shows up in daily life. A classmate's earlier answer on the same topic comes free.";
+export const USE_NOTE =
+  "Two or three places the idea shows up in daily life. A classmate's earlier answer on the same topic comes free.";
 export const DRAW_ALT = "A diagram made by the desk";
 export const WRITE_NOTE =
   "The desk tells you what works and what to improve. It does not rewrite your piece, so try the rewrite yourself.";

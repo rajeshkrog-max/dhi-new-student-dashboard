@@ -246,3 +246,21 @@ export const userTextFor = (kind: string, question: string): string =>
 // Owner gate, like the other rooms: the desk's words are drafts until the owner approves them. False.
 // Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
 export const DESK_WORDS_APPROVED = true;
+
+// Attach (the house mockup's desk): a picture or a PDF beside an "Ask a question", read by the model with the question. One more coin for the reading.
+// An attached question is never cached or shared, and the file is deleted as soon as the answer comes back.
+export const ATTACH_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
+export const MAX_ATTACH_BYTES = 4 * 1024 * 1024;
+export const ATTACH_FRESH_MS = 60 * 60 * 1000;
+export const ATTACH_PRICE = 1;
+export const isAttachType = (x: unknown): boolean => typeof x === "string" && (ATTACH_TYPES as readonly string[]).includes(x);
+
+// Whether a stored file may go to the model with a question: it exists, is of an allowed type, is not empty or too large, and was uploaded in the
+// last hour. Returns the refusal code or null.
+export function attachFileProblem(file: { size: number; contentType?: string; _creationTime: number } | null, now: number): "bad_attachment" | null {
+  if (file === null) return "bad_attachment";
+  if (!(file.size > 0) || file.size > MAX_ATTACH_BYTES) return "bad_attachment";
+  if (now - file._creationTime > ATTACH_FRESH_MS) return "bad_attachment";
+  if (file.contentType !== undefined && !isAttachType(file.contentType)) return "bad_attachment";
+  return null;
+}

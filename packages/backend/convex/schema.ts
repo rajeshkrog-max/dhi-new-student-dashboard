@@ -1081,6 +1081,7 @@ export default defineSchema({
     tokensOut: v.optional(v.number()),
     createdAt: v.number(),
     resolvedAt: v.optional(v.number()), // the student marked this answer as solving their doubt, once (A18, house spec 0030)
+    attachment: v.optional(v.string()), // "image" or "pdf" when a file came with the question; the file itself is deleted after the answer
   })
     .index("by_threadId", ["threadId"])
     .index("by_memberId", ["memberId"])

@@ -715,63 +715,65 @@ function HelpDesk({ onClose, onBooked }: { onClose: () => void; onBooked: () => 
         className="mt-4 w-full resize-none rounded-control bg-white p-3 text-sm outline-none focus-visible:focus-ring"
       />
       <p className="mt-4 text-[11px] uppercase tracking-wide text-mute touch:text-xs">Open times</p>
-      {free === undefined ? (
-        <p className="mt-2 text-sm text-mute">Loading…</p>
-      ) : free.length === 0 ? (
-        <p className="mt-2 text-sm text-mute">
-          No open times in the next days. Counseling shows new times as soon as a counselor opens
-          them.
-        </p>
-      ) : (
-        <>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {days.map((d) => (
-              <button
-                key={d}
-                type="button"
-                aria-pressed={shownDay === d}
-                onClick={() => {
-                  setDay(d);
-                  setSlotId(null);
-                }}
-                className={cn(
-                  "h-9 rounded-full px-3 text-xs touch:h-11",
-                  shownDay === d ? "bg-home text-paper" : "bg-white",
-                )}
-              >
-                {new Date(`${d}T12:00:00+05:30`).toLocaleDateString("en-IN", {
-                  timeZone: "Asia/Kolkata",
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
-              </button>
-            ))}
-          </div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {ofDay.map((s) => (
-              <button
-                key={s.slotId}
-                type="button"
-                aria-pressed={slotId === s.slotId}
-                onClick={() => setSlotId(slotId === s.slotId ? null : s.slotId)}
-                className={cn(
-                  "flex min-h-12 flex-col items-center justify-center rounded-control text-xs",
-                  slotId === s.slotId ? "bg-grove text-paper" : "bg-white",
-                )}
-              >
-                <Clock className="mb-0.5 size-3" aria-hidden />
-                {new Date(s.startsAt).toLocaleTimeString("en-IN", {
-                  timeZone: "Asia/Kolkata",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-                <span className="opacity-80">{s.counselor}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      <div className="min-h-[7.5rem]">
+        {free === undefined ? (
+          <p className="mt-2 text-sm text-mute">Loading…</p>
+        ) : free.length === 0 ? (
+          <p className="mt-2 text-sm text-mute">
+            No open times in the next days. Counseling shows new times as soon as a counselor opens
+            them.
+          </p>
+        ) : (
+          <>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {days.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={shownDay === d}
+                  onClick={() => {
+                    setDay(d);
+                    setSlotId(null);
+                  }}
+                  className={cn(
+                    "h-9 rounded-full px-3 text-xs touch:h-11",
+                    shownDay === d ? "bg-home text-paper" : "bg-white",
+                  )}
+                >
+                  {new Date(`${d}T12:00:00+05:30`).toLocaleDateString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </button>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {ofDay.map((s) => (
+                <button
+                  key={s.slotId}
+                  type="button"
+                  aria-pressed={slotId === s.slotId}
+                  onClick={() => setSlotId(slotId === s.slotId ? null : s.slotId)}
+                  className={cn(
+                    "flex min-h-12 flex-col items-center justify-center rounded-control text-xs",
+                    slotId === s.slotId ? "bg-grove text-paper" : "bg-white",
+                  )}
+                >
+                  <Clock className="mb-0.5 size-3" aria-hidden />
+                  {new Date(s.startsAt).toLocaleTimeString("en-IN", {
+                    timeZone: "Asia/Kolkata",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                  <span className="opacity-80">{s.counselor}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
       {error && (
         <Notice tone="danger" role="alert" className="mt-3 px-4 py-3 text-sm">
           {error}

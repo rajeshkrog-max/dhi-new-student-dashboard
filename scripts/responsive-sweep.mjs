@@ -148,13 +148,23 @@ function collectFacts(leakWords) {
   // What the loading, error and not found screens are expected to show (spec house/0003).
   const bodyText = document.body.innerText;
   const clean = (el) => (el.textContent || "").replace(/\s+/g, " ").trim();
-  const shownButtons = [...document.querySelectorAll("main button, main a[href]")].filter(visible).map(clean);
-  const back = [...document.querySelectorAll("a[href]")].find((a) => clean(a) === "Back to the house");
+  const shownButtons = [...document.querySelectorAll("main button, main a[href]")]
+    .filter(visible)
+    .map(clean);
+  const back = [...document.querySelectorAll("a[href]")].find(
+    (a) => clean(a) === "Back to the house",
+  );
   const page = {
-    loading: [...document.querySelectorAll('[role="status"]')].some((el) => clean(el) === "Loading"),
+    loading: [...document.querySelectorAll('[role="status"]')].some(
+      (el) => clean(el) === "Loading",
+    ),
     slowLine: bodyText.includes("This is taking longer than usual."),
-    tryAgain: [...document.querySelectorAll("button")].filter(visible).some((el) => clean(el) === "Try again"),
-    brandBar: [...document.querySelectorAll("header, aside")].filter(visible).some((el) => clean(el).includes("DHI")),
+    tryAgain: [...document.querySelectorAll("button")]
+      .filter(visible)
+      .some((el) => clean(el) === "Try again"),
+    brandBar: [...document.querySelectorAll("header, aside")]
+      .filter(visible)
+      .some((el) => clean(el).includes("DHI")),
     h1: document.querySelector("h1") ? clean(document.querySelector("h1")) : "",
     buttons: shownButtons,
     backHref: back ? back.getAttribute("href") : null,
@@ -238,8 +248,15 @@ const SCENES = {
     room: "modules",
     run: async (page) => {
       await page.getByTestId("film-card").first().waitFor({ timeout: 30_000 });
-      await page.getByTestId("film-card").filter({ hasText: KEPT_FILM.title || "" }).first().click();
-      await page.locator('[data-testid="film-checks"], [data-testid="film-checks-done"]').first().waitFor({ timeout: 30_000 });
+      await page
+        .getByTestId("film-card")
+        .filter({ hasText: KEPT_FILM.title || "" })
+        .first()
+        .click();
+      await page
+        .locator('[data-testid="film-checks"], [data-testid="film-checks-done"]')
+        .first()
+        .waitFor({ timeout: 30_000 });
       await page.waitForTimeout(800);
     },
   },
@@ -255,7 +272,10 @@ const SCENES = {
   "meals-custom": {
     room: "day",
     run: async (page) => {
+      // The dish form is inside the Log a plate sheet.
+      await page.getByTestId("meal-open").click();
       await page.getByRole("button", { name: /Add a dish that is not listed/ }).click();
+      await page.getByTestId("custom-dish").waitFor({ timeout: 20_000 });
     },
   },
   "habits-new": {
@@ -268,7 +288,9 @@ const SCENES = {
     room: "habits",
     run: async (page) => {
       // The room is real now (spec house/0007): the demo student's habits come from the server, so make one if there is none yet.
-      await page.waitForFunction(() => !document.body.innerText.includes("Loading…"), null, { timeout: 30_000 });
+      await page.waitForFunction(() => !document.body.innerText.includes("Loading…"), null, {
+        timeout: 30_000,
+      });
       if (!(await page.getByRole("button", { name: /day streak/ }).count())) {
         await page.getByRole("button", { name: /New habit/ }).click();
         await page.getByTestId("habit-title").fill("Sweep habit");
@@ -337,32 +359,70 @@ const KEPT_FILM = { title: "" };
 
 // Data the scenes above need, made once before the sweep with the development helpers (the sweep refuses production, and so do they).
 function prepare(selected) {
-  const run = (command) => execSync(`npx convex run ${command}`, { cwd: "packages/backend", stdio: "pipe" });
+  const run = (command) =>
+    execSync(`npx convex run ${command}`, { cwd: "packages/backend", stdio: "pipe" });
   // A proof that stopped part way may have left the demo student in a sitting, which the server's exam lock would hold them in.
   run("papersProof:resetDemoSitting");
-  const wants = (prefix) => selected.some((name) => name === prefix || name.startsWith(`${prefix}-`));
+  const wants = (prefix) =>
+    selected.some((name) => name === prefix || name.startsWith(`${prefix}-`));
   if (wants("papers")) {
     run("papersProof:assignDemoTeacher");
     run("papersProof:openDemoPaper");
   }
-  if (wants("hour")) run(`hourProof:openNow "${JSON.stringify({ minutes: 120 }).replace(/"/g, '\\"')}"`);
+  if (wants("hour"))
+    run(`hourProof:openNow "${JSON.stringify({ minutes: 120 }).replace(/"/g, '\\"')}"`);
   // The heavy fortnight with the tagged days under it (house spec 0028), so the page also holds the topic and subject connections.
-  if (wants("progress")) run(`brainProof:seed "${JSON.stringify({ email: PEOPLE.student.email, scenario: "sweep" }).replace(/"/g, '\\"')}"`);
+  if (wants("progress"))
+    run(
+      `brainProof:seed "${JSON.stringify({ email: PEOPLE.student.email, scenario: "sweep" }).replace(/"/g, '\\"')}"`,
+    );
   // A pending card for the desk and for the study hour (house spec 0028: the subject and topic taps). A card stays until answered, so one is enough.
   // A made up practice bank for the demo student's class, for the Learn scenes (house spec 0031).
-  if (wants("dhi")) run(`learnProof:bankFor "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`);
-  if (wants("modules")) KEPT_FILM.title = JSON.parse(run(`learnProof:keepFilm "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`).toString() || "null")?.title ?? "";
-  if (wants("dhi")) run(`topicsProof:openDeskCard "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`);
-  if (wants("hour")) run(`hourProof:addFinishedStay "${JSON.stringify({ email: PEOPLE.student.email, minutes: 25 }).replace(/"/g, '\\"')}"`);
+  if (wants("dhi"))
+    run(
+      `learnProof:bankFor "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`,
+    );
+  if (wants("modules"))
+    KEPT_FILM.title =
+      JSON.parse(
+        run(
+          `learnProof:keepFilm "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`,
+        ).toString() || "null",
+      )?.title ?? "";
+  if (wants("dhi"))
+    run(
+      `topicsProof:openDeskCard "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`,
+    );
+  if (wants("hour"))
+    run(
+      `hourProof:addFinishedStay "${JSON.stringify({ email: PEOPLE.student.email, minutes: 25 }).replace(/"/g, '\\"')}"`,
+    );
 }
 
 // The room is real now (spec house/0006): its days come from the server. Make sure today has a colour, then open the month that holds it: by its
 // row on touch, by the strip on desktop. The day rule is the house's: 04:00 to 04:00 India time.
 async function openMoodDay(page, width) {
   const day = new Date(Date.now() + (5.5 - 4) * 3600 * 1000).toISOString().slice(0, 10);
-  const monthName = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][Number(day.slice(5, 7)) - 1];
+  const monthName = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ][Number(day.slice(5, 7)) - 1];
   await page.getByTestId("mood-note").waitFor({ timeout: 30_000 });
-  await page.waitForFunction(() => !document.querySelector('[data-testid="mood-save"]')?.textContent?.includes("Loading"), null, { timeout: 30_000 });
+  await page.waitForFunction(
+    () => !document.querySelector('[data-testid="mood-save"]')?.textContent?.includes("Loading"),
+    null,
+    { timeout: 30_000 },
+  );
   if (!(await page.getByTestId("mood-saved").count())) {
     await page.locator("article button", { hasText: "Content" }).first().click();
     await page.getByTestId("mood-save").click();
@@ -372,7 +432,10 @@ async function openMoodDay(page, width) {
     await page.getByRole("button", { name: "Open " + monthName }).click();
     await page.locator("[data-day-cell]:not([disabled])").first().click();
   } else {
-    await page.locator('button[title^="' + day.slice(0, 8) + '"]:not([disabled])').first().click();
+    await page
+      .locator('button[title^="' + day.slice(0, 8) + '"]:not([disabled])')
+      .first()
+      .click();
   }
 }
 
@@ -401,7 +464,12 @@ const NAME = TEST_STUDENT.name;
 const RAW_ERROR = ["thrown on purpose", "__throw"];
 // Loading, error and not found screens must show no student name. A screen that ends on the real dashboard (`showsStudent`) legitimately does.
 const LEAKS = [NAME, ...RAW_ERROR];
-const BACK_DASHBOARD = { h1: "This page is not here", buttons: ["Back to the house"], backHref: "/dashboard", brandBar: true };
+const BACK_DASHBOARD = {
+  h1: "This page is not here",
+  buttons: ["Back to the house"],
+  backHref: "/dashboard",
+  brandBar: true,
+};
 // The staff screens (spec house/0002, AC-18) are reached as the demo institute admin, through the menu like a person does.
 const staffScreen = (room, title) => ({
   auth: "staff",
@@ -432,7 +500,10 @@ const SCREENS = {
     expect: { h1: "You are not in a house yet", buttons: ["Leave"], brandBar: true },
     leakNames: [PEOPLE.stranger.name],
   },
-  "staff-home": { ...staffScreen("home", "Home"), run: (p) => p.getByTestId("staff-home").waitFor({ timeout: 20_000 }) },
+  "staff-home": {
+    ...staffScreen("home", "Home"),
+    run: (p) => p.getByTestId("staff-home").waitFor({ timeout: 20_000 }),
+  },
   "staff-classes": staffScreen("classes", "Classes"),
   "staff-people": staffScreen("people", "People"),
   "staff-invites": staffScreen("invites", "Invites"),
@@ -466,7 +537,14 @@ const SCREENS = {
     path: "/dashboard",
     ready: (p) => p.getByRole("heading", { name: "Before you enter" }),
     run: async (p) => {
-      await p.waitForFunction(() => (document.querySelector('[data-testid="notice-box"]')?.textContent ?? "").includes("privacy@"), null, { timeout: 20_000 });
+      await p.waitForFunction(
+        () =>
+          (document.querySelector('[data-testid="notice-box"]')?.textContent ?? "").includes(
+            "privacy@",
+          ),
+        null,
+        { timeout: 20_000 },
+      );
     },
     expect: { h1: "Before you enter", brandBar: true },
     leakNames: [PEOPLE.gate.name],
@@ -496,7 +574,12 @@ const SCREENS = {
     ready: (p) => p.getByTestId("landing-signin"),
     run: (p) => p.getByRole("button", { name: "Invite letter" }).click(),
   },
-  notfound: { auth: "user", path: "/dashboard/nothing-here", ready: (p) => p.getByRole("heading", { name: "This page is not here" }), expect: BACK_DASHBOARD },
+  notfound: {
+    auth: "user",
+    path: "/dashboard/nothing-here",
+    ready: (p) => p.getByRole("heading", { name: "This page is not here" }),
+    expect: BACK_DASHBOARD,
+  },
   "notfound-door": {
     auth: "anon",
     path: "/enter/nothing-here",
@@ -507,7 +590,12 @@ const SCREENS = {
     auth: "user",
     path: "/dashboard?__throw=1",
     ready: (p) => p.getByRole("heading", { name: "Something went wrong" }),
-    expect: { h1: "Something went wrong", buttons: ["Try again", "Back to the house"], backHref: "/dashboard", brandBar: true },
+    expect: {
+      h1: "Something went wrong",
+      buttons: ["Try again", "Back to the house"],
+      backHref: "/dashboard",
+      brandBar: true,
+    },
     consoleHas: "thrown on purpose",
   },
   "room-paused": {
@@ -517,15 +605,53 @@ const SCREENS = {
     consoleHas: "thrown on purpose",
     showsStudent: true,
   },
-  "wait-dashboard": { auth: "user", path: "/dashboard", hold: true, wait: 1000, expect: { loading: true, notSlow: true, brandBar: true } },
-  "slow-dashboard": { auth: "user", path: "/dashboard", hold: true, wait: 10500, expect: { loading: true, slow: true, brandBar: true } },
-  "settle-dashboard": { auth: "user", path: "/dashboard", hold: true, wait: 1000, settle: (p) => p.locator('section[aria-label="House"] h1'), showsStudent: true },
-  "wait-door": { auth: "anon", path: "/enter", hold: true, wait: 1000, expect: { loading: true, notSlow: true, brandBar: false } },
-  "slow-door": { auth: "anon", path: "/enter", hold: true, wait: 10500, expect: { loading: true, slow: true, brandBar: false } },
-  "settle-door": { auth: "anon", path: "/enter", hold: true, wait: 1000, settle: (p) => p.getByTestId("landing-signin") },
+  "wait-dashboard": {
+    auth: "user",
+    path: "/dashboard",
+    hold: true,
+    wait: 1000,
+    expect: { loading: true, notSlow: true, brandBar: true },
+  },
+  "slow-dashboard": {
+    auth: "user",
+    path: "/dashboard",
+    hold: true,
+    wait: 10500,
+    expect: { loading: true, slow: true, brandBar: true },
+  },
+  "settle-dashboard": {
+    auth: "user",
+    path: "/dashboard",
+    hold: true,
+    wait: 1000,
+    settle: (p) => p.locator('section[aria-label="House"] h1'),
+    showsStudent: true,
+  },
+  "wait-door": {
+    auth: "anon",
+    path: "/enter",
+    hold: true,
+    wait: 1000,
+    expect: { loading: true, notSlow: true, brandBar: false },
+  },
+  "slow-door": {
+    auth: "anon",
+    path: "/enter",
+    hold: true,
+    wait: 10500,
+    expect: { loading: true, slow: true, brandBar: false },
+  },
+  "settle-door": {
+    auth: "anon",
+    path: "/enter",
+    hold: true,
+    wait: 1000,
+    settle: (p) => p.getByTestId("landing-signin"),
+  },
 };
 
-const dashboardReady = (page) => page.locator('section[aria-label="House"] h1').waitFor({ timeout: 30_000 });
+const dashboardReady = (page) =>
+  page.locator('section[aria-label="House"] h1').waitFor({ timeout: 30_000 });
 
 async function visitRoom(page, base, target, width) {
   const scene = SCENES[target];
@@ -565,7 +691,17 @@ async function visitScreen(page, base, screen, width) {
   if (screen.consoleHas && !logged.some((line) => line.includes(screen.consoleHas))) {
     throw new Error(`the console never got the error text "${screen.consoleHas}"`);
   }
-  return { facts: await page.evaluate(collectFacts, screen.showsStudent ? RAW_ERROR : screen.leakNames ? [...screen.leakNames, ...RAW_ERROR] : LEAKS), expect: screen.expect };
+  return {
+    facts: await page.evaluate(
+      collectFacts,
+      screen.showsStudent
+        ? RAW_ERROR
+        : screen.leakNames
+          ? [...screen.leakNames, ...RAW_ERROR]
+          : LEAKS,
+    ),
+    expect: screen.expect,
+  };
 }
 
 async function main() {
@@ -591,20 +727,33 @@ async function main() {
     };
     if (rooms.some((r) => r === "counsel" || r === "staff-counsel")) {
       states.counselor = await signInCounselor(browser, new URL(base));
-      const json = JSON.stringify({ counselorEmail: PEOPLE.counselor.email, studentEmail: PEOPLE.student.email }).replace(/"/g, '\\"');
-      execSync(`npx convex run counselProof:seedDemo "${json}"`, { cwd: "packages/backend", stdio: "pipe" });
+      const json = JSON.stringify({
+        counselorEmail: PEOPLE.counselor.email,
+        studentEmail: PEOPLE.student.email,
+      }).replace(/"/g, '\\"');
+      execSync(`npx convex run counselProof:seedDemo "${json}"`, {
+        cwd: "packages/backend",
+        stdio: "pipe",
+      });
     }
     for (const width of widths) {
       const touch = isTouchWidth(width);
-      const options = { viewport: { width, height: touch ? 740 : 800 }, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1 };
+      const options = {
+        viewport: { width, height: touch ? 740 : 800 },
+        hasTouch: touch,
+        isMobile: touch,
+        deviceScaleFactor: 1,
+      };
       const contexts = { anon: await browser.newContext(options) };
-      for (const [key, state] of Object.entries(states)) contexts[key] = await browser.newContext({ ...options, storageState: state });
+      for (const [key, state] of Object.entries(states))
+        contexts[key] = await browser.newContext({ ...options, storageState: state });
       // The layout shift score, from navigation until the page settles (spec house/0003, AC-5).
       for (const context of Object.values(contexts)) {
         await context.addInitScript(() => {
           window.__cls = 0;
           new PerformanceObserver((list) => {
-            for (const entry of list.getEntries()) if (!entry.hadRecentInput) window.__cls += entry.value;
+            for (const entry of list.getEntries())
+              if (!entry.hadRecentInput) window.__cls += entry.value;
           }).observe({ type: "layout-shift", buffered: true });
         });
       }
@@ -613,19 +762,30 @@ async function main() {
         // A fresh page for every visit, so held calls, listeners and the layout shift score never leak into the next one.
         const page = await contexts[screen ? screen.auth : "user"].newPage();
         try {
-          const { facts, expect } = screen ? await visitScreen(page, base, screen, width) : await visitRoom(page, base, room, width);
+          const { facts, expect } = screen
+            ? await visitScreen(page, base, screen, width)
+            : await visitRoom(page, base, room, width);
           rows.push(judge(room, width, facts, expect));
           if (args.shots) {
             // A fixed Sheet is only placed right in a viewport shot, so use one while a dialog is open.
-            const dialog = await page.evaluate(() => Boolean(document.querySelector('[role="dialog"]')));
-            await page.screenshot({ path: join(args.shots, `${room}-${width}.png`), fullPage: !dialog });
+            const dialog = await page.evaluate(() =>
+              Boolean(document.querySelector('[role="dialog"]')),
+            );
+            await page.screenshot({
+              path: join(args.shots, `${room}-${width}.png`),
+              fullPage: !dialog,
+            });
           }
         } catch (err) {
           rows.push({ room, width, ok: false, error: String(err.message ?? err).split("\n")[0] });
         }
         await page.close();
         // A sitting scene leaves the demo student's paper open, and the server's exam lock would then close every later room: undo it.
-        if (room.startsWith("papers-")) execSync("npx convex run papersProof:resetDemoSitting", { cwd: "packages/backend", stdio: "pipe" });
+        if (room.startsWith("papers-"))
+          execSync("npx convex run papersProof:resetDemoSitting", {
+            cwd: "packages/backend",
+            stdio: "pipe",
+          });
       }
       await Promise.all(Object.values(contexts).map((context) => context.close()));
     }

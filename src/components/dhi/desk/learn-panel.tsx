@@ -71,13 +71,27 @@ import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
 
-type Topic = { topicId: Id<"paperTopics">; name: string; subject: string; chapter: string | null; step: string; due: boolean; openFix: number };
-type Round = { roundId: Id<"learnRounds">; mode: string; questions: { questionId: Id<"paperQuestions">; topic: string; text: string; options: string[] }[] };
+type Topic = {
+  topicId: Id<"paperTopics">;
+  name: string;
+  subject: string;
+  chapter: string | null;
+  step: string;
+  due: boolean;
+  openFix: number;
+};
+type Round = {
+  roundId: Id<"learnRounds">;
+  mode: string;
+  questions: { questionId: Id<"paperQuestions">; topic: string; text: string; options: string[] }[];
+};
 
-const fieldClass = "w-full rounded-control border border-white/80 bg-white/60 p-3 text-sm outline-none placeholder:opacity-70 focus-visible:focus-ring";
+const fieldClass =
+  "w-full rounded-control border border-white/80 bg-white/60 p-3 text-sm outline-none placeholder:opacity-70 focus-visible:focus-ring";
 
 // The India day of a moment, YYYY-MM-DD, for the plan's date box.
-const indiaDay = (ms: number) => new Date(ms + 5.5 * 60 * 60 * 1000 - 4 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const indiaDay = (ms: number) =>
+  new Date(ms + 5.5 * 60 * 60 * 1000 - 4 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 export function LearnPanel({ live }: { live: boolean }) {
   // A query does not read the clock: the screen passes the time it opened, moved on each minute, which only changes which topics read as due.
@@ -90,7 +104,10 @@ export function LearnPanel({ live }: { live: boolean }) {
   const [search, setSearch] = useState("");
   const summary = useQuery(api.learn.summary, { now });
   const map = useQuery(api.learn.map, { now, ...(subject ? { subject } : {}) });
-  const found = useQuery(api.learn.search, search.trim().length > 0 ? { text: search, now } : "skip");
+  const found = useQuery(
+    api.learn.search,
+    search.trim().length > 0 ? { text: search, now } : "skip",
+  );
   const start = useMutation(api.learn.start);
   const [open, setOpen] = useState<Topic | null>(null);
   const [round, setRound] = useState<Round | null>(null);
@@ -109,14 +126,18 @@ export function LearnPanel({ live }: { live: boolean }) {
 
   const topics: Topic[] | undefined = search.trim().length > 0 ? found : map;
   // The open topic is read again from the live list, so its step and counts move after a round.
-  const openNow = open ? ([...(map ?? []), ...(found ?? [])].find((t) => t.topicId === open.topicId) ?? open) : null;
+  const openNow = open
+    ? ([...(map ?? []), ...(found ?? [])].find((t) => t.topicId === open.topicId) ?? open)
+    : null;
   const byChapter = useMemo(() => {
     const groups = new Map<string, Topic[]>();
     for (const t of topics ?? []) {
       const key = t.chapter ?? "";
       groups.set(key, [...(groups.get(key) ?? []), t]);
     }
-    return [...groups.entries()].sort(([a], [b]) => (a === "" ? 1 : b === "" ? -1 : a.localeCompare(b)));
+    return [...groups.entries()].sort(([a], [b]) =>
+      a === "" ? 1 : b === "" ? -1 : a.localeCompare(b),
+    );
   }, [topics]);
 
   if (summary === undefined) {
@@ -152,13 +173,24 @@ export function LearnPanel({ live }: { live: boolean }) {
       {round ? (
         <RoundCard round={round} onClose={() => setRound(null)} />
       ) : openNow ? (
-        <TopicPage topic={openNow} live={live} now={now} onBack={() => setOpen(null)} onStart={(mode) => void begin(mode, openNow.topicId)} />
+        <TopicPage
+          topic={openNow}
+          live={live}
+          now={now}
+          onBack={() => setOpen(null)}
+          onStart={(mode) => void begin(mode, openNow.topicId)}
+        />
       ) : (
         <Card className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-2 block text-xs text-ink/70">{SUBJECT_PICK}</span>
-              <select value={subject} onChange={(e) => setSubject(e.target.value)} className={fieldClass} data-testid="learn-subject">
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className={fieldClass}
+                data-testid="learn-subject"
+              >
                 <option value="">{ALL_SUBJECTS}</option>
                 {SUBJECTS.map((s) => (
                   <option key={s} value={s}>
@@ -169,7 +201,14 @@ export function LearnPanel({ live }: { live: boolean }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-xs text-ink/70">{SEARCH_LABEL}</span>
-              <input value={search} onChange={(e) => setSearch(e.target.value)} maxLength={60} placeholder={SEARCH_PLACEHOLDER} className={fieldClass} data-testid="learn-search" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                maxLength={60}
+                placeholder={SEARCH_PLACEHOLDER}
+                className={fieldClass}
+                data-testid="learn-search"
+              />
             </label>
           </div>
           {topics === undefined ? (
@@ -216,7 +255,19 @@ export function LearnPanel({ live }: { live: boolean }) {
   );
 }
 
-function TopicPage({ topic, live, now, onBack, onStart }: { topic: Topic; live: boolean; now: number; onBack: () => void; onStart: (mode: string) => void }) {
+function TopicPage({
+  topic,
+  live,
+  now,
+  onBack,
+  onStart,
+}: {
+  topic: Topic;
+  live: boolean;
+  now: number;
+  onBack: () => void;
+  onStart: (mode: string) => void;
+}) {
   const ask = useAction(api.deskAsk.ask);
   const [use, setUse] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -260,10 +311,20 @@ function TopicPage({ topic, live, now, onBack, onStart }: { topic: Topic; live: 
             {FIX_TOPIC}
           </Button>
         )}
-        <Button variant="quiet" onClick={() => setWriting((x) => !x)} aria-expanded={writing} data-testid="learn-write">
+        <Button
+          variant="quiet"
+          onClick={() => setWriting((x) => !x)}
+          aria-expanded={writing}
+          data-testid="learn-write"
+        >
           {WRITTEN}
         </Button>
-        <Button variant="quiet" onClick={() => void whereUsed()} disabled={busy || !live} data-testid="learn-use">
+        <Button
+          variant="quiet"
+          onClick={() => void whereUsed()}
+          disabled={busy || !live}
+          data-testid="learn-use"
+        >
           {USE_IT}
         </Button>
       </div>
@@ -274,7 +335,10 @@ function TopicPage({ topic, live, now, onBack, onStart }: { topic: Topic; live: 
         </Notice>
       )}
       {use && (
-        <p className="rounded-control bg-white/70 p-3 text-sm whitespace-pre-wrap" data-testid="learn-use-answer">
+        <p
+          className="rounded-control bg-white/70 p-3 text-sm whitespace-pre-wrap"
+          data-testid="learn-use-answer"
+        >
           {use}
         </p>
       )}
@@ -287,7 +351,11 @@ function RoundCard({ round, onClose }: { round: Round; onClose: () => void }) {
   const answer = useMutation(api.learn.answer);
   const [i, setI] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
-  const [result, setResult] = useState<{ right: boolean; rightOption: number; mastered: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    right: boolean;
+    rightOption: number;
+    mastered: boolean;
+  } | null>(null);
   const [fail, setFail] = useState("");
   const shownAt = useRef(Date.now());
   const q = round.questions[i];
@@ -297,7 +365,12 @@ function RoundCard({ round, onClose }: { round: Round; onClose: () => void }) {
     if (choice === null || !q) return;
     setFail("");
     try {
-      const r = await answer({ roundId: round.roundId, questionId: q.questionId, choice, seconds: (Date.now() - shownAt.current) / 1000 });
+      const r = await answer({
+        roundId: round.roundId,
+        questionId: q.questionId,
+        choice,
+        seconds: (Date.now() - shownAt.current) / 1000,
+      });
       if (!r.ok) setFail(learnRefusal(r.code));
       else setResult({ right: r.right, rightOption: r.rightOption, mastered: r.mastered });
     } catch (error) {
@@ -332,18 +405,37 @@ function RoundCard({ round, onClose }: { round: Round; onClose: () => void }) {
           <fieldset className="space-y-2">
             <legend className="mb-2 text-sm font-medium whitespace-pre-wrap">{q.text}</legend>
             {q.options.map((o, k) => (
-              <label key={k} className="tap flex items-center gap-3 rounded-control border border-home/15 bg-white/70 px-3 py-2 text-sm">
-                <input type="radio" name={`q-${q.questionId}`} checked={choice === k} disabled={result !== null} onChange={() => setChoice(k)} data-testid="learn-option" />
+              <label
+                key={k}
+                className="tap flex items-center gap-3 rounded-control border border-home/15 bg-white/70 px-3 py-2 text-sm"
+              >
+                <input
+                  type="radio"
+                  name={`q-${q.questionId}`}
+                  checked={choice === k}
+                  disabled={result !== null}
+                  onChange={() => setChoice(k)}
+                  data-testid="learn-option"
+                />
                 <span>{o}</span>
               </label>
             ))}
           </fieldset>
-          {result && (
-            <Notice role="status" tone={result.right ? undefined : "danger"} className="px-4 py-3 text-sm" data-testid="learn-result" data-right={result.right ? "yes" : "no"}>
-              {result.right ? RIGHT : NOT_YET(q.options[result.rightOption] ?? "")}
-              {result.mastered ? ` ${MASTERED}` : ""}
-            </Notice>
-          )}
+          {/* The answer's line has its place kept before the check, so the buttons below do not move when it arrives. */}
+          <div className="min-h-16">
+            {result && (
+              <Notice
+                role="status"
+                tone={result.right ? undefined : "danger"}
+                className="px-4 py-3 text-sm"
+                data-testid="learn-result"
+                data-right={result.right ? "yes" : "no"}
+              >
+                {result.right ? RIGHT : NOT_YET(q.options[result.rightOption] ?? "")}
+                {result.mastered ? ` ${MASTERED}` : ""}
+              </Notice>
+            )}
+          </div>
           {fail && (
             <Notice role="alert" tone="danger" className="px-4 py-3 text-sm">
               {fail}
@@ -355,7 +447,11 @@ function RoundCard({ round, onClose }: { round: Round; onClose: () => void }) {
                 {NEXT}
               </Button>
             ) : (
-              <Button onClick={() => void check()} disabled={choice === null} data-testid="learn-check">
+              <Button
+                onClick={() => void check()}
+                disabled={choice === null}
+                data-testid="learn-check"
+              >
                 {CHECK}
               </Button>
             )}
@@ -369,7 +465,11 @@ function RoundCard({ round, onClose }: { round: Round; onClose: () => void }) {
   );
 }
 
-function WrittenBox({ questions }: { questions: { questionId: Id<"paperQuestions">; text: string; maxMarks: number }[] | undefined }) {
+function WrittenBox({
+  questions,
+}: {
+  questions: { questionId: Id<"paperQuestions">; text: string; maxMarks: number }[] | undefined;
+}) {
   const submit = useAction(api.learnMark.submit);
   const [pick, setPick] = useState<string>("");
   const [text, setText] = useState("");
@@ -402,11 +502,18 @@ function WrittenBox({ questions }: { questions: { questionId: Id<"paperQuestions
   }
 
   return (
-    <div className="space-y-3 rounded-control border border-home/15 p-3" data-testid="learn-written">
+    <div
+      className="space-y-3 rounded-control border border-home/15 p-3"
+      data-testid="learn-written"
+    >
       {questions.length > 1 && (
         <label className="block">
           <span className="mb-2 block text-xs text-ink/70">{WRITTEN_PICK}</span>
-          <select value={chosen.questionId} onChange={(e) => setPick(e.target.value)} className={fieldClass}>
+          <select
+            value={chosen.questionId}
+            onChange={(e) => setPick(e.target.value)}
+            className={fieldClass}
+          >
             {questions.map((q) => (
               <option key={q.questionId} value={q.questionId}>
                 {q.text.slice(0, 80)}
@@ -418,9 +525,20 @@ function WrittenBox({ questions }: { questions: { questionId: Id<"paperQuestions
       <p className="text-sm font-medium whitespace-pre-wrap">{chosen.text}</p>
       <label className="block">
         <span className="mb-2 block text-xs text-ink/70">{WRITTEN_LABEL}</span>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={WRITTEN_MAX} rows={6} className={fieldClass} data-testid="learn-written-input" />
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={WRITTEN_MAX}
+          rows={6}
+          className={fieldClass}
+          data-testid="learn-written-input"
+        />
       </label>
-      <Button onClick={() => void send()} disabled={busy || text.trim().length === 0} data-testid="learn-written-send">
+      <Button
+        onClick={() => void send()}
+        disabled={busy || text.trim().length === 0}
+        data-testid="learn-written-send"
+      >
         {busy ? MARKING : WRITTEN_SEND}
       </Button>
       <p className="text-xs text-mute">{WRITTEN_NOTE}</p>
@@ -442,11 +560,20 @@ function MyAnswers() {
       <h3 className="text-sm font-semibold">{MY_ANSWERS}</h3>
       <ul className="space-y-3">
         {mine.map((a) => (
-          <li key={a.answerId} className="space-y-1 rounded-control border border-home/15 bg-white/70 p-3 text-sm" data-testid="learn-answer" data-status={a.status}>
+          <li
+            key={a.answerId}
+            className="space-y-1 rounded-control border border-home/15 bg-white/70 p-3 text-sm"
+            data-testid="learn-answer"
+            data-status={a.status}
+          >
             <p className="font-medium whitespace-pre-wrap">{a.question}</p>
             <p className="text-xs text-mute whitespace-pre-wrap">{a.text}</p>
             <p>
-              {a.status === "marking" ? MARKING : a.status === "teacher" ? WAITING : MARKS(a.marks, a.maxMarks)}
+              {a.status === "marking"
+                ? MARKING
+                : a.status === "teacher"
+                  ? WAITING
+                  : MARKS(a.marks, a.maxMarks)}
               {a.status === "marked" ? ` · ${BY_DESK}` : a.byTeacher ? ` · ${BY_TEACHER}` : ""}
             </p>
             {a.points.length > 0 && (
@@ -460,7 +587,11 @@ function MyAnswers() {
               </ul>
             )}
             {a.status === "marked" && (
-              <Button variant="link" onClick={() => void dispute({ answerId: a.answerId }).catch(() => {})} data-testid="learn-dispute">
+              <Button
+                variant="link"
+                onClick={() => void dispute({ answerId: a.answerId }).catch(() => {})}
+                data-testid="learn-dispute"
+              >
                 {ASK_TEACHER}
               </Button>
             )}
@@ -496,7 +627,12 @@ function PlanCard({ now }: { now: number }) {
       <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <label className="block">
           <span className="mb-2 block text-xs text-ink/70">{SUBJECT_PICK}</span>
-          <select value={subject} onChange={(e) => setSubject(e.target.value)} className={fieldClass} data-testid="learn-plan-subject">
+          <select
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className={fieldClass}
+            data-testid="learn-plan-subject"
+          >
             {SUBJECTS.map((s) => (
               <option key={s} value={s}>
                 {subjectWord(s)}
@@ -506,7 +642,14 @@ function PlanCard({ now }: { now: number }) {
         </label>
         <label className="block">
           <span className="mb-2 block text-xs text-ink/70">{PLAN_DAY}</span>
-          <input type="date" value={day} min={tomorrow} onChange={(e) => setDay(e.target.value)} className={fieldClass} data-testid="learn-plan-day" />
+          <input
+            type="date"
+            value={day}
+            min={tomorrow}
+            onChange={(e) => setDay(e.target.value)}
+            className={fieldClass}
+            data-testid="learn-plan-day"
+          />
         </label>
         <Button onClick={() => void make()} data-testid="learn-plan-make">
           {PLAN_MAKE}
@@ -528,7 +671,8 @@ function PlanCard({ now }: { now: number }) {
             <ol className="space-y-1 text-sm">
               {plan.days.map((d) => (
                 <li key={d.day} data-testid="learn-plan-day-row">
-                  <span className="font-medium">{d.day}</span>: {d.topics.map((t) => `${t.name} (${PLAN_STEP[t.step] ?? t.step})`).join(", ")}
+                  <span className="font-medium">{d.day}</span>:{" "}
+                  {d.topics.map((t) => `${t.name} (${PLAN_STEP[t.step] ?? t.step})`).join(", ")}
                 </li>
               ))}
             </ol>

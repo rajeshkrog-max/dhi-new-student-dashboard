@@ -917,7 +917,7 @@ function Milestone({
           aria-current={i === current ? "step" : undefined}
           aria-label={`Question ${i + 1}${done[i] ? ", answered" : ""}`}
           className={cn(
-            "grid h-8 w-full place-items-center rounded-chip text-[11px]",
+            "grid h-8 w-full shrink-0 place-items-center rounded-chip text-[11px] touch:h-11 touch:text-xs",
             i === current
               ? "bg-home text-paper"
               : done[i]

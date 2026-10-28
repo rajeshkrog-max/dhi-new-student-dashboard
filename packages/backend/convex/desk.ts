@@ -3,7 +3,7 @@
 // the balance can never go below zero and a race cannot spend a coin twice. A repeated question is answered from `deskCache` for 0 coins and no model call.
 // A message that looks like distress is answered with the care text by the screen: nothing is stored, no coins are taken and the model is never called.
 import { v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { env, internalMutation, mutation, query, type MutationCtx } from "./_generated/server";
 import { dayOf } from "./dayRules";
 import {
@@ -23,6 +23,8 @@ import {
   looksDistressed,
   looksPersonal,
   titleOf,
+  ATTACH_PRICE,
+  attachFileProblem,
 } from "./deskRules";
 import { touchSitting } from "./deskSitting";
 import { recordEvent } from "./eventLog";
@@ -119,6 +121,7 @@ const turnView = v.object({
   cached: v.boolean(),
   createdAt: v.number(),
   resolved: v.boolean(),
+  attachment: v.union(v.string(), v.null()),
 });
 
 // One of the student's own talks, or null. A malformed id, a missing row and another student's talk read the same.
@@ -145,6 +148,7 @@ export const thread = query({
         cached: x.cached,
         createdAt: x.createdAt,
         resolved: x.resolvedAt !== undefined,
+        attachment: x.attachment ?? null,
       })),
     };
   },
@@ -204,6 +208,20 @@ export const allot = mutation({
   },
 });
 
+// A place to upload a file for the desk: the browser sends a picture or a PDF there and passes the storage id to `ask`, which checks it. Twelve an
+// hour for each student, and never during an exam. A file that is never asked about is removed by the daily storage clean up after a day.
+export const attachUploadUrl = mutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    if (await hasOpenSitting(ctx, mc.member._id)) fail("exam_open");
+    if (!(await rateLimiter.limit(ctx, "deskAttach", { key: mc.member._id })).ok) fail("slow_down");
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 // The deployment's daily cap and the student's share of it, counted on the way to the model (desk questions and written answer marking, house spec 0031).
 // Returns the refusal code, or null after counting the call.
 export async function reserveModelCall(ctx: MutationCtx, member: Doc<"members">, now: number): Promise<string | null> {
@@ -239,6 +257,7 @@ const beginResult = v.union(
     kind: v.string(),
     question: v.string(),
     earlier: v.union(v.null(), v.object({ question: v.string(), answer: v.string() })),
+    attachment: v.union(v.null(), v.object({ id: v.id("_storage"), type: v.string() })),
   }),
 );
 
@@ -246,7 +265,7 @@ const beginResult = v.union(
 // switched on, the entry check and the role, the hourly limits (every attempt counts), the question's own checks, the exam lock, the care check,
 // the talk, the cache (before the coins, so a stored answer is free even at 0), the coins, then the write.
 export const begin = internalMutation({
-  args: { threadId: v.optional(v.string()), kind: v.string(), question: v.string() },
+  args: { threadId: v.optional(v.string()), kind: v.string(), question: v.string(), attachmentId: v.optional(v.id("_storage")) },
   returns: beginResult,
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
@@ -273,6 +292,17 @@ export const begin = internalMutation({
     // The exam lock (Desk Design rule 5): while a paper is open for this student the desk is closed, so it can never answer a paper.
     if (await hasOpenSitting(ctx, member._id)) return { ok: false as const, code: "exam_open" };
 
+    let attachment: { id: Id<"_storage">; type: string } | null = null;
+    if (args.attachmentId !== undefined) {
+      if (kind !== "chat") return { ok: false as const, code: "attach_chat_only" };
+      const file = await ctx.db.system.get("_storage", args.attachmentId);
+      if (attachFileProblem(file, Date.now())) return { ok: false as const, code: "bad_attachment" };
+      if (await ctx.db.query("blogPosts").withIndex("by_photoId", (q) => q.eq("photoId", args.attachmentId as Id<"_storage">)).first()) {
+        return { ok: false as const, code: "bad_attachment" };
+      }
+      attachment = { id: args.attachmentId, type: (file as { contentType?: string }).contentType ?? "" };
+    }
+
     const now = Date.now();
     let existing: Doc<"deskThreads"> | null = null;
     if (args.threadId !== undefined) {
@@ -296,7 +326,7 @@ export const begin = internalMutation({
 
     // The cache (a repeated question, house spec 0031: every kind that is not the student's own writing or a clarifying question, which depends on its talk).
     const key = await hashedKey(cacheKeyOf(kind, question));
-    if (isCachedKind(kind) && !looksPersonal(question)) {
+    if (isCachedKind(kind) && !looksPersonal(question) && attachment === null) {
       const hit = await ctx.db.query("deskCache").withIndex("by_instituteId_and_key", (q) => q.eq("instituteId", instituteId).eq("key", key)).first();
       if (hit && now - hit.createdAt <= CACHE_DAYS * DAY_MS) {
         const threadId = existing?._id ?? (await ctx.db.insert("deskThreads", { memberId: member._id, instituteId, title: titleOf(question), lastAt: now }));
@@ -319,7 +349,7 @@ export const begin = internalMutation({
       }
     }
 
-    const price = PRICES[kind];
+    const price = PRICES[kind] + (attachment ? ATTACH_PRICE : 0);
     if (wallet.balance < price) return { ok: false as const, code: "not_enough_coins" };
     // The daily cap for the whole deployment, counted only here, on the way to the model. A question that later fails still counts: the cap is a
     // ceiling on calls, and a failed call may still cost.
@@ -338,6 +368,7 @@ export const begin = internalMutation({
       coinsSpent: price,
       cached: false,
       createdAt: now,
+      ...(attachment ? { attachment: attachment.type === "application/pdf" ? "pdf" : "image" } : {}),
     });
     await touchSitting(ctx, member, now, kind);
     // A clarifying question carries the talk's last answered turn so the model knows what is being clarified; a chat question carries nothing else.
@@ -350,6 +381,7 @@ export const begin = internalMutation({
       kind,
       question,
       earlier: kind === "clarify" ? earlier : null,
+      attachment,
     };
   },
 });
@@ -357,7 +389,7 @@ export const begin = internalMutation({
 // Step two when the model answered: the answer is kept on the turn with its cost, and a stand alone chat answer is stored for the next student who asks
 // the same thing in this institute. A turn the sweep already gave up on is not answered late.
 export const finish = internalMutation({
-  args: { turnId: v.string(), answer: v.string(), model: v.string(), tokensIn: v.number(), tokensOut: v.number() },
+  args: { turnId: v.string(), answer: v.string(), model: v.string(), tokensIn: v.number(), tokensOut: v.number(), attachment: v.optional(v.string()) },
   returns: v.union(v.object({ ok: v.literal(true), balance: v.number() }), refused),
   handler: async (ctx, args) => {
     const id = ctx.db.normalizeId("deskTurns", args.turnId);
@@ -365,8 +397,8 @@ export const finish = internalMutation({
     if (!turn) return { ok: false as const, code: "not_found" };
     if (turn.status !== "pending") return { ok: false as const, code: "expired" };
     const answer = args.answer.slice(0, answerMaxFor(turn.kind));
-    await ctx.db.patch(turn._id, { status: "answered", answer, model: args.model, tokensIn: args.tokensIn, tokensOut: args.tokensOut });
-    if (isDeskKind(turn.kind) && isCachedKind(turn.kind) && !looksPersonal(turn.question)) {
+    await ctx.db.patch(turn._id, { status: "answered", answer, model: args.model, tokensIn: args.tokensIn, tokensOut: args.tokensOut, ...(args.attachment ? { attachment: args.attachment } : {}) });
+    if (isDeskKind(turn.kind) && isCachedKind(turn.kind) && !looksPersonal(turn.question) && turn.attachment === undefined) {
       const key = await hashedKey(cacheKeyOf(turn.kind, turn.question));
       const row = await ctx.db.query("deskCache").withIndex("by_instituteId_and_key", (q) => q.eq("instituteId", turn.instituteId).eq("key", key)).first();
       const now = Date.now();

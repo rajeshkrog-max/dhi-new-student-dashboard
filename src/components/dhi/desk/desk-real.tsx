@@ -5,7 +5,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
-import { DEFAULT_MONTHLY_COINS, QUESTION_MAX, WRITE_MAX } from "@dhi/backend/deskRules";
+import {
+  ATTACH_PRICE,
+  ATTACH_TYPES,
+  DEFAULT_MONTHLY_COINS,
+  MAX_ATTACH_BYTES,
+  QUESTION_MAX,
+  WRITE_MAX,
+} from "@dhi/backend/deskRules";
 import {
   ASK,
   ASKING,
@@ -61,7 +68,17 @@ import { Button } from "@/components/dhi/ui/button";
 import { Notice } from "@/components/dhi/ui/notice";
 import { useStudent } from "@/lib/dhi/student";
 import { cn } from "@/lib/utils";
-import { Image as ImageIcon, Mic, MicOff, Plus, Search, Send, Sparkles, X } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Mic,
+  MicOff,
+  Paperclip,
+  Plus,
+  Search,
+  Send,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 // The three ways to ask: what each one is called, its box and its button. `max` is the same limit the server holds.
 const MODES = {
@@ -153,6 +170,9 @@ export function DeskReal() {
   const [fail, setFail] = useState("");
   const [care, setCare] = useState(false);
   const [q, setQ] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const attachUrl = useMutation(api.desk.attachUploadUrl);
+  const picker = useRef<HTMLInputElement>(null);
   const [canvasOn, setCanvasOn] = useState(true);
   const student = useStudent();
   const input = useRef<HTMLTextAreaElement>(null);
@@ -178,7 +198,23 @@ export function DeskReal() {
     setFail("");
     setCare(false);
     try {
-      const r = await ask({ kind, question: text, ...(threadId ? { threadId } : {}) });
+      let attachmentId: string | undefined;
+      if (file && kind === "chat") {
+        const sent = await fetch(await attachUrl({}), {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!sent.ok)
+          throw Object.assign(new Error("upload"), { data: { code: "bad_attachment" } });
+        attachmentId = ((await sent.json()) as { storageId: string }).storageId;
+      }
+      const r = await ask({
+        kind,
+        question: text,
+        ...(threadId ? { threadId } : {}),
+        ...(attachmentId ? { attachmentId: attachmentId as never } : {}),
+      });
       if (!r.ok) {
         setFail(deskRefusal(r.code));
       } else if (r.care) {
@@ -187,6 +223,7 @@ export function DeskReal() {
       } else {
         setThreadId(r.threadId);
         setText("");
+        setFile(null);
       }
     } catch (error) {
       setFail(deskRefusal(error));
@@ -315,6 +352,11 @@ export function DeskReal() {
                     {turns.map((x) => (
                       <li key={x.id} className="space-y-2">
                         <p className="ml-auto w-fit max-w-[92%] whitespace-pre-wrap rounded-card bg-home px-4 py-3 text-sm text-paper">
+                          {x.attachment && (
+                            <span className="mb-1 block text-[11px] opacity-80 touch:text-xs">
+                              📎 {x.attachment === "pdf" ? "PDF" : "Picture"} attached
+                            </span>
+                          )}
                           {x.question}
                         </p>
                         <article className="max-w-[92%] rounded-card bg-white px-4 py-3 text-sm text-home shadow-sm">
@@ -440,7 +482,7 @@ export function DeskReal() {
                     maxLength={MODES[mode].max}
                     rows={mode === "write" ? 6 : 2}
                     placeholder={MODES[mode].placeholder}
-                    className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-mute"
+                    className="min-h-11 w-full resize-none bg-transparent text-sm outline-none placeholder:text-mute"
                     data-testid="desk-input"
                   />
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -456,6 +498,62 @@ export function DeskReal() {
                       >
                         {CLARIFY}
                       </Button>
+                    )}
+                    <input
+                      ref={picker}
+                      type="file"
+                      accept={ATTACH_TYPES.join(",")}
+                      className="hidden"
+                      tabIndex={-1}
+                      aria-hidden
+                      data-testid="desk-attach-input"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        e.target.value = "";
+                        if (!f) return;
+                        if (
+                          f.size > MAX_ATTACH_BYTES ||
+                          !(ATTACH_TYPES as readonly string[]).includes(f.type)
+                        ) {
+                          setFail(deskRefusal("bad_attachment"));
+                          return;
+                        }
+                        setFail("");
+                        setFile(f);
+                        setMode("chat");
+                      }}
+                    />
+                    {file ? (
+                      <span
+                        className="flex items-center gap-1 rounded-full bg-mint/50 px-3 py-1.5 text-xs"
+                        data-testid="desk-attached"
+                      >
+                        <Paperclip className="size-3.5" aria-hidden />
+                        <span className="max-w-[10rem] truncate">{file.name}</span>
+                        <span className="text-mute">+{ATTACH_PRICE} coin</span>
+                        <button
+                          type="button"
+                          className="tap ml-1 rounded-full px-1"
+                          aria-label="Remove the file"
+                          onClick={() => setFile(null)}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => picker.current?.click()}
+                          className="flex h-8 items-center gap-1 rounded-full bg-paper px-3 text-xs touch:h-11"
+                          data-testid="desk-attach"
+                        >
+                          <Paperclip className="size-3.5" aria-hidden /> Attach
+                        </button>
+                        <span className="rounded-full bg-paper px-3 py-1.5 text-xs text-mute">
+                          PDF · image
+                        </span>
+                      </>
                     )}
                     <span className="ml-auto" />
                     <Dictate
