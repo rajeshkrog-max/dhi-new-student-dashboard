@@ -4,7 +4,7 @@ Everything only the owner can close before real students enter. Written 2026-10-
 
 ## Word approvals
 
-Read the words in one sitting: `docs/launch/words/english.md` (462 lines, with counseling, the school report, the staff houses and the study hour call since 2026-10-27) and `docs/launch/words/hinglish.md` (102 lines), grouped by room. While a switch is false, its screen shows a small draft note.
+Read the words in one sitting: `docs/launch/words/english.md` (477 lines, with counseling, the school report, the staff houses, the study hour call and the topic and subject taps since 2026-10-27) and `docs/launch/words/hinglish.md` (114 lines), grouped by room. While a switch is false, its screen shows a small draft note.
 
 | | Gate | File and constant | Flipping it to true changes | Decides |
 |---|---|---|---|---|
@@ -32,7 +32,6 @@ Read the words in one sitting: `docs/launch/words/english.md` (462 lines, with c
 
 | | Gate | What is needed | Decides |
 |---|---|---|---|
-| [ ] | Rotate the OpenAI key | The key pasted in chat is on the development deployment only and appears nowhere in code, docs, build output or git history (scan of 2026-10-26). Revoke it at OpenAI, make a new key, and set the new one on **production only**: `npx convex env set OPENAI_API_KEY ... --prod` (typed by the owner, never pasted in chat). Then set a fresh one on development too | owner |
 | [ ] | The legal check | `docs/launch/legal-check.md`: verifiable parental consent through the school's record (DPDP), the missing desk, counseling and study hour call lines in the notice (both calls are recorded on Stream), the production region in the notice, the retention numbers | owner and counsel |
 | [ ] | A Hinglish speaker's read | `docs/launch/hinglish-reader.md` | owner names the reader |
 | [ ] | Food catalog licences | The catalog starts empty; each source's licence is checked before any item is loaded (`foods.ts`). Students can add their own dishes, and DHI can publish them | owner |
