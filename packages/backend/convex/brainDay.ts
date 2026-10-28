@@ -9,7 +9,7 @@ import { dayBounds, dayOf, shiftDay, todayOf } from "./dayRules";
 import { eventsForDay } from "./eventLog";
 import { pausedWithin } from "./pauseHistory";
 import { sittingWithin } from "./examLock";
-import { MOOD_LIGHTNESS, valuesOfDay, type DayRow, type DayValues } from "./metricRules";
+import { MOOD_LIGHTNESS, tagsOfDay, valuesOfDay, type DayRow, type DayTags, type DayValues, type Value } from "./metricRules";
 
 type Reader = QueryCtx | MutationCtx;
 
@@ -45,6 +45,11 @@ async function previousLightness(ctx: Reader, member: Doc<"members">, day: strin
 
 // One student's values for one house day, worked out from the day's current events and the two facts the events cannot say.
 export async function valuesFor(ctx: Reader, member: Doc<"members">, day: string, now: number): Promise<DayValues> {
+  return (await dayFor(ctx, member, day, now)).values;
+}
+
+// The day's values and its tagged values (house spec 0028), from one read of the day's events.
+export async function dayFor(ctx: Reader, member: Doc<"members">, day: string, now: number): Promise<{ values: DayValues; tags: DayTags }> {
   const events = (await eventsForDay(ctx, { memberId: member._id, day })).map((e) => ({ type: e.type, payload: e.payload as Record<string, unknown>, occurredAt: e.occurredAt }));
   // A class whose logins were paused (spec house/0021) is not expected to do anything on a day the pause touched: what the student did that day still
   // counts, but no real zero is written for a habit not ticked or an hour not sat. The day is then the same before and after the resume.
@@ -52,21 +57,22 @@ export async function valuesFor(ctx: Reader, member: Doc<"members">, day: string
   const paused = await pausedWithin(ctx, member.classId, start, end);
   // A day an open paper touched: the exam lock closed the study hour, so it is not expected that day (an hour the student did sit still counts).
   const sitting = await sittingWithin(ctx, member._id, start, end);
-  return valuesOfDay(events, {
+  const values = valuesOfDay(events, {
     openHabits: await openHabitsOn(ctx, member, day),
     hourOpen: (await hourOpenOn(ctx, day)) && !sitting,
     finished: day < todayOf(now) && !paused,
     prevLightness: events.some((e) => e.type === "mood.logged") ? await previousLightness(ctx, member, day) : undefined,
   });
+  return { values, tags: tagsOfDay(events) };
 }
 
-export const sameValues = (a: DayValues, b: DayValues): boolean => {
+export const sameValues = (a: Partial<Record<string, Value>>, b: Partial<Record<string, Value>>): boolean => {
   const ka = Object.keys(a).sort();
   const kb = Object.keys(b).sort();
   if (ka.length !== kb.length || ka.some((k, i) => k !== kb[i])) return false;
   return ka.every((k) => {
-    const x = a[k as keyof DayValues]!;
-    const y = b[k as keyof DayValues]!;
+    const x = a[k]!;
+    const y = b[k]!;
     return x.num === y.num && x.den === y.den;
   });
 };
@@ -81,10 +87,10 @@ export async function windowRows(ctx: Reader, member: Doc<"members">, now: numbe
     .query("brainDays")
     .withIndex("by_memberId_and_day", (q) => q.eq("memberId", member._id).gte("day", from).lte("day", yesterday))
     .take(days + 5);
-  const rows: DayRow[] = stored.map((r) => ({ day: r.day, v: r.values as DayValues }));
+  const rows: DayRow[] = stored.map((r) => ({ day: r.day, v: r.values as DayValues, ...(r.tags ? { t: r.tags } : {}) }));
   if (await eligible(ctx, member, today, now)) {
-    const live = await valuesFor(ctx, member, today, now);
-    if (Object.keys(live).length > 0) rows.push({ day: today, v: live });
+    const live = await dayFor(ctx, member, today, now);
+    if (Object.keys(live.values).length > 0) rows.push({ day: today, v: live.values, ...(Object.keys(live.tags).length > 0 ? { t: live.tags } : {}) });
   }
   return rows.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
 }

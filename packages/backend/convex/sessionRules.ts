@@ -16,10 +16,26 @@ export const DESK_MIN_MINUTES = 10;
 // A desk sitting (spec house/0018, desk part) is a run of questions with no gap over 15 minutes. It ends after 15 idle minutes, and its length is from
 // the first question to the last one. At 10 minutes or more one card is offered; a shorter sitting asks nothing.
 export const DESK_GAP_MS = 15 * 60 * 1000;
-// The subjects a student may tag a desk card with. Optional: leaving it out is allowed.
+// The subjects a student may tag a desk or study hour card with, and a teacher picks for each paper question (house spec 0028). Optional on a card.
 export const SUBJECTS = ["maths", "science", "english", "social", "hindi", "other"] as const;
 export type Subject = (typeof SUBJECTS)[number];
 export const isSubject = (text: unknown): text is Subject => typeof text === "string" && (SUBJECTS as readonly string[]).includes(text);
+// A paper question's subject as a code: the code itself, or the usual name of one in any case ("Maths", "Social studies"). Anything else is null.
+const SUBJECT_ALIASES: Readonly<Record<string, Subject>> = {
+  math: "maths",
+  mathematics: "maths",
+  "social studies": "social",
+  "social science": "social",
+  sst: "social",
+};
+export function subjectCodeOf(text: unknown): Subject | null {
+  if (typeof text !== "string") return null;
+  const t = text.trim().toLowerCase().replace(/\s+/g, " ");
+  if (isSubject(t)) return t;
+  return SUBJECT_ALIASES[t] ?? null;
+}
+// The key a topic is found by: the teacher's words in lower case, with single spaces.
+export const topicKeyOf = (text: string): string => text.trim().toLowerCase().replace(/\s+/g, " ");
 // A card that was not answered or skipped is offered for 24 hours, then it is left alone (it counts as nothing, like a skip).
 export const OFFER_WINDOW_MS = 24 * 60 * 60 * 1000;
 

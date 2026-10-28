@@ -22,6 +22,8 @@ const MAX_LONG_ANSWER = 2000;
 // Attempts closed in one run for each status. Closing writes the attempt and an event (about 30 documents read), so a run stays well inside a
 // transaction; when either batch is full the sweep schedules itself again at once.
 const SWEEP_BATCH = 25;
+// The most topics one sitting's event names (the event's size limit); a paper rarely has more.
+const TOPICS_IN_EVENT = 10;
 
 // The questions of a paper, read once for a run that closes many attempts of the same paper.
 type Questions = Map<string, Doc<"paperQuestions">[]>;
@@ -50,18 +52,27 @@ async function tally(ctx: QueryCtx | MutationCtx, paperId: Id<"papers">, answers
   let tried = 0;
   let right = 0;
   let longDone = 0;
+  // The multiple choice answers tried and right on each topic (house spec 0028), in the order the topics first appear.
+  const byTopic = new Map<Id<"paperTopics">, { tried: number; right: number }>();
   for (const a of answers) {
     const q = questions.find((x) => x.order === a.question);
     if (!q) continue;
     if (q.kind === "mcq") {
       if (a.choice === undefined) continue;
       tried += 1;
-      if (a.choice === q.rightOption) right += 1;
+      const hit = a.choice === q.rightOption;
+      if (hit) right += 1;
+      if (q.topicId) {
+        const t = byTopic.get(q.topicId) ?? { tried: 0, right: 0 };
+        t.tried += 1;
+        if (hit) t.right += 1;
+        byTopic.set(q.topicId, t);
+      }
     } else if (a.text !== undefined && a.text.trim() !== "") {
       longDone += 1;
     }
   }
-  return { tried, right, longDone };
+  return { tried, right, longDone, byTopic };
 }
 
 // Ends an attempt: the status, the multiple choice score (fixed here, the moment the attempt is submitted) and the Brain's event. `at` is when the
@@ -69,7 +80,8 @@ async function tally(ctx: QueryCtx | MutationCtx, paperId: Id<"papers">, answers
 // stop the call (the student's own Submit); a closing done for a window that ended carries on without the event, because the room's own row is the
 // record and a stuck close would stay open for ever. The log checks everything before it writes, so a refused event leaves nothing half written.
 async function finishAttempt(ctx: MutationCtx, attempt: Doc<"paperAttempts">, by: Closer, at: number, auto: boolean, strict: boolean, cache?: Questions): Promise<void> {
-  const { tried, right, longDone } = await tally(ctx, attempt.paperId, attempt.answers ?? [], cache);
+  const { tried, right, longDone, byTopic } = await tally(ctx, attempt.paperId, attempt.answers ?? [], cache);
+  const topics = [...byTopic.entries()].slice(0, TOPICS_IN_EVENT);
   const missed = tried + longDone === 0;
   await ctx.db.patch(attempt._id, { status: "submitted", submittedAt: at, autoSubmitted: auto, missed, mcqCorrect: right });
   const about = `exam:${attempt._id}`;
@@ -77,7 +89,16 @@ async function finishAttempt(ctx: MutationCtx, attempt: Doc<"paperAttempts">, by
     memberId: attempt.memberId,
     room: "exams",
     type: missed ? "exams.missed" : "exams.submitted",
-    payload: missed ? {} : { auto, mcqTried: tried, mcqRight: right, longDone, hints: (attempt.hintsOpened ?? []).length },
+    payload: missed
+      ? {}
+      : {
+          auto,
+          mcqTried: tried,
+          mcqRight: right,
+          longDone,
+          hints: (attempt.hintsOpened ?? []).length,
+          ...(topics.length > 0 ? { topics: topics.map(([id]) => id), topicTried: topics.map(([, t]) => t.tried), topicRight: topics.map(([, t]) => t.right) } : {}),
+        },
     occurredAt: at,
     eventKey: `${about}-0`,
     about,

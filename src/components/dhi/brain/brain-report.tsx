@@ -159,7 +159,7 @@ export function BrainReport({ onOpen }: { onOpen: (room: string) => void }) {
                 <h3 className="text-sm font-semibold">{ui.connectionsTitle}</h3>
                 <p className="text-xs text-mute">{ui.connectionsIntro}</p>
                 {data.connections.map((c) => {
-                  const words = connectionText(c.id, lang, { a: c.a, b: c.b, n: c.nA + c.nB });
+                  const words = connectionText(c.id, lang, { a: c.a, b: c.b, n: c.nA + c.nB, ...(c.subject ? { subject: c.subject } : {}) });
                   if (!words) return null;
                   return (
                     <article key={c.id} className="space-y-2 rounded-control border border-home/15 bg-white/70 p-4" data-testid="connection" data-connection={c.id}>

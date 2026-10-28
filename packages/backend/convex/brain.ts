@@ -35,7 +35,7 @@ import { rateLimiter } from "./limits";
 const inputView = v.object({ metric: v.string(), value: v.union(v.number(), v.null()), logged: v.number() });
 const lampView = v.object({ lamp: v.string(), value: v.union(v.number(), v.null()), movement: v.union(v.string(), v.null()), loggedDays: v.number(), inputs: v.array(inputView) });
 const evidenceView = v.array(v.object({ day: v.string(), items: v.array(v.object({ item: v.string(), room: v.string() })) }));
-const connectionView = v.object({ id: v.string(), a: v.number(), b: v.number(), nA: v.number(), nB: v.number() });
+const connectionView = v.object({ id: v.string(), a: v.number(), b: v.number(), nA: v.number(), nB: v.number(), subject: v.optional(v.string()) });
 const patternView = v.object({ id: v.string(), kind: v.string(), params: v.record(v.string(), v.union(v.number(), v.string())), evidence: evidenceView });
 
 export const report = query({

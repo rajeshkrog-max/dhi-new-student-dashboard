@@ -164,6 +164,8 @@ import type * as studyHour from "../studyHour.js";
 import type * as team from "../team.js";
 import type * as teamCore from "../teamCore.js";
 import type * as teamHttp from "../teamHttp.js";
+import type * as topics from "../topics.js";
+import type * as topicsProof from "../topicsProof.js";
 import type * as trustedOrigins from "../trustedOrigins.js";
 import type * as waiting from "../waiting.js";
 
@@ -330,6 +332,8 @@ declare const fullApi: ApiFromModules<{
   team: typeof team;
   teamCore: typeof teamCore;
   teamHttp: typeof teamHttp;
+  topics: typeof topics;
+  topicsProof: typeof topicsProof;
   trustedOrigins: typeof trustedOrigins;
   waiting: typeof waiting;
 }>;

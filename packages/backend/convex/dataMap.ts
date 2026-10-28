@@ -35,6 +35,8 @@ export const DATA_MAP: Readonly<Record<string, DataMapEntry>> = {
   papers: { owner: "house", class: "kept", retention: "Kept. The teacher's paper: its title and questions, which hold no student's words." },
   paperQuestions: { owner: "house", class: "kept", retention: "Kept with the paper. The right answers and tags are the teacher's own material, and hold no student's words." },
   paperSends: { owner: "house", class: "kept", retention: "Kept. Ids, codes and times only; the student's link is the attempt row, which is erased with them." },
+  paperTopics: { owner: "house", class: "kept", retention: "Kept. The topics of an institute's papers in the teachers' words; no person in it. A student's tap names a topic by its id, and is erased with the student." },
+  classTopics: { owner: "house", class: "kept", retention: "Kept. Which topics were sent to a class and when; no person in it." },
   paperAttempts: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Their marks and remarks, and the paper they belong to." },
   blogPosts: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Their own writing: the title, the tag, the cleaned body and the photo, and the photo's file is deleted with the post." },
   blogComments: { owner: "house", class: "erased", retention: "Deleted when the student is erased. Their own comments." },

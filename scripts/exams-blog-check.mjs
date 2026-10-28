@@ -57,15 +57,14 @@ try {
     await teacher.locator('[data-room="papers"]:visible').click();
     await teacher.getByTestId("papers-section").waitFor({ timeout: 20_000 });
     await teacher.getByLabel("Paper title").fill(title);
-    const subject = teacher.getByLabel("Subject").first();
-    await subject.fill("Maths");
+    // The subject is a pick from the fixed list (house spec 0028).
+    await teacher.getByTestId("question-subject").first().selectOption("maths");
     await teacher.getByLabel("Topic").first().fill("Fractions");
     await teacher.getByLabel("Question").first().fill("What is half of four?");
     await teacher.getByLabel("Options, one a line (2 to 6)").fill("one\ntwo\nthree");
     await teacher.getByLabel("Right option (its number, starting at 1)").fill("2");
     await teacher.getByRole("button", { name: "Add long answer" }).click();
-    const subjects = teacher.getByLabel("Subject");
-    await subjects.nth(1).fill("English");
+    await teacher.getByTestId("question-subject").nth(1).selectOption("english");
     await teacher.getByLabel("Topic").nth(1).fill("Story");
     await teacher.getByLabel("Question").nth(1).fill("Tell a short story.");
     await teacher.getByLabel("Rubric (what earns the marks)").fill("Plot and ending");

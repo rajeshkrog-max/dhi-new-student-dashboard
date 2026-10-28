@@ -2,7 +2,7 @@
 // stored the way the rollup stores them, and today is worked out live from the real rooms. Each test names the criterion it covers.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { api } from "./_generated/api";
-import { connectedRows, scenarioRows, type Scenario } from "./brainFixtures";
+import { connectedRows, scenarioRows, taggedRows, type Scenario } from "./brainFixtures";
 import { HIDE_DAYS } from "./brainRules";
 import { DAY_MS, shiftDay, todayOf } from "./dayRules";
 import { HABIT_COLORS } from "./habitRules";
@@ -153,6 +153,30 @@ describe("the connections (house spec 0023)", () => {
       }
     });
     expect((await report(w.s)).connections.map((c) => c.id)).toContain("bedtime_mood");
+  });
+
+  // The tagged seed (brainProof "tagged", house spec 0028) shows P4 and P6 through the report, with P6's subject, and erasing the tags shows neither.
+  test("the tagged seed scenario shows the topic and subject connections, with the subject", async () => {
+    const w = await world();
+    await w.t.run(async (ctx) => {
+      const member = await ctx.db.get(w.s.memberId);
+      for (const row of taggedRows(TODAY)) {
+        await ctx.db.insert("brainDays", { memberId: w.s.memberId, instituteId: member!.instituteId!, day: row.day, values: row.v as Record<string, { num: number; den: number }>, tags: row.t, version: METRIC_VERSION, computedAt: Date.now() });
+      }
+    });
+    const shown = (await report(w.s)).connections;
+    expect(shown).toEqual(
+      expect.arrayContaining([
+        { id: "topic_desk_papers", a: 90, b: 40, nA: 30, nB: 30 },
+        { id: "subject_feeling", subject: "maths", a: 50, b: 0, nA: 60, nB: 30 },
+      ]),
+    );
+    expect((await report(w.other)).connections).toEqual([]);
+    for (const p of [w.teacher, w.counselor, w.dhi, w.A.admin]) expect(await refusal(p.as.query(api.brain.report, {}))).toBe("forbidden");
+    await w.t.run(async (ctx) => {
+      for (const row of await ctx.db.query("brainDays").collect()) await ctx.db.patch(row._id, { tags: undefined });
+    });
+    expect((await report(w.s)).connections).toEqual([]);
   });
 
   test("no difference between the two kinds of night shows nothing", async () => {

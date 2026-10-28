@@ -5,7 +5,7 @@ import { describe, expect, test } from "vitest";
 import { isHideable } from "./brainRules";
 import { compare, connectionsOf, survivors, CONNECTION_PAIRS, CONNECTION_Q } from "./connectionRules";
 import { shiftDay } from "./dayRules";
-import type { DayRow, DayValues } from "./metricRules";
+import type { DayRow, DayTags, DayValues } from "./metricRules";
 
 const START = "2026-06-01";
 const dayAt = (i: number) => shiftDay(START, i);
@@ -133,9 +133,78 @@ describe("the fixed pairs", () => {
   });
 });
 
+// Tagged days (house spec 0028): `n` finished days, each with its measures and its tags.
+function taggedOf(list: DayTags[]): { rows: DayRow[]; today: string } {
+  return { rows: list.map((t, i) => ({ day: dayAt(i), v: { C01: one(1) }, t })), today: dayAt(list.length) };
+}
+
+describe("the tagged pairs (house spec 0028)", () => {
+  test("P4: paper answers on a topic the day after a desk sitting on it, against topics with no sitting the day before", () => {
+    const list: DayTags[] = [];
+    for (let i = 0; i < 15; i += 1) {
+      list.push({ "d:t1": one(1) });
+      list.push({ "p:t1": one(8, 10), "p:t2": one(3, 10) });
+    }
+    const { rows, today } = taggedOf(list);
+    expect(connectionsOf(rows, today)).toEqual([{ id: "topic_desk_papers", a: 80, b: 30, nA: 15, nB: 15 }]);
+  });
+
+  test("P4: a sitting on another topic, or two days before, puts the paper in the group with no sitting", () => {
+    const list: DayTags[] = [];
+    for (let i = 0; i < 15; i += 1) {
+      list.push({ "d:t9": one(1) });
+      list.push({});
+      list.push({ "p:t1": one(8, 10) });
+    }
+    const { rows, today } = taggedOf(list);
+    expect(connectionsOf(rows, today)).toEqual([]); // 15 papers, all in group B, none in A
+  });
+
+  test("P4: nothing is compared with 13 topic days on one side", () => {
+    const list: DayTags[] = [];
+    for (let i = 0; i < 13; i += 1) list.push({ "d:t1": one(1) }, { "p:t1": one(9, 10) });
+    for (let i = 0; i < 20; i += 1) list.push({ "p:t2": one(2, 10) });
+    const { rows, today } = taggedOf(list);
+    expect(connectionsOf(rows, today)).toEqual([]);
+  });
+
+  test("P6: the subject whose sessions were drained more often, against the student's other subjects, with the subject named", () => {
+    const list: DayTags[] = [];
+    for (let i = 0; i < 12; i += 1) list.push({ "s:maths": one(1, 1), "s:english": one(0, 1) });
+    const { rows, today } = taggedOf(list);
+    expect(connectionsOf(rows, today)).toEqual([{ id: "subject_feeling", subject: "maths", a: 100, b: 0, nA: 12, nB: 12 }]);
+  });
+
+  test("P6: fewer than 10 sessions on a side shows nothing; a subject with no difference shows nothing", () => {
+    const few: DayTags[] = [];
+    for (let i = 0; i < 9; i += 1) few.push({ "s:maths": one(1, 1), "s:english": one(0, 1) });
+    expect(connectionsOf(taggedOf(few).rows, taggedOf(few).today)).toEqual([]);
+    const even: DayTags[] = [];
+    for (let i = 0; i < 20; i += 1) even.push({ "s:maths": one(i % 2, 1), "s:english": one((i + 1) % 2, 1) });
+    expect(connectionsOf(taggedOf(even).rows, taggedOf(even).today)).toEqual([]);
+  });
+
+  test("P6: the p value of the best subject is multiplied by the subjects tried, so a borderline gap does not survive", () => {
+    // Maths drained on 6 of 10 sessions, the others on 2 of 10: a gap that one test might pass, but not after the correction for the subjects tried.
+    const list: DayTags[] = [];
+    for (let i = 0; i < 10; i += 1) list.push({ "s:maths": one(i < 6 ? 1 : 0, 1), "s:science": one(i < 1 ? 1 : 0, 1), "s:english": one(i < 1 ? 1 : 0, 1) });
+    const { rows, today } = taggedOf(list);
+    const single = compare("subject_feeling:maths", [1, 1, 1, 1, 1, 1, 0, 0, 0, 0], Array.from({ length: 20 }, (_, i) => (i < 2 ? 1 : 0)));
+    expect(single.p).toBeLessThan(0.05);
+    expect(connectionsOf(rows, today)).toEqual([]);
+  });
+
+  test("P4 and P6: today is never read", () => {
+    const list: DayTags[] = [];
+    for (let i = 0; i < 12; i += 1) list.push({ "s:maths": one(1, 1), "s:english": one(0, 1) });
+    const { rows } = taggedOf(list);
+    expect(connectionsOf(rows, dayAt(5))).toEqual([]);
+  });
+});
+
 describe("hiding a connection", () => {
   test("every connection can be hidden for 30 days like a pattern", () => {
-    for (const id of ["sleep_papers", "breakfast_focus", "bedtime_mood", "late_room_feeling"]) expect(isHideable(id)).toBe(true);
+    for (const id of ["sleep_papers", "breakfast_focus", "bedtime_mood", "late_room_feeling", "topic_desk_papers", "subject_feeling"]) expect(isHideable(id)).toBe(true);
     expect(isHideable("nope")).toBe(false);
   });
 });

@@ -75,6 +75,8 @@ const svgUrl = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURICom
 export function DeskReal() {
   const wallet = useQuery(api.desk.wallet, {});
   const threads = useQuery(api.desk.threads, {});
+  // The after session card is read here too (the same query, shared with the card), so the room draws once with it and the desk below never jumps.
+  const pendingCard = useQuery(api.deskSitting.pending, {});
   const openWallet = useMutation(api.desk.open);
   const removeThread = useMutation(api.desk.removeThread);
   const ask = useAction(api.deskAsk.ask);
@@ -124,7 +126,7 @@ export function DeskReal() {
     }
   }
 
-  if (wallet === undefined || threads === undefined) {
+  if (wallet === undefined || threads === undefined || pendingCard === undefined) {
     return (
       <p className="text-sm text-mute" data-testid="desk-loading">
         {LOADING}

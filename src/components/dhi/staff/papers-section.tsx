@@ -12,6 +12,8 @@ import { Notice } from "@/components/dhi/ui/notice";
 import { Label, SelectInput, TextInput, useScope } from "@/components/dhi/staff/staff-parts";
 import { HourReview } from "@/components/dhi/staff/hour-section";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
+import { SUBJECTS } from "@dhi/backend/sessionRules";
+import { SUBJECT_WORDS } from "@/lib/dhi/desk-words";
 
 type Draft =
   | { kind: "mcq"; subject: string; topic: string; text: string; options: string; rightOption: number; tags: string[]; hint: string }
@@ -98,8 +100,16 @@ export function PapersSection() {
               <p className="text-xs text-mute">
                 Question {i + 1}, {d.kind === "mcq" ? "multiple choice" : "long answer"}
               </p>
+              {/* The subject is one of the fixed list (house spec 0028), so a student's desk or study hour card can name the same one. */}
               <Label text="Subject">
-                <TextInput value={d.subject} onChange={(e) => update(i, { subject: e.target.value })} required maxLength={60} />
+                <SelectInput value={d.subject} onChange={(e) => update(i, { subject: e.target.value })} required data-testid="question-subject">
+                  <option value="">Pick a subject</option>
+                  {SUBJECTS.map((code) => (
+                    <option key={code} value={code}>
+                      {SUBJECT_WORDS[code]}
+                    </option>
+                  ))}
+                </SelectInput>
               </Label>
               <Label text="Topic">
                 <TextInput value={d.topic} onChange={(e) => update(i, { topic: e.target.value })} required maxLength={60} />

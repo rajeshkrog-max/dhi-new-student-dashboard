@@ -13,6 +13,7 @@ import { Notice } from "@/components/dhi/ui/notice";
 import { Label, SelectInput, TextInput, useScope } from "@/components/dhi/staff/staff-parts";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
 import { SCHOOL_WORDS, SCHOOL_WORDS_APPROVED } from "@/lib/dhi/school-words";
+import { subjectWord } from "@/lib/dhi/desk-words";
 
 type Report = Extract<FunctionReturnType<typeof api.schoolReport.forClass>, { subjects: unknown }>;
 type Counts = FunctionReturnType<typeof api.schoolReport.roomCounts>;
@@ -138,7 +139,7 @@ function ReportView({ report: r }: { report: Report }) {
               <tbody>
                 {r.subjects.map((s) => (
                   <tr key={s.subject} className="border-t border-home/10">
-                    <td className="py-1 pr-3">{s.subject}</td>
+                    <td className="py-1 pr-3">{subjectWord(s.subject)}</td>
                     <td className="py-1 pr-3">{s.pct === null ? SCHOOL_WORDS.fewer : `${s.pct}%`}</td>
                     <td className="py-1">{s.change === null ? "" : `${s.change > 0 ? "+" : ""}${s.change}`}</td>
                   </tr>
@@ -169,7 +170,7 @@ function ReportView({ report: r }: { report: Report }) {
                 {r.topics.map((t) => (
                   <tr key={`${t.subject}-${t.topic}`} className="border-t border-home/10">
                     <td className="py-1 pr-3 whitespace-nowrap">
-                      {t.topic} <span className="text-xs text-mute">({t.subject})</span>
+                      {t.topic} <span className="text-xs text-mute">({subjectWord(t.subject)})</span>
                     </td>
                     {t.cells.map((c) => (
                       <td key={c.week} className="px-1 py-1">
@@ -191,7 +192,7 @@ function ReportView({ report: r }: { report: Report }) {
         ) : (
           <ul className="list-disc space-y-1 pl-5 text-sm">
             {r.actions.map((a) => (
-              <li key={`${a.subject}-${a.topic}`}>{SCHOOL_WORDS.reteach(a.topic, a.subject, a.pct, a.gain)}</li>
+              <li key={`${a.subject}-${a.topic}`}>{SCHOOL_WORDS.reteach(a.topic, subjectWord(a.subject), a.pct, a.gain)}</li>
             ))}
           </ul>
         )}

@@ -13,7 +13,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Doc } from "./_generated/dataModel";
 import { internalMutation, type MutationCtx } from "./_generated/server";
-import { eligible, sameValues, valuesFor } from "./brainDay";
+import { dayFor, eligible, sameValues } from "./brainDay";
 import { shiftDay, todayOf } from "./dayRules";
 import { METRIC_VERSION, type DayValues } from "./metricRules";
 
@@ -43,15 +43,17 @@ export type DayResult = "written" | "removed" | "unchanged" | "skipped";
 // One student's values for one house day, worked out from the day's current events and stored. A day with nothing to measure has no row.
 export async function computeDay(ctx: MutationCtx, member: Doc<"members">, day: string, now: number): Promise<DayResult> {
   if (!(await eligible(ctx, member, day, now))) return "skipped";
-  const values = await valuesFor(ctx, member, day, now);
+  const { values, tags } = await dayFor(ctx, member, day, now);
   const existing = await ctx.db.query("brainDays").withIndex("by_memberId_and_day", (q) => q.eq("memberId", member._id).eq("day", day)).first();
   if (Object.keys(values).length === 0) {
     if (!existing) return "unchanged";
     await ctx.db.delete(existing._id);
     return "removed";
   }
-  if (existing && existing.version === METRIC_VERSION && sameValues(existing.values as DayValues, values)) return "unchanged";
-  const row = { values: values as Record<string, { num: number; den: number }>, version: METRIC_VERSION, computedAt: now };
+  const hasTags = Object.keys(tags).length > 0;
+  if (existing && existing.version === METRIC_VERSION && sameValues(existing.values as DayValues, values) && sameValues(existing.tags ?? {}, tags)) return "unchanged";
+  // The tagged values (house spec 0028) go with the day; a day that lost them drops the field.
+  const row = { values: values as Record<string, { num: number; den: number }>, tags: hasTags ? tags : undefined, version: METRIC_VERSION, computedAt: now };
   if (existing) await ctx.db.patch(existing._id, row);
   else await ctx.db.insert("brainDays", { memberId: member._id, instituteId: member.instituteId!, day, ...row });
   return "written";
@@ -164,7 +166,8 @@ export const reconcile = internalMutation({
       const member = await ctx.db.get(row.memberId);
       if (!member || !(await eligible(ctx, member, row.day, now))) continue;
       checked += 1;
-      if (!sameValues(row.values as DayValues, await valuesFor(ctx, member, row.day, now))) mismatches += 1;
+      const fresh = await dayFor(ctx, member, row.day, now);
+      if (!sameValues(row.values as DayValues, fresh.values) || !sameValues(row.tags ?? {}, fresh.tags)) mismatches += 1;
     }
     const state = await stateOf(ctx, "reconcile");
     await ctx.db.patch(state._id, { checked, mismatches, at: now });

@@ -7,6 +7,8 @@ import { useMutation, useQuery } from "convex/react";
 import type { GenericId } from "convex/values";
 import { api } from "@dhi/backend/api";
 import { BEAT_MS, MAX_MESSAGE } from "@dhi/backend/hourRules";
+import { SUBJECTS } from "@dhi/backend/sessionRules";
+import { SUBJECT_LABEL, SUBJECT_WORDS } from "@/lib/dhi/desk-words";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
@@ -55,6 +57,7 @@ function FeedbackCard() {
   const skip = useMutation(api.sessionFeedback.skip);
   const [feel, setFeel] = useState("");
   const [focus, setFocus] = useState(0);
+  const [subject, setSubject] = useState("");
   const [error, setError] = useState("");
   if (!card) return null;
 
@@ -62,7 +65,7 @@ function FeedbackCard() {
     if (!card) return;
     setError("");
     try {
-      const r = await answer({ seatId: card.seatId, feel, focus });
+      const r = await answer({ seatId: card.seatId, feel, focus, ...(subject ? { subject } : {}) });
       if (!r.ok) setError("We could not save that. You can skip this card.");
     } catch {
       setError("We could not save that. You can skip this card.");
@@ -80,7 +83,7 @@ function FeedbackCard() {
   return (
     <Card className="space-y-3" data-testid="feedback-card">
       <h2 className="text-sm font-semibold">How did that sitting feel?</h2>
-      <p className="text-xs text-mute">You stayed {card.minutes} minutes. Two taps, or skip it. A skip changes nothing.</p>
+      <p className="text-xs text-mute">You stayed {card.minutes} minutes. Two taps and a subject if you like, or skip it. A skip changes nothing.</p>
       <div className="flex flex-wrap gap-2" role="group" aria-label="How you felt">
         {Object.entries(FEEL_WORDS).map(([key, label]) => (
           <Button key={key} variant={feel === key ? "solid" : "quiet"} onClick={() => setFeel(key)} data-testid={`feel-${key}`} aria-pressed={feel === key}>
@@ -93,6 +96,15 @@ function FeedbackCard() {
         {[1, 2, 3, 4, 5].map((n) => (
           <Button key={n} variant={focus === n ? "solid" : "quiet"} onClick={() => setFocus(n)} data-testid={`focus-${n}`} aria-pressed={focus === n}>
             {n}
+          </Button>
+        ))}
+      </div>
+      {/* An optional subject (house spec 0028), the same list as the desk card. */}
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={SUBJECT_LABEL}>
+        <span className="text-sm text-mute">{SUBJECT_LABEL}</span>
+        {SUBJECTS.map((s) => (
+          <Button key={s} variant={subject === s ? "solid" : "quiet"} onClick={() => setSubject(subject === s ? "" : s)} data-testid={`subject-${s}`} aria-pressed={subject === s}>
+            {SUBJECT_WORDS[s]}
           </Button>
         ))}
       </div>

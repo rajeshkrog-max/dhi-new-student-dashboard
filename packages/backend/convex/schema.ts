@@ -530,7 +530,29 @@ export default defineSchema({
     maxMarks: v.optional(v.number()), // long only
     rubric: v.optional(v.string()), // long only
     hint: v.optional(v.string()), // the teacher's hint, server only until a student opens it in a sitting (exams.hint)
+    topicId: v.optional(v.id("paperTopics")), // the topic row of this subject and topic (house spec 0028); a question from before it has none
   }).index("by_paperId", ["paperId"]),
+
+  // The topics of an institute's papers (house spec 0028): one row for each subject code and topic, in the words of the teacher who first wrote it,
+  // found again by its key (the words in lower case with single spaces). A student's event and Brain day name a topic only by this row's id. Erase
+  // class `kept`: the teachers' material, no person in it.
+  paperTopics: defineTable({
+    instituteId: v.id("institutes"),
+    subject: v.string(), // a code from SUBJECTS (sessionRules.ts)
+    key: v.string(),
+    name: v.string(),
+  }).index("by_instituteId_and_subject_and_key", ["instituteId", "subject", "key"]),
+
+  // Which topics were sent to a class, so a student's card offers only the topics of their own class's papers (house spec 0028). One row for each
+  // class and topic, its time moved on each send. Erase class `kept`: no person in it.
+  classTopics: defineTable({
+    classId: v.id("classes"),
+    topicId: v.id("paperTopics"),
+    subject: v.string(),
+    lastSentAt: v.number(),
+  })
+    .index("by_classId_and_topicId", ["classId", "topicId"])
+    .index("by_classId_and_subject_and_lastSentAt", ["classId", "subject", "lastSentAt"]),
 
   paperSends: defineTable({
     paperId: v.id("papers"),
@@ -619,6 +641,9 @@ export default defineSchema({
     instituteId: v.id("institutes"),
     day: v.string(), // YYYY-MM-DD, the 04:00 to 04:00 India day
     values: v.record(v.string(), v.object({ num: v.number(), den: v.number() })),
+    // The day's tagged values for the connections P4 and P6 (house spec 0028), a top and a bottom each: `p:<topic id>` paper answers right of tried on
+    // a topic, `d:<topic id>` a desk sitting on a topic, `s:<subject>` sessions felt drained of those in a subject. Absent when the day has none.
+    tags: v.optional(v.record(v.string(), v.object({ num: v.number(), den: v.number() }))),
     version: v.number(),
     computedAt: v.number(),
   })
@@ -744,6 +769,7 @@ export default defineSchema({
     feedbackStatus: v.optional(v.string()),
     feel: v.optional(v.string()), // a code from FEELS (sessionRules.ts), only when answered
     focus: v.optional(v.number()), // 1 to 5, only when answered
+    subject: v.optional(v.string()), // a code from SUBJECTS, only when the student tapped one (house spec 0028)
   })
     .index("by_hourId_and_instituteId", ["hourId", "instituteId"])
     .index("by_memberId_and_hourId", ["memberId", "hourId"])
@@ -942,6 +968,7 @@ export default defineSchema({
     feel: v.optional(v.string()),
     focus: v.optional(v.number()),
     subject: v.optional(v.string()),
+    topicId: v.optional(v.id("paperTopics")), // a topic of the student's class, only when they tapped one (house spec 0028)
     // Questions asked in the sitting, and how many of them were an active learning kind (write, paper or mock). Counts only, for the Brain's A10 and A12.
     turns: v.optional(v.number()),
     activeTurns: v.optional(v.number()),

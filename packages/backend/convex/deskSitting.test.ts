@@ -303,6 +303,6 @@ describe("the event shape", () => {
     const { EVENT_DEFS } = await import("./eventRegistry");
     const def = EVENT_DEFS.find((d) => d.type === "desk.felt");
     expect(def?.room).toBe("desk");
-    expect(Object.keys(def?.payload ?? {}).sort()).toEqual(["feel", "focus", "length", "subject", "time"]);
+    expect(Object.keys(def?.payload ?? {}).sort()).toEqual(["feel", "focus", "length", "subject", "time", "topic"]);
   });
 });

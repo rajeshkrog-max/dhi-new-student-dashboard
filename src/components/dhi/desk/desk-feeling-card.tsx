@@ -1,7 +1,9 @@
 // The after session card of the desk (spec house/0018, desk part): offered once when a desk sitting of 10 minutes or more has ended. Two taps and an optional
-// subject, or skip it; a skip changes nothing. The server decides when a card exists (`deskSitting.pending`) and writes the event on an answer.
+// subject, then an optional topic of that subject from the papers sent to the student's class (house spec 0028), or skip it; a skip changes nothing. The
+// server decides when a card exists (`deskSitting.pending`) and writes the event on an answer.
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "@dhi/backend/api";
 import { SUBJECTS } from "@dhi/backend/sessionRules";
 import {
@@ -11,14 +13,47 @@ import {
   CARD_TITLE,
   FEEL_WORDS,
   FOCUS_LABEL,
+  PAPER_LABEL,
   SAVE,
   SKIP,
   SUBJECT_LABEL,
   SUBJECT_WORDS,
+  TOPIC_LABEL,
+  TOPIC_NONE,
 } from "@/lib/dhi/desk-words";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
+
+type TopicId = FunctionReturnType<typeof api.topics.forCard>[number]["topicId"];
+
+// The topics of one subject from the papers sent to the student's class, newest first. Tapping the picked one again clears it.
+function TopicPick({ subject, topicId, onPick }: { subject: string; topicId: TopicId | null; onPick: (id: TopicId | null) => void }) {
+  const topics = useQuery(api.topics.forCard, { subject });
+  // The row is drawn at once, with a hidden button holding its height while the list loads, so the desk below does not jump.
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label={TOPIC_LABEL} data-testid={topics === undefined ? undefined : "desk-topics"}>
+      <span className="text-sm text-mute">{TOPIC_LABEL}</span>
+      {topics === undefined && (
+        <Button variant="quiet" className="invisible" tabIndex={-1} aria-hidden="true">
+          {PAPER_LABEL}
+        </Button>
+      )}
+      {topics?.length === 0 && <span className="text-xs text-mute">{TOPIC_NONE}</span>}
+      {(topics ?? []).map((t) => (
+        <Button
+          key={t.topicId}
+          variant={topicId === t.topicId ? "solid" : "quiet"}
+          onClick={() => onPick(topicId === t.topicId ? null : t.topicId)}
+          data-testid="desk-topic"
+          aria-pressed={topicId === t.topicId}
+        >
+          {t.name}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 export function DeskFeelingCard() {
   const card = useQuery(api.deskSitting.pending, {});
@@ -27,6 +62,7 @@ export function DeskFeelingCard() {
   const [feel, setFeel] = useState("");
   const [focus, setFocus] = useState(0);
   const [subject, setSubject] = useState("");
+  const [topicId, setTopicId] = useState<TopicId | null>(null);
   const [error, setError] = useState("");
   if (!card) return null;
 
@@ -39,6 +75,7 @@ export function DeskFeelingCard() {
         feel,
         focus,
         ...(subject ? { subject } : {}),
+        ...(subject && topicId ? { topicId } : {}),
       });
       if (!r.ok) setError(CARD_FAIL);
     } catch {
@@ -92,7 +129,10 @@ export function DeskFeelingCard() {
           <Button
             key={s}
             variant={subject === s ? "solid" : "quiet"}
-            onClick={() => setSubject(subject === s ? "" : s)}
+            onClick={() => {
+              setSubject(subject === s ? "" : s);
+              setTopicId(null);
+            }}
             data-testid={`desk-subject-${s}`}
             aria-pressed={subject === s}
           >
@@ -100,6 +140,7 @@ export function DeskFeelingCard() {
           </Button>
         ))}
       </div>
+      {subject && <TopicPick subject={subject} topicId={topicId} onPick={setTopicId} />}
       {error && (
         <Notice tone="danger" role="alert" className="px-4 py-3 text-sm">
           {error}

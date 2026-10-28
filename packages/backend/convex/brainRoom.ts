@@ -23,9 +23,11 @@ export const brainRoom: RoomEntry = {
       .withIndex("by_memberId_and_day", (q) => (cursor === null ? q.eq("memberId", memberId) : q.eq("memberId", memberId).gt("day", cursor)))
       .take(limit + 1);
     const page = rows.slice(0, limit);
-    if (rows.length > limit) return { rows: page.map((r) => ({ day: r.day, values: r.values })), next: page[page.length - 1].day };
+    // A day's tagged values (house spec 0028) go with it: topic ids and subject codes with their counts.
+    const shown = page.map((r) => ({ day: r.day, values: r.values, ...(r.tags ? { tags: r.tags } : {}) }));
+    if (rows.length > limit) return { rows: shown, next: page[page.length - 1].day };
     const someHidden = await ctx.db.query("brainHides").withIndex("by_memberId_and_patternId", (q) => q.eq("memberId", memberId)).first();
-    return { rows: page.map((r) => ({ day: r.day, values: r.values })), next: someHidden ? "h:" : null };
+    return { rows: shown, next: someHidden ? "h:" : null };
   },
   // The hidden patterns go with the first page of days: there are only a few of them.
   eraser: async (ctx: MutationCtx, memberId: Id<"members">, limit: number) => {

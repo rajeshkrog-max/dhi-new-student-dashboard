@@ -11,6 +11,7 @@ import { fail } from "./helpers";
 import { requireMember } from "./houseAuth";
 import { isActiveKind } from "./deskRules";
 import { DESK_GAP_MS, OFFER_WINDOW_MS, asksForCard, isFeel, isFocus, isSubject, lengthBandOf, timeBandOf } from "./sessionRules";
+import { isClassTopic } from "./topics";
 
 const refused = v.object({ ok: v.literal(false), code: v.string() });
 const minutesOf = (s: Pick<Doc<"deskSittings">, "startedAt" | "lastAt">) => Math.floor((s.lastAt - s.startedAt) / 60000);
@@ -78,9 +79,10 @@ export const pending = query({
   },
 });
 
-// Answers the card. Once only; the feeling and the focus must be real values, and the subject, if given, one of the fixed list.
+// Answers the card. Once only; the feeling and the focus must be real values, and the subject, if given, one of the fixed list. A topic (house spec
+// 0028) needs the subject and must be one of that subject's topics sent to the student's own class.
 export const answer = mutation({
-  args: { sittingId: v.id("deskSittings"), feel: v.string(), focus: v.number(), subject: v.optional(v.string()) },
+  args: { sittingId: v.id("deskSittings"), feel: v.string(), focus: v.number(), subject: v.optional(v.string()), topicId: v.optional(v.id("paperTopics")) },
   returns: v.union(v.object({ ok: v.literal(true) }), refused),
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
@@ -92,6 +94,9 @@ export const answer = mutation({
     if (!isFeel(args.feel)) return { ok: false as const, code: "bad_feel" };
     if (!isFocus(args.focus)) return { ok: false as const, code: "bad_focus" };
     if (args.subject !== undefined && !isSubject(args.subject)) return { ok: false as const, code: "bad_subject" };
+    if (args.topicId !== undefined && (args.subject === undefined || !(await isClassTopic(ctx, mc.member.classId, args.topicId, args.subject)))) {
+      return { ok: false as const, code: "bad_topic" };
+    }
     await recordEvent(ctx, {
       by: mc,
       memberId: mc.member._id,
@@ -103,12 +108,19 @@ export const answer = mutation({
         time: timeBandOf(s.startedAt),
         length: lengthBandOf(minutesOf(s)),
         ...(args.subject !== undefined ? { subject: args.subject } : {}),
+        ...(args.topicId !== undefined ? { topic: args.topicId } : {}),
       },
       occurredAt: s.lastAt,
       eventKey: `deskfelt:${s._id}-0`,
       about: `deskfelt:${s._id}`,
     });
-    await ctx.db.patch(s._id, { feedbackStatus: "answered", feel: args.feel, focus: args.focus, ...(args.subject !== undefined ? { subject: args.subject } : {}) });
+    await ctx.db.patch(s._id, {
+      feedbackStatus: "answered",
+      feel: args.feel,
+      focus: args.focus,
+      ...(args.subject !== undefined ? { subject: args.subject } : {}),
+      ...(args.topicId !== undefined ? { topicId: args.topicId } : {}),
+    });
     return { ok: true as const };
   },
 });

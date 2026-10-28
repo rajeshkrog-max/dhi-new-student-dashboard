@@ -9,6 +9,7 @@ import type { GenericId } from "convex/values";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
+import { subjectWord } from "@/lib/dhi/desk-words";
 
 const WORDS: Record<string, string> = {
   not_open: "This paper is not open yet.",
@@ -294,7 +295,7 @@ function Sitting({ attemptId, onDone, onOpen }: { attemptId: GenericId<"paperAtt
       {sitting.items.map((q) => (
         <Card key={q.order} className="space-y-2">
           <p className="text-xs text-mute">
-            {q.subject} · {q.topic}
+            {subjectWord(q.subject)} · {q.topic}
           </p>
           <p className="text-sm font-medium">{q.text}</p>
           {q.kind === "mcq" ? (

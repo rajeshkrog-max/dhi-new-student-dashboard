@@ -329,8 +329,8 @@ describe("the page's small pieces (AC-7)", () => {
     expect(windowDays(TODAY, 3)).toEqual([back(3), back(2), back(1)]);
   });
 
-  test("covers AC-7: only the three patterns, the four connections (house spec 0023) and the expression note can be hidden", () => {
-    expect([...HIDEABLE_IDS].sort()).toEqual(["bedtime_mood", "breakfast_focus", "expression", "late_room_feeling", "mood_habits_quiet", "packaged_quiet", "sleep_papers", "steady_rhythm"]);
+  test("covers AC-7: only the three patterns, the six connections (house specs 0023 and 0028) and the expression note can be hidden", () => {
+    expect([...HIDEABLE_IDS].sort()).toEqual(["bedtime_mood", "breakfast_focus", "expression", "late_room_feeling", "mood_habits_quiet", "packaged_quiet", "sleep_papers", "steady_rhythm", "subject_feeling", "topic_desk_papers"]);
     for (const id of PATTERN_IDS) expect(isHideable(id) && isPatternId(id)).toBe(true);
     expect(isHideable("support")).toBe(false);
     expect(isHideable("")).toBe(false);

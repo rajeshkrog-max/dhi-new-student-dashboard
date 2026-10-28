@@ -102,6 +102,11 @@ export const SUBJECT_WORDS: Record<string, string> = {
   hindi: "Hindi",
   other: "Other",
 };
+// The topic pick after a subject (house spec 0028): only topics from the papers sent to the student's class. Optional.
+export const TOPIC_LABEL = "Topic from your class's papers (you can leave this out)";
+export const TOPIC_NONE = "No topics from your class's papers in this subject yet.";
+// A paper question's subject in words: a code of the fixed list, or the words of an older paper as they were.
+export const subjectWord = (subject: string): string => SUBJECT_WORDS[subject] ?? subject;
 export const SAVE = "Save";
 export const SKIP = "Skip";
 export const CARD_FAIL = "We could not save that. You can skip this card.";
@@ -158,6 +163,8 @@ export const NEW_LINES: string[] = [
   FOCUS_LABEL,
   SUBJECT_LABEL,
   ...Object.values(SUBJECT_WORDS),
+  TOPIC_LABEL,
+  TOPIC_NONE,
   SAVE,
   SKIP,
   CARD_FAIL,

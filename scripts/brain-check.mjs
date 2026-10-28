@@ -149,6 +149,24 @@ try {
     expect((await page.getByTestId("score-value").innerText()).trim() === "70", "Home shows a different score from Progress");
   });
 
+  // House spec 0028: the topic and subject connections, from hand made tagged days, with the subject named in words and nothing from anyone else.
+  await step("tagged days show the desk topic and subject connections, the subject in words, and each can be hidden", async () => {
+    seed(who.email, "tagged");
+    await openProgress();
+    const topic = page.locator('[data-testid="connection"][data-connection="topic_desk_papers"]');
+    const subject = page.locator('[data-testid="connection"][data-connection="subject_feeling"]');
+    await topic.waitFor({ timeout: 30_000 });
+    await subject.waitFor({ timeout: 30_000 });
+    const topicText = await topic.innerText();
+    expect(topicText.includes("90%") && topicText.includes("40%") && topicText.includes("60 topic days"), `the topic connection reads wrong: ${topicText}`);
+    const subjectText = await subject.innerText();
+    expect(/maths sessions/.test(subjectText) && subjectText.includes("50%") && subjectText.includes("90 sessions"), `the subject connection reads wrong: ${subjectText}`);
+    expect(!/seedtopic/.test(await page.getByTestId("brain-report").innerText()), "a topic id shows on the page");
+    await subject.getByTestId("hide-connection").click();
+    await subject.waitFor({ state: "detached", timeout: 20_000 });
+    expect((await topic.count()) === 1, "hiding one connection hid the other");
+  });
+
   await context.close();
 } finally {
   await browser.close();

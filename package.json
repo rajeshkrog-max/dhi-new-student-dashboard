@@ -34,6 +34,7 @@
     "modules:check": "node scripts/modules-check.mjs",
     "hour:check": "node scripts/hour-check.mjs",
     "brain:check": "node scripts/brain-check.mjs",
+    "topics:check": "node scripts/topics-check.mjs",
     "counsel:check": "node scripts/counsel-check.mjs",
     "school:check": "node scripts/school-check.mjs",
     "staff:check": "node scripts/staff-check.mjs",

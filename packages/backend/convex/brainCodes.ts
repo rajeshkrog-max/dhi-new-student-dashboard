@@ -6,9 +6,9 @@
 export const PATTERN_IDS = ["mood_habits_quiet", "steady_rhythm", "packaged_quiet"] as const;
 export type PatternId = (typeof PATTERN_IDS)[number];
 
-// The connections (house spec 0023): cross room patterns tested on a fixed list of pairs over all of a student's days. P4 and P6 of the Master Spec are not
-// built yet (they need topic and subject tags), so the four built pairs are named by what they compare.
-export const CONNECTION_IDS = ["sleep_papers", "breakfast_focus", "bedtime_mood", "late_room_feeling"] as const;
+// The connections (house spec 0023): cross room patterns tested on a fixed list of pairs over all of a student's days, named by what they compare.
+// `topic_desk_papers` (P4) and `subject_feeling` (P6) came with the topic and subject tags (house spec 0028); `subject_feeling` also sends its subject.
+export const CONNECTION_IDS = ["sleep_papers", "breakfast_focus", "bedtime_mood", "late_room_feeling", "topic_desk_papers", "subject_feeling"] as const;
 export type ConnectionId = (typeof CONNECTION_IDS)[number];
 // The most days the connections read, ending yesterday: about four months.
 export const CONNECTION_WINDOW = 120;

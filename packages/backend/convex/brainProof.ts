@@ -28,6 +28,7 @@ export const seed = internalMutation({
         instituteId: member.instituteId,
         day: row.day,
         values: row.v as Record<string, { num: number; den: number }>,
+        ...(row.t ? { tags: row.t } : {}),
         version: METRIC_VERSION,
         computedAt: now,
       });

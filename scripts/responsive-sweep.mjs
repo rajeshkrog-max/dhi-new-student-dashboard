@@ -257,6 +257,29 @@ const SCENES = {
       await page.getByText("See the days").first().click();
     },
   },
+  // House spec 0028: the desk card with a subject tapped and its topics shown, the study hour card with a subject tapped, and the two connections.
+  "dhi-card": {
+    room: "dhi",
+    run: async (page) => {
+      await page.getByTestId("desk-feeling-card").waitFor({ timeout: 30_000 });
+      await page.getByTestId("desk-subject-maths").click();
+      await page.getByTestId("desk-topic").first().waitFor({ timeout: 20_000 });
+    },
+  },
+  "hour-card": {
+    room: "hour",
+    run: async (page) => {
+      await page.getByTestId("feedback-card").waitFor({ timeout: 30_000 });
+      await page.getByTestId("subject-science").click();
+    },
+  },
+  "progress-connections": {
+    room: "progress",
+    run: async (page) => {
+      await page.locator('[data-connection="subject_feeling"]').waitFor({ timeout: 30_000 });
+      await page.locator('[data-connection="topic_desk_papers"]').scrollIntoViewIfNeeded();
+    },
+  },
   "progress-hinglish": {
     room: "progress",
     run: async (page) => {
@@ -278,7 +301,11 @@ function prepare(selected) {
     run("papersProof:openDemoPaper");
   }
   if (wants("hour")) run(`hourProof:openNow "${JSON.stringify({ minutes: 120 }).replace(/"/g, '\\"')}"`);
-  if (wants("progress")) run(`brainProof:seed "${JSON.stringify({ email: PEOPLE.student.email, scenario: "heavy" }).replace(/"/g, '\\"')}"`);
+  // The heavy fortnight with the tagged days under it (house spec 0028), so the page also holds the topic and subject connections.
+  if (wants("progress")) run(`brainProof:seed "${JSON.stringify({ email: PEOPLE.student.email, scenario: "sweep" }).replace(/"/g, '\\"')}"`);
+  // A pending card for the desk and for the study hour (house spec 0028: the subject and topic taps). A card stays until answered, so one is enough.
+  if (wants("dhi")) run(`topicsProof:openDeskCard "${JSON.stringify({ email: PEOPLE.student.email }).replace(/"/g, '\\"')}"`);
+  if (wants("hour")) run(`hourProof:addFinishedStay "${JSON.stringify({ email: PEOPLE.student.email, minutes: 25 }).replace(/"/g, '\\"')}"`);
 }
 
 // The room is real now (spec house/0006): its days come from the server. Make sure today has a colour, then open the month that holds it: by its

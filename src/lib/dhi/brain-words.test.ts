@@ -44,10 +44,15 @@ const SAMPLES = {
 } as const;
 
 // The connections (house spec 0023): the two means and the days behind them; the breakfast pair has the focus out of five with a decimal.
+// The subject pair (house spec 0028) also names a subject code; every code and an unknown one are tried.
 const CONNECTION_SAMPLES = [
-  { a: 80, b: 30, n: 30 },
-  { a: 100, b: 0, n: 32 },
-  { a: 4.5, b: 2.5, n: 32 },
+  { a: 80, b: 30, n: 30, subject: "maths" },
+  { a: 100, b: 0, n: 32, subject: "social" },
+  { a: 4.5, b: 2.5, n: 32, subject: "other" },
+  { a: 60, b: 20, n: 40, subject: "english" },
+  { a: 60, b: 20, n: 40, subject: "science" },
+  { a: 60, b: 20, n: 40, subject: "hindi" },
+  { a: 60, b: 20, n: 40, subject: "a_subject_from_a_newer_server" },
 ] as const;
 
 function everySentence(lang: Lang): string[] {
@@ -134,16 +139,27 @@ test("spec house/0020: a pattern says 'tend to' and speaks only of the student's
   }
 });
 
+test("spec house/0028: the subject pair names the subject in words, never as a code", () => {
+  for (const lang of LANGS) {
+    for (const params of CONNECTION_SAMPLES) {
+      const text = connectionText("subject_feeling", lang, params)!.text;
+      assert.ok(!text.includes("a_subject_from_a_newer_server") && !/\bsocial\b(?! studies)/.test(text), text);
+    }
+  }
+  assert.match(connectionText("subject_feeling", "en", CONNECTION_SAMPLES[1])!.text, /social studies sessions/);
+});
+
 test("spec house/0023: a connection says 'tend to', speaks only of the student's own days and gives the days behind it", () => {
   for (const id of CONNECTION_IDS) {
     for (const params of CONNECTION_SAMPLES) {
       const en = connectionText(id, "en", params)!;
       assert.match(en.text, /tend to go together/, id);
       assert.match(en.text + en.note, /own days/, id);
-      assert.match(en.text, /Based on \d+ days/, id);
+      // The days behind it: days, topic days (house spec 0028) or, for the subject pair, sessions.
+      assert.match(en.text, /Based on \d+ (days|topic days|sessions)\./, id);
       const hi = connectionText(id, "hi", params)!;
       assert.match(hi.text + hi.note, /apne dinon/, id);
-      assert.match(hi.text, /dinon par aadharit/, id);
+      assert.match(hi.text, /(dinon|sessions) par aadharit/, id);
     }
   }
 });

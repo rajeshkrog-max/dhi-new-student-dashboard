@@ -1,14 +1,14 @@
 // The after session feeling card (spec house/0018). When a study hour stay of 20 minutes or more ends, the seat is marked pending and the student
 // is offered one card: how they felt (energised, okay, drained) and their focus from 1 to 5. It can be skipped; a skip is stored as skipped, changes
 // no value and writes no event. An answer writes one `hour.felt` event (fixed codes and one small number, with the time and length bands of the
-// stay). A card is offered for 24 hours, and a seat of another student is never found. Every function starts with `requireMember`.
+// stay, and the subject if the student tapped one: house spec 0028). A card is offered for 24 hours, and a seat of another student is never found. Every function starts with `requireMember`.
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { recordEvent } from "./eventLog";
 import { fail } from "./helpers";
 import { requireMember } from "./houseAuth";
 import { minutesPresent } from "./hourRules";
-import { OFFER_WINDOW_MS, isFeel, isFocus, lengthBandOf, timeBandOf } from "./sessionRules";
+import { OFFER_WINDOW_MS, isFeel, isFocus, isSubject, lengthBandOf, timeBandOf } from "./sessionRules";
 
 const refused = v.object({ ok: v.literal(false), code: v.string() });
 
@@ -26,9 +26,9 @@ export const pending = query({
   },
 });
 
-// Answers the card. Once only; the feeling and the focus must be real values.
+// Answers the card. Once only; the feeling and the focus must be real values, and the subject, if given, one of the fixed list.
 export const answer = mutation({
-  args: { seatId: v.id("seats"), feel: v.string(), focus: v.number() },
+  args: { seatId: v.id("seats"), feel: v.string(), focus: v.number(), subject: v.optional(v.string()) },
   returns: v.union(v.object({ ok: v.literal(true) }), refused),
   handler: async (ctx, args) => {
     const mc = await requireMember(ctx);
@@ -39,18 +39,25 @@ export const answer = mutation({
     if (Date.now() - seat.leftAt >= OFFER_WINDOW_MS) return { ok: false as const, code: "expired" };
     if (!isFeel(args.feel)) return { ok: false as const, code: "bad_feel" };
     if (!isFocus(args.focus)) return { ok: false as const, code: "bad_focus" };
+    if (args.subject !== undefined && !isSubject(args.subject)) return { ok: false as const, code: "bad_subject" };
     const minutes = minutesPresent(seat.enteredAt, seat.leftAt);
     await recordEvent(ctx, {
       by: mc,
       memberId: mc.member._id,
       room: "hour",
       type: "hour.felt",
-      payload: { feel: args.feel, focus: args.focus, time: timeBandOf(seat.enteredAt), length: lengthBandOf(minutes) },
+      payload: {
+        feel: args.feel,
+        focus: args.focus,
+        time: timeBandOf(seat.enteredAt),
+        length: lengthBandOf(minutes),
+        ...(args.subject !== undefined ? { subject: args.subject } : {}),
+      },
       occurredAt: seat.leftAt,
       eventKey: `felt:${seat._id}-0`,
       about: `felt:${seat._id}`,
     });
-    await ctx.db.patch(seat._id, { feedbackStatus: "answered", feel: args.feel, focus: args.focus });
+    await ctx.db.patch(seat._id, { feedbackStatus: "answered", feel: args.feel, focus: args.focus, ...(args.subject !== undefined ? { subject: args.subject } : {}) });
     return { ok: true as const };
   },
 });

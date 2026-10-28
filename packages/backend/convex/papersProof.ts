@@ -44,7 +44,7 @@ export const openDemoPaper = internalMutation({
       paperId,
       order: 0,
       kind: "mcq",
-      subject: "Maths",
+      subject: "maths",
       topic: "Fractions",
       text: "What is half of four?",
       options: ["One", "Two", "Three"],
@@ -52,7 +52,7 @@ export const openDemoPaper = internalMutation({
       tags: ["misread", null, "concept"],
       hint: "Share four things equally between two friends.",
     });
-    await ctx.db.insert("paperQuestions", { paperId, order: 1, kind: "long", subject: "English", topic: "Story", text: "Tell a short story about a lamp.", maxMarks: 10, rubric: "Plot, voice, ending", hint: "Say who, then what happened." });
+    await ctx.db.insert("paperQuestions", { paperId, order: 1, kind: "long", subject: "english", topic: "Story", text: "Tell a short story about a lamp.", maxMarks: 10, rubric: "Plot, voice, ending", hint: "Say who, then what happened." });
     await ctx.db.insert("paperAttempts", { paperId, memberId: student._id, instituteId: student.instituteId, status: "assigned", opensAt: now - 60 * 60 * 1000, dueAt: now + 24 * 60 * 60 * 1000 });
     return { paperId };
   },

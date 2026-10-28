@@ -96,6 +96,9 @@ try {
     expect(await page.getByTestId("feedback-save").isDisabled(), "Save is available before both taps");
     await page.getByTestId("feel-okay").click();
     await page.getByTestId("focus-4").click();
+    // An optional subject (house spec 0028): a tap picks it and shows it as pressed.
+    await page.getByTestId("subject-science").click();
+    expect((await page.getByTestId("subject-science").getAttribute("aria-pressed")) === "true", "the subject tap did not hold");
     await page.getByTestId("feedback-save").click();
     await page.getByTestId("feedback-card").waitFor({ state: "detached", timeout: 20_000 });
     await page.reload();

@@ -16,7 +16,8 @@ import { PROCESSING } from "./foodRules";
 // Version 6 (2026-10-24): A10 (desk study days) and A12 (active learning share of desk sittings), plain measures like X02.
 // Version 7 (2026-10-26): a day an open paper touched has no real zero for the study hour (H12, X01), because the exam lock closed it (owner,
 // 2026-10-26; brainDay.ts with examLock.sittingWithin).
-export const METRIC_VERSION = 7;
+// Version 8 (2026-10-28): the tagged values for the connections P4 and P6 (`tagsOfDay`, house spec 0028), kept beside the measures.
+export const METRIC_VERSION = 8;
 
 // E06 is the mood mix, one measure for each family of moods; E15 the tags of the posts, one for each tag; H03 the meal times, one for each slot. The Master
 // Spec keeps these as breakdowns of one id; here each key is its own id so a day stays one top and one bottom for each id.
@@ -264,9 +265,41 @@ export function valuesOfDay(events: readonly EventRow[], facts: DayFacts): DayVa
   return out;
 }
 
+// ---- Tagged values (house spec 0028) ----------------------------------------------------------------------------------------------------------
+
+// A day's values that carry a tag, for the connections P4 and P6 only, kept apart from the measures so no lamp, chain, coverage or parent page reads
+// them. `p:<topic id>`: the multiple choice answers right over those tried on a topic. `d:<topic id>`: a desk sitting on a topic (the student's tap).
+// `s:<subject>`: of the after session cards in a subject (desk and study hour), how many were drained. Ids and codes only, never a word.
+export type DayTags = Record<string, Value>;
+export const DRAINED = "drained";
+
+export function tagsOfDay(events: readonly EventRow[]): DayTags {
+  const out: DayTags = {};
+  const add = (key: string, n: number, d: number) => {
+    const t = out[key] ?? { num: 0, den: 0 };
+    out[key] = { num: t.num + n, den: t.den + d };
+  };
+  for (const e of rowsOf(events, "exams.submitted")) {
+    const topics = e.payload.topics;
+    const tried = e.payload.topicTried;
+    const right = e.payload.topicRight;
+    if (!Array.isArray(topics) || !Array.isArray(tried) || !Array.isArray(right)) continue;
+    topics.forEach((id, i) => {
+      if (typeof id === "string" && num(tried[i]) > 0) add(`p:${id}`, num(right[i]), num(tried[i]));
+    });
+  }
+  for (const e of rowsOf(events, "desk.felt")) {
+    if (typeof e.payload.topic === "string") out[`d:${e.payload.topic}`] = { num: 1, den: 1 };
+  }
+  for (const e of [...rowsOf(events, "desk.felt"), ...rowsOf(events, "hour.felt")]) {
+    if (typeof e.payload.subject === "string") add(`s:${e.payload.subject}`, e.payload.feel === DRAINED ? 1 : 0, 1);
+  }
+  return out;
+}
+
 // ---- Periods ------------------------------------------------------------------------------------------------------------------------------
 
-export type DayRow = { day: string; v: DayValues };
+export type DayRow = { day: string; v: DayValues; t?: DayTags };
 
 // The sum of one measure over some days: the tops, the bottoms and how many days carried a value (`logged`, printed beside every period value).
 export function periodOf(rows: readonly DayRow[], metric: MetricId): { num: number; den: number; logged: number } {

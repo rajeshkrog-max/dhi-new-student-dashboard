@@ -313,7 +313,45 @@ export const CONNECTION_COPY: Record<ConnectionId, Record<Lang, ConnectionCopy>>
       note: "Ye sirf aapke apne dinon ki baat hai. Isse ye nahi pata chalta ki aisa kyun hua, aur ye koi faisla nahi hai.",
     },
   },
+  // House spec 0028: a desk sitting the student tagged with a topic, and the next day's paper answers on that topic (`n` is topic days).
+  topic_desk_papers: {
+    en: {
+      title: "A desk sitting and the next paper",
+      text: (p) =>
+        `When you sat at the desk on a topic the day before a paper, ${num(p, "a")}% of your answers on that topic were right. On topics with no desk sitting the day before it was ${num(p, "b")}%. Based on ${num(p, "n")} topic days. In your own days, these tend to go together.`,
+      note: "This is only about your own days, and only about the topics you tapped on the desk card. It does not say why, and it is not a judgement.",
+    },
+    hi: {
+      title: "Desk par baithna aur agla paper",
+      text: (p) =>
+        `Jab aap paper se ek din pehle kisi topic par desk par baithe, us topic par aapke ${num(p, "a")}% jawab sahi the. Jin topics par ek din pehle desk par baithna nahi hua, un par ye ${num(p, "b")}% tha. ${num(p, "n")} topic dinon par aadharit. Aapke apne dinon mein ye ek saath dikhte hain.`,
+      note: "Ye sirf aapke apne dinon ki baat hai, aur sirf un topics ki jo aapne desk card par chune. Isse ye nahi pata chalta ki aisa kyun hua, aur ye koi faisla nahi hai.",
+    },
+  },
+  // House spec 0028: how often the sessions of one subject left the student drained, against their other subjects (`n` is sessions, `subject` a code).
+  subject_feeling: {
+    en: {
+      title: "A subject and how you felt",
+      text: (p) =>
+        `After your ${subjectName(p, "en")} sessions you felt drained ${num(p, "a")}% of the time. After your other sessions it was ${num(p, "b")}%. Based on ${num(p, "n")} sessions. In your own days, these tend to go together.`,
+      note: "This is only about the sessions you tagged with a subject. It does not say why, and it is not a judgement of you or the subject.",
+    },
+    hi: {
+      title: "Ek vishay aur aapka mehsoos karna",
+      text: (p) =>
+        `Aapke ${subjectName(p, "hi")} sessions ke baad aapne ${num(p, "a")}% baar thakaan mehsoos ki. Baaki sessions ke baad ye ${num(p, "b")}% tha. ${num(p, "n")} sessions par aadharit. Aapke apne dinon mein ye ek saath dikhte hain.`,
+      note: "Ye sirf un sessions ki baat hai jin par aapne vishay chuna. Isse ye nahi pata chalta ki aisa kyun hua, aur ye na aapke baare mein faisla hai na vishay ke.",
+    },
+  },
 };
+// The subject codes of `@dhi/backend/sessionRules` as a connection names them, in both languages.
+export const SUBJECT_NAME: Record<Lang, Record<string, string>> = {
+  en: { maths: "maths", science: "science", english: "English", social: "social studies", hindi: "Hindi", other: "other subject" },
+  hi: { maths: "maths", science: "science", english: "English", social: "social studies", hindi: "Hindi", other: "doosre vishay" },
+};
+function subjectName(p: Params, lang: Lang): string {
+  return SUBJECT_NAME[lang][String(p.subject)] ?? SUBJECT_NAME[lang].other;
+}
 export function connectionText(id: string, lang: Lang, params: Params): { title: string; text: string; note: string } | null {
   const copy = (CONNECTION_COPY as Record<string, Record<Lang, ConnectionCopy> | undefined>)[id]?.[lang];
   return copy ? { title: copy.title, text: copy.text(params), note: copy.note } : null;

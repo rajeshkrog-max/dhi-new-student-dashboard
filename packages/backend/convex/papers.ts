@@ -10,6 +10,8 @@ import { requireMember, teacherClassIds } from "./houseAuth";
 import { rateLimiter } from "./limits";
 import { staffRead } from "./staffRead";
 import { markProblem, paperProblem, totalOf, windowProblem, type QuestionInput } from "./papersRules";
+import { subjectCodeOf } from "./sessionRules";
+import { ensureTopic, noteSent } from "./topics";
 
 const questionArg = v.union(
   v.object({
@@ -42,22 +44,28 @@ export const create = mutation({
     if (mc.role !== "teacher") fail("forbidden");
     const problem = paperProblem(args.title, args.questions);
     if (problem) fail(problem);
+    // The subject is one of the fixed list (house spec 0028), so a desk or study hour card can name the same one.
+    if (args.questions.some((q) => subjectCodeOf(q.subject) === null)) fail("bad_question");
+    const instituteId = mc.member.instituteId as NonNullable<typeof mc.member.instituteId>;
     const paperId = await ctx.db.insert("papers", {
       teacherMemberId: mc.member._id,
-      instituteId: mc.member.instituteId as NonNullable<typeof mc.member.instituteId>,
+      instituteId,
       title: args.title.trim(),
       status: "draft",
       createdAt: Date.now(),
     });
     for (const [order, q] of (args.questions as QuestionInput[]).entries()) {
       const hint = q.hint?.trim();
+      const subject = subjectCodeOf(q.subject)!;
+      const topicId = await ensureTopic(ctx, instituteId, subject, q.topic);
       if (q.kind === "mcq") {
         await ctx.db.insert("paperQuestions", {
           paperId,
           order,
           kind: "mcq",
-          subject: q.subject.trim(),
+          subject,
           topic: q.topic.trim(),
+          topicId,
           text: q.text.trim(),
           options: q.options.map((o) => o.trim()),
           rightOption: q.rightOption,
@@ -69,8 +77,9 @@ export const create = mutation({
           paperId,
           order,
           kind: "long",
-          subject: q.subject.trim(),
+          subject,
           topic: q.topic.trim(),
+          topicId,
           text: q.text.trim(),
           maxMarks: q.maxMarks,
           rubric: q.rubric.trim(),
@@ -148,6 +157,12 @@ export const send = mutation({
       dueAt: args.dueAt,
       sentAt: Date.now(),
     });
+    // The paper's topics, noted for the class it went to (or the one student's class), so the class's cards can offer them (house spec 0028).
+    const sentTo = args.target.kind === "class" ? args.target.classId : students[0]?.classId;
+    if (sentTo !== undefined) {
+      const questions = await ctx.db.query("paperQuestions").withIndex("by_paperId", (q) => q.eq("paperId", args.paperId)).take(50);
+      await noteSent(ctx, sentTo, questions.flatMap((q) => (q.topicId ? [{ topicId: q.topicId, subject: q.subject }] : [])), Date.now());
+    }
     await ctx.db.patch(args.paperId, { status: "sent" });
     return { ok: true as const, made };
   },

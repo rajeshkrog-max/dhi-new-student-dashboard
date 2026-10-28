@@ -71,7 +71,7 @@ describe("the school report", () => {
     expect(r).toMatchObject({ className: "Class 10 A", students: 6, papers: 2, closed: 12, sat: 8, missed: 4, excused: 0 });
     if (!("subjects" in r)) throw new Error("refused");
     // Four students answered, fewer than five, so the share stays hidden.
-    expect(r.subjects).toEqual([{ subject: "Maths", students: 4, pct: null, change: null }]);
+    expect(r.subjects).toEqual([{ subject: "maths", students: 4, pct: null, change: null }]);
   });
 
   test("covers AC-3: a range outside the papers is empty, and a range over 13 weeks is refused", async () => {

@@ -100,8 +100,39 @@ export function connectedRows(today: string): DayRow[] {
   return rows.reverse();
 }
 
-export const SCENARIOS = ["heavy", "steady", "packaged", "connected"] as const;
+// Sixty finished days for the tagged connections (house spec 0028). Desk days and paper days take turns. On a desk day the student tagged a sitting
+// with one topic (`seedtopica`) and two maths sessions, one of them drained, and one english session that was not. On the paper day after it, the
+// answers on that topic were mostly right and on a topic with no sitting the day before (`seedtopicb`) fewer were. So P4 and P6 both show. The topic
+// ids are made up: the engine matches them only to each other.
+export const SEED_TOPIC_A = "seedtopica";
+export const SEED_TOPIC_B = "seedtopicb";
+export function taggedRows(today: string): DayRow[] {
+  const rows: DayRow[] = [];
+  for (let back = 60; back >= 1; back -= 1) {
+    const deskDay = back % 2 === 0;
+    rows.push({
+      day: shiftDay(today, -back),
+      v: deskDay ? { E09: { num: 2, den: 3 }, C01: { num: 1, den: 1 } } : { A02: { num: 13, den: 20 }, C01: { num: 1, den: 1 } },
+      t: deskDay
+        ? { [`d:${SEED_TOPIC_A}`]: { num: 1, den: 1 }, "s:maths": { num: 1, den: 2 }, "s:english": { num: 0, den: 1 } }
+        : { [`p:${SEED_TOPIC_A}`]: { num: 9, den: 10 }, [`p:${SEED_TOPIC_B}`]: { num: 4, den: 10 } },
+    });
+  }
+  return rows;
+}
+
+// The responsive sweep's days: the heavy fortnight's measures with the tagged days' tags under them, so one page holds the chain, the expression note,
+// the support offer and the two tagged connections.
+export function sweepRows(today: string): DayRow[] {
+  const heavy = new Map(rowsFromPlan(HEAVY_PLAN, today).map((r) => [r.day, r.v] as const));
+  const rows = taggedRows(today).map((r) => ({ ...r, v: heavy.get(r.day) ?? r.v }));
+  for (const [day, v] of heavy) if (!rows.some((r) => r.day === day)) rows.push({ day, v });
+  return rows.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+}
+
+export const SCENARIOS = ["heavy", "steady", "packaged", "connected", "tagged", "sweep"] as const;
 export type Scenario = (typeof SCENARIOS)[number];
 export const isScenario = (text: unknown): text is Scenario => typeof text === "string" && (SCENARIOS as readonly string[]).includes(text);
-const PLANS: Readonly<Record<Exclude<Scenario, "connected">, Plan>> = { heavy: HEAVY_PLAN, steady: STEADY_PLAN, packaged: PACKAGED_PLAN };
-export const scenarioRows = (scenario: Scenario, today: string): DayRow[] => (scenario === "connected" ? connectedRows(today) : rowsFromPlan(PLANS[scenario], today));
+const PLANS: Readonly<Record<Exclude<Scenario, "connected" | "tagged" | "sweep">, Plan>> = { heavy: HEAVY_PLAN, steady: STEADY_PLAN, packaged: PACKAGED_PLAN };
+export const scenarioRows = (scenario: Scenario, today: string): DayRow[] =>
+  scenario === "connected" ? connectedRows(today) : scenario === "tagged" ? taggedRows(today) : scenario === "sweep" ? sweepRows(today) : rowsFromPlan(PLANS[scenario], today);
