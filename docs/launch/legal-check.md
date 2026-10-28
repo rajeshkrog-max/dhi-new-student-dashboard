@@ -71,6 +71,10 @@ Erase class: **erased** (deleted when the person is erased), **kept** (stays: id
 | `counselSlots` | kept | Kept. A counselor's open times; no student in it. |
 | `counselBookings` | erased | Deleted when the student is erased. Their booking: the time, the counselor, their own note and the counselor's short summary. Seen by the student and that counselor only. Each call is recorded and transcribed on Stream (never in a DHI table); the recordings of the student's sessions are deleted on Stream when they are erased. |
 | `counselShares` | erased | Deleted when the student is erased. Who the counselor shared a session's recording with; the recording itself stays on Stream and is deleted there too. |
+| `habitRatings` | erased | Deleted when the student is erased. Their weekly four answers on how automatic a habit feels. Seen by the student alone. |
+| `learnTopics`, `learnStats`, `learnAnswers`, `fixItems`, `learnRounds`, `studyPlans` | erased | Deleted when the student is erased. The desk's learning loop (house spec 0031): each answer on a practice question, the wrong answers to go back over, the student's state on each topic and their own answer times, and a test day they planned for. Seen by the student alone. |
+| `writtenAnswers` | erased | Deleted when the student is erased. A written practice answer, the model's points and mark, and a teacher's mark. A teacher of the student's class sees the answer without the name when the model is unsure or the student asks. The answer is sent to the outside model provider for marking (the notice needs the desk line). |
+| `questionStats` | kept | How many answers a bank question had and how many were right; no person in it. |
 | `hourShares` | erased | Deleted when the student is erased. Which study hour recordings a teacher or DHI admin shared with this student; the recordings themselves stay on Stream for 30 days. |
 | `events` | erased | Deleted when the student is erased. |
 | `brainDays` | erased | Deleted when the student is erased. Their daily values worked out from their events: numbers only, no words. Seen by the student alone. |

@@ -14,7 +14,7 @@ Read the words in one sitting: `docs/launch/words/english.md` (477 lines, with c
 | [ ] | Sleep room words | `src/lib/dhi/sleep-words.ts`, `SLEEP_WORDS_APPROVED` | the draft note leaves the sleep room | owner |
 | [ ] | The Brain report (English and Hinglish) | `src/lib/dhi/brain-words.ts`, `BRAIN_WORDS_APPROVED` | the draft note leaves Progress | owner, after the Hinglish read |
 | [ ] | The weekly parent page and the link lines | `src/lib/dhi/parent-words.ts`, `PARENT_WORDS_APPROVED` | the draft note leaves the parent page | owner, after the Hinglish read |
-| [ ] | The desk's screen words and its instructions to the model | `src/lib/dhi/desk-words.ts` and `packages/backend/convex/deskRules.ts`, `DESK_WORDS_APPROVED` (both) | the draft note leaves the desk | owner |
+| [ ] | The desk's screen words and its instructions to the model, with the Learn panel (house spec 0031) and the marking instruction | `src/lib/dhi/desk-words.ts`, `src/lib/dhi/learn-words.ts`, `packages/backend/convex/deskRules.ts` and `learnRules.ts` (`MARK_SYSTEM_PROMPT`), `DESK_WORDS_APPROVED` (both files) | the draft note leaves the desk | owner |
 | [ ] | The study hour call's words | `src/lib/dhi/hour-call-words.ts`, `HOUR_CALL_WORDS_APPROVED` | the draft note leaves the call card and Hour calls | owner, after the legal check |
 | [ ] | The staff houses' words | `src/lib/dhi/staff-words.ts`, `STAFF_WORDS_APPROVED` | the draft note leaves Home, Overview and Counselors | owner |
 | [ ] | The school report's words | `src/lib/dhi/school-words.ts`, `SCHOOL_WORDS_APPROVED` | the draft note leaves the school report | owner |
@@ -41,6 +41,8 @@ Read the words in one sitting: `docs/launch/words/english.md` (477 lines, with c
 | [ ] | The desk opens | `DESK_LIVE=true` on production, after the new key is set and `DESK_WORDS_APPROVED` is true; the daily cap stays 300 (`DESK_DAILY_CAP`) and 20 a student | owner |
 | [ ] | Counseling opens | Invite the first counselor from the staff area by their Google email, after `COUNSEL_WORDS_APPROVED` and the notice line. The call type `dhi_counsel` exists on the Stream app (shared by development and production). Watch the free plan's recording minutes on the Stream dashboard (house spec 0024) | owner |
 | [ ] | Moderation without a record | A teacher reads the study hour chat of their own classes, and a DHI admin the reported messages of every institute, without a `staffRead` record (the security review of 2026-10-27). Confirm it fits "a DHI admin never sees room content" | owner |
+| [ ] | A book licence for the desk's library | Which books DHI may ingest (Desk Design D1 and D6). None is ingested until a written licence; the desk's map is topics only and uploads wait (house spec 0031, owner 2026-10-28). With a licence the builder estimates storage and cost against the free plan first | owner |
+| [ ] | More than two classes on the desk's practice | The learning loop's reads are about 300 MB a month for one class of 40 at 10 answers a school day (house spec 0031); more than about two such classes needs the paid Convex plan or one event per round | owner |
 | [ ] | Your own browser pass | Every room with made up students, on a phone and a computer | owner |
 | [ ] | Each production step | A fresh yes for committing, pushing, the backend deploy and the Worker deploy, each in its own message (`docs/launch/PROGRESS.md`) | owner |
 

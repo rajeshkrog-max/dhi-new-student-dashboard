@@ -52,6 +52,7 @@ pnpm meals:check     # the food table, custom dishes, the meals room and the hom
 pnpm modules:check   # the films: upload, approval, watching and keeping (a stand-in video host)
 pnpm hour:check      # the study hour: seats in three modes, chat, and the after session feeling card
 pnpm brain:check     # the Progress page (the Brain report) on the hand made days of brainFixtures.ts
+pnpm learn:check     # the desk's Learn panel (map, practice, Fix, a written answer a teacher marks, the plan) and the new measures' inputs (house specs 0030, 0031)
 pnpm topics:check    # the desk card's subject and topic taps (house spec 0028): the class's topics, newest first, stored by id only
 pnpm hourcall:check  # the study hour call: two made up students and a moderating teacher on the real Stream app, then the recording watched and shared (--no-recording skips the wait)
 pnpm staff:check     # the staff houses: the admin's and teacher's Home, a student's Papers (the DHI admin's screens are backend tested only)

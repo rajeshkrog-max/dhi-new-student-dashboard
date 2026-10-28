@@ -47,6 +47,9 @@ Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
 - `LAMP_COPY.viveka.hi.name`: Viveka
 - `LAMP_COPY.viveka.hi.meaning`: Soch aur samajh: poori dekhi gayi films
 - `LANG_NAME.hi`: Hinglish
+- `MEASURES_UI.hi.title`: Aapke maap
+- `MEASURES_UI.hi.intro`: Aapke apne pichhle 28 dinon ki ginti. Ye sirf aapke liye hain, inme se koi score nahi hai aur kisi se tulna nahi hai.
+- `MEASURES_UI.hi.none`: Abhi dikhane ko kuch nahi. Rooms use karne par ye bharte jaayenge.
 - `MOVE_COPY.rising.hi`: Pichhle 2 hafton se badh raha hai
 - `MOVE_COPY.steady.hi`: Pichhle 2 hafton jaisa hi
 - `MOVE_COPY.dipping.hi`: Pichhle 2 hafton se thoda neeche. Ye sirf aapke apne pichhle hafton se tulna hai.
