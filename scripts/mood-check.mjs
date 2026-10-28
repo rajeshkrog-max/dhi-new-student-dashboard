@@ -93,8 +93,8 @@ try {
     expect((await second.getByTestId("mood-guna").innerText()).includes("rajas"), "the other device lost the colour");
   });
 
-  await step("the new words are marked as drafts, and the page shows no clinical word", async () => {
-    expect(await page.getByTestId("mood-draft").isVisible(), "the draft mark is missing");
+  await step("no draft mark shows (approved 2026-10-28), and the page shows no clinical word", async () => {
+    expect((await page.getByTestId("mood-draft").count()) === 0, "the draft mark still shows");
     const text = await page.locator("main, body").first().innerText();
     expect(!/depress|disorder|diagnos|therap|medicat/i.test(text), "a clinical word shows in the mood room");
   });

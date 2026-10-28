@@ -103,9 +103,13 @@ export const HOUSE_NOTICE_V1 = "house-v1";
 // they write in any room. The rooms are built now, and a teacher reads each blog post before the class does, classmates read approved posts, and the
 // study hour chat is read by the others in the hour and kept for teachers and the DHI team to moderate. The notice has to say what really happens, so
 // it is a new version, and everyone who agreed to the first draft (made up people only) agrees again.
-export const HOUSE_NOTICE_VERSION = "house-v2";
-// False until the owner approves the exact words (AC-18). The screen shows the lines as written, with a draft mark while this is false.
-export const HOUSE_WORDS_APPROVED = false;
+export const HOUSE_NOTICE_V2 = "house-v2";
+// The third version (2026-10-28), the one the owner approved. The legal check found that the second did not name the DHI desk (and its outside model
+// provider), counseling, or the study hour call, which are all built now. Version 3 adds a line for each, so everyone who agreed to the second draft
+// (made up people only) agrees again.
+export const HOUSE_NOTICE_VERSION = "house-v3";
+// The owner approved the exact words of house-v3 and the parent wording on 2026-10-28 ("approve all the words gates"). A change of a word is a new version.
+export const HOUSE_WORDS_APPROVED = true;
 
 // The first draft, kept as written because the consent records made while the house was built point at it. It is no longer accepted.
 export const HOUSE_NOTICE_V1_LINES: readonly string[] = [
@@ -120,7 +124,8 @@ export const HOUSE_NOTICE_V1_LINES: readonly string[] = [
 ];
 
 
-export const HOUSE_NOTICE_LINES: readonly string[] = [
+// The second draft, kept as written because the consent records made while the house was built point at it. It is no longer accepted.
+export const HOUSE_NOTICE_V2_LINES: readonly string[] = [
   "DHI is your study house. When you use its rooms, DHI saves what you do there, such as your moods and notes, meals, habits, sleep, study hours and chat, blog posts and photos, exam answers and marks, and the films you watch. DHI also works out numbers and patterns from your own days, and shows them to you.",
   "Only you can see your moods and notes, meals, habits, sleep, and the numbers and patterns DHI works out for you.",
   "A teacher of your class can see your exam answers, marks and remarks, and reads each blog post, photo and comment before your classmates can. Your institute can see your exam marks and remarks, and totals for a whole class (only when 10 or more students stand behind a total).",
@@ -133,8 +138,19 @@ export const HOUSE_NOTICE_LINES: readonly string[] = [
   "Questions or complaints: privacy@dhirise.com. By tapping I agree, you confirm that you have read this notice.",
 ];
 
+export const HOUSE_NOTICE_LINES: readonly string[] = [
+  HOUSE_NOTICE_V2_LINES[0],
+  "Only you can see your moods and notes, meals, habits, sleep, your talks with the DHI desk, and the numbers and patterns DHI works out for you.",
+  HOUSE_NOTICE_V2_LINES[2],
+  HOUSE_NOTICE_V2_LINES[3],
+  "The DHI desk is a study helper. What you type to it is sent to an outside model provider, OpenAI, on servers outside India, to write the answer, and is kept as your talks until you delete them. DHI keeps an answer for 90 days so that the same question in your institute can be answered again for free; it is stored by a code made from the question, with nothing about you. When you send a written practice answer for marking, a teacher of your class may mark it instead, and sees the answer but not your name.",
+  "If you book a counselor, the call is recorded and written out as text by Stream, a video provider in the United States. The counselor sees your first name, class, school and the note you write, and may share the recording only with a person you name. Your school and the DHI team never see a booking. The recordings are deleted when you erase your data.",
+  "In the study hour you can join a video call with camera and voice, only with students of your own school. The call is recorded by Stream and kept for 30 days. Your school's teachers and the DHI team can watch a recording to keep the hour safe, and may share one with a student who asks for it.",
+  ...HOUSE_NOTICE_V2_LINES.slice(4),
+];
+
 // The wording the school relies on when it records that a parent or guardian's consent is on file (spec house/0005, AC-2). The school records it
-// for a student under 18; the house stores who, when and which wording, and nothing about the parent. DRAFT WORDS, like the notice above.
+// for a student under 18; the house stores who, when and which wording, and nothing about the parent. Approved by the owner with the notice (2026-10-28).
 export const HOUSE_PARENT_VERSION = "house-parent-v1";
 
 export const HOUSE_PARENT_LINES: readonly string[] = [
@@ -157,6 +173,7 @@ export const CONSENT_TEXTS: Readonly<Record<string, string>> = {
   [SHARE_CONSENT_VERSION]: SHARE_CONSENT_LINES.join("\n\n"),
   [CHALLENGE_CONSENT_VERSION]: CHALLENGE_CONSENT_LINES.join("\n\n"),
   [HOUSE_NOTICE_V1]: HOUSE_NOTICE_V1_LINES.join("\n\n"),
+  [HOUSE_NOTICE_V2]: HOUSE_NOTICE_V2_LINES.join("\n\n"),
   [HOUSE_NOTICE_VERSION]: HOUSE_NOTICE_LINES.join("\n\n"),
   [HOUSE_PARENT_VERSION]: HOUSE_PARENT_LINES.join("\n\n"),
 };
@@ -171,6 +188,7 @@ export const CONSENT_KINDS: Readonly<Record<string, ConsentKind>> = {
   [SHARE_CONSENT_VERSION]: "share",
   [CHALLENGE_CONSENT_VERSION]: "challenge",
   [HOUSE_NOTICE_V1]: "house",
+  [HOUSE_NOTICE_V2]: "house",
   [HOUSE_NOTICE_VERSION]: "house",
   [HOUSE_PARENT_VERSION]: "house_parent",
 };

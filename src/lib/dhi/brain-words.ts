@@ -7,7 +7,8 @@
 
 import type { ConnectionId, EvidenceItem, LampId, Movement, PatternId } from "@dhi/backend/brainCodes";
 
-export const BRAIN_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const BRAIN_WORDS_APPROVED = true;
 
 export type Lang = "en" | "hi";
 export const LANGS: readonly Lang[] = ["en", "hi"];

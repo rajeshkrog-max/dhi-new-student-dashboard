@@ -3,7 +3,8 @@ import { codeOf, refusalWords } from "./house-words.ts";
 // The new words of the sleep room (spec house/0008, AC-8 and AC-11): a failure line for each refusal of the server, the "night moved on" notice,
 // the labels of the read back and the "not logged" mark. They are drafts until the owner approves them: the screen says so while
 // SLEEP_WORDS_APPROVED is false. No word here calls a night short, long, good, bad or enough, and no word sets a target.
-export const SLEEP_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const SLEEP_WORDS_APPROVED = true;
 
 const SLEEP_REFUSALS: Record<string, string> = {
   bad_time: "Please pick a bed time in steps of 15 minutes.",

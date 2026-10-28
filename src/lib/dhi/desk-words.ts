@@ -3,7 +3,8 @@ import { codeOf, refusalWords } from "./house-words.ts";
 // The words of the DHI desk (spec house/0016): a line for each refusal of the server, the care text, the labels of the screen and the note that the
 // answers are written by a model. They are drafts until the owner approves them: the screen says so while DESK_WORDS_APPROVED is false. No word
 // labels a student, ranks one or calls a question silly, and the care text points to people, not to the model.
-export const DESK_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const DESK_WORDS_APPROVED = true;
 
 const DESK_REFUSALS: Record<string, string> = {
   not_enough_coins:

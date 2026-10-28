@@ -84,9 +84,9 @@ try {
     await page.getByRole("heading", { name: "Before you enter" }).waitFor({ timeout: 20_000 });
     const text = await page.locator("main").innerText();
     expect(!text.includes(kid.name) && !text.includes("Class 10") && !text.includes("Meal Tracker"), "the consent screen shows the student's name, class or rooms");
-    await page.getByTestId("draft-mark").waitFor({ timeout: 20_000 }).catch(() => {
-      throw new Error("the draft mark is missing");
-    });
+    // The owner approved the notice on 2026-10-28: no draft mark.
+    await page.waitForTimeout(1500);
+    expect((await page.getByTestId("draft-mark").count()) === 0, "the draft mark still shows");
   });
 
   await step("I agree is locked until the notice is scrolled to the end, and the notice is shown as written", async () => {
@@ -108,9 +108,8 @@ try {
   await step("the admin records the parent's consent on the Parent consent screen, and the house opens by itself", async () => {
     await admin.goto("/staff");
     await admin.locator('[data-room="parent"]:visible').click();
-    await admin.getByTestId("draft-mark").waitFor({ timeout: 20_000 }).catch(() => {
-      throw new Error("the draft mark is missing on the school's screen");
-    });
+    await admin.waitForTimeout(1500);
+    expect((await admin.getByTestId("draft-mark").count()) === 0, "the draft mark still shows on the school's screen");
     const row = admin.getByTestId("parent-list").locator("li", { hasText: kid.name });
     await showRow(admin, "parent-list", row);
     await row.getByRole("button", { name: /^Record consent/ }).click();

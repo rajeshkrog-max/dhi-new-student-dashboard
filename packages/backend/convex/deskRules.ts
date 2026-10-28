@@ -244,4 +244,5 @@ export const userTextFor = (kind: string, question: string): string =>
   kind === "write" ? `My writing:\n\n${question}` : kind === "paper" || kind === "mock" || kind === "story" || kind === "draw" || kind === "use" ? `Topic: ${question}` : question;
 
 // Owner gate, like the other rooms: the desk's words are drafts until the owner approves them. False.
-export const DESK_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const DESK_WORDS_APPROVED = true;

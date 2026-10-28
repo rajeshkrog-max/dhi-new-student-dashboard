@@ -64,10 +64,10 @@ try {
   const first = await browser.newContext({ baseURL: base.origin, storageState: await freshStudent(browser, base) });
   const page = await first.newPage();
 
-  await step("a new student opens the desk with 60 coins, and the draft note shows", async () => {
+  await step("a new student opens the desk with 60 coins, and no draft note shows (approved 2026-10-28)", async () => {
     await openDesk(page);
     expect((await coins(page)) === 60, `the desk opened with ${await coins(page)} coins, not 60`);
-    await page.getByTestId("desk-draft").waitFor({ timeout: 5_000 });
+    expect((await page.getByTestId("desk-draft").count()) === 0, "the draft note still shows");
     expect((await page.getByTestId("desk-off").count()) === 0, "the desk says it is off on the development deployment");
   });
 

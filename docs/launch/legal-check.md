@@ -1,10 +1,10 @@
 # For the legal check
 
-For the person who checks the house's consent and privacy against the DPDP Act before any real student enters (owner gate 3 in `OWNER-GATES.md`). It names what to read and what to decide. Every word here is a draft (`HOUSE_WORDS_APPROVED` is false), and only made up people are loaded until the check is done.
+For the person who checks the house's consent and privacy against the DPDP Act before any real student enters (owner gate 3 in `OWNER-GATES.md`). It names what to read and what to decide. The owner approved the words on 2026-10-28 (`HOUSE_WORDS_APPROVED` is true); the check itself is still for counsel, and only made up people are loaded until it is done.
 
 ## 1. What to read
 
-1. **The house notice**, version `house-v2` (10 lines): `docs/launch/words/english.md`, the first section, or `packages/backend/convex/consentText.ts` (`HOUSE_NOTICE_LINES`). A student reads it to the end and taps I agree before any room opens.
+1. **The house notice**, version `house-v3` (13 lines; the owner approved its words on 2026-10-28, and it now has the desk, counseling and study hour call lines that item 3 below found missing; the legal check itself is still for counsel): `docs/launch/words/english.md`, the first section, or `packages/backend/convex/consentText.ts` (`HOUSE_NOTICE_LINES`). A student reads it to the end and taps I agree before any room opens.
 2. **The parent wording**, version `house-parent-v1` (3 lines), the same section (`HOUSE_PARENT_LINES`). For a student under 18 (or with the flag missing) the school records that it holds the parent's written consent; DHI keeps who recorded it, when, and which wording, and nothing about the parent.
 3. **The weekly parent page** words (`PARENT_COPY` and `LINK_COPY` in the same file): off until the student turns it on; the student makes a private link and gives it to the parent; it shows days logged in each room over 7 days and three growth marks, never a mood, a note, sleep, meals, a pattern or anything written.
 4. **The data kept and for how long**, below (from `packages/backend/convex/dataMap.ts`, which a test keeps complete).

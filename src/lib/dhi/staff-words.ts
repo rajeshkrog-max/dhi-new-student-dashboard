@@ -1,6 +1,7 @@
 // The words of the staff houses (house spec 0026): the staff home, the DHI admin's overview, the counselor roster and a teacher's page for one
 // student. Drafts until the owner approves them: the screens say so while STAFF_WORDS_APPROVED is false. A count is never a judgement of a person.
-export const STAFF_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const STAFF_WORDS_APPROVED = true;
 
 const n = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 

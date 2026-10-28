@@ -4,7 +4,7 @@ Every word the house shows a student, a parent or the model, in Hinglish, read f
 
 ## Progress (the Brain report)
 
-Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
+Switch: `BRAIN_WORDS_APPROVED` (approved). File: `src/lib/dhi/brain-words.ts`.
 
 - `CONNECTION_COPY.sleep_papers.hi.title`: Sone ka samay aur paper ke din
 - `CONNECTION_COPY.sleep_papers.hi.text(…)`: Jin paper dinon se pehle aap raat saade gyarah baje se pehle soye, un par aapke 7% jawab sahi the. Der se sone ke baad ye 7% tha. 7 dinon par aadharit. Aapke apne dinon mein ye ek saath dikhte hain.
@@ -107,7 +107,7 @@ Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
 
 ## The weekly parent page and the link on Your data
 
-Switch: `PARENT_WORDS_APPROVED` (a draft). File: `src/lib/dhi/parent-words.ts`.
+Switch: `PARENT_WORDS_APPROVED` (approved). File: `src/lib/dhi/parent-words.ts`.
 
 - `PARENT_COPY.hi.title(…)`: {name} ka hafta
 - `PARENT_COPY.hi.intro(…)`: Yeh ek chhota sa saar hai jo {name} ne aapke saath share kiya hai. Yeh sirf unke apne dinon ke baare mein hai. Yeh kabhi rank nahi hai aur kisi se tulna nahi.

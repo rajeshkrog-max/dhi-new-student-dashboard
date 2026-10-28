@@ -2,7 +2,8 @@ import { codeOf, refusalWords } from "./house-words.ts";
 
 // The words of the study hour call (house spec 0027). Drafts until the owner approves them: the screens say so while HOUR_CALL_WORDS_APPROVED is
 // false. Every call is recorded (owner, 2026-10-28), and the words say so, and who may watch, before anyone joins. No word labels or ranks a student.
-export const HOUR_CALL_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const HOUR_CALL_WORDS_APPROVED = true;
 
 export const HOUR_CALL_WORDS = {
   draft: "These words are drafts and may change.",

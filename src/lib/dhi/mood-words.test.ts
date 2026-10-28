@@ -39,7 +39,7 @@ test("spec house/0006 AC-8: each mood has two DHI lines, the stored index picks 
 });
 
 test("spec house/0006 AC-8: the new words are marked as drafts until the owner approves them", () => {
-  assert.equal(MOOD_WORDS_APPROVED, false);
+  assert.equal(MOOD_WORDS_APPROVED, true); // approved by the owner, 2026-10-28
 });
 
 test("spec house/0006 AC-11: every refusal of a save has plain words, and an unknown one falls back to the house's words", () => {

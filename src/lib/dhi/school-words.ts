@@ -1,6 +1,7 @@
 // The words of the school report (house spec 0025). Drafts until the owner approves them: the screen says so while SCHOOL_WORDS_APPROVED is false.
 // A number is a class total; the support list gives a reason and never a score, a rank or a label of a student.
-export const SCHOOL_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const SCHOOL_WORDS_APPROVED = true;
 
 export const SCHOOL_WORDS = {
   draft: "These words are drafts and may change.",

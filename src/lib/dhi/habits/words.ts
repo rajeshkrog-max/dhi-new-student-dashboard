@@ -3,7 +3,8 @@ import { codeOf, refusalWords } from "../house-words.ts";
 // The new words of the habits room (spec house/0007, AC-12): a failure line for each refusal of the server, the "day moved on" notice and the labels
 // for a habit that starts later and for finished habits. They are drafts until the owner approves them: the screen says so while
 // HABIT_WORDS_APPROVED is false. The tips, the insight lines and the milestones are the ones the room already had.
-export const HABIT_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const HABIT_WORDS_APPROVED = true;
 
 const HABIT_REFUSALS: Record<string, string> = {
   bad_title: "Please write a short name for the habit, on one line, up to 40 characters.",

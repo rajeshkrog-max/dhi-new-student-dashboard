@@ -120,7 +120,7 @@ try {
   await step("the room's words hold no judging word and no target", async () => {
     const text = await page.getByTestId("sleep-room").innerText();
     expect(!/\b(short|long|good|bad|enough|weak|target|should|too little|too much)\b/i.test(text), "a judging word shows in the sleep room");
-    expect(text.includes("Draft words") || text.includes("draft"), "the draft mark is missing");
+    expect(!text.includes("Draft words"), "the draft mark still shows (the words were approved on 2026-10-28)");
   });
 
   await step("the day moving past 04:00 is said on the screen", async () => {

@@ -5,7 +5,8 @@
 import type { LampId } from "@dhi/backend/brainCodes";
 import type { Lang } from "@/lib/dhi/brain-words";
 
-export const PARENT_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const PARENT_WORDS_APPROVED = true;
 
 type Words = {
   title: (name: string) => string;

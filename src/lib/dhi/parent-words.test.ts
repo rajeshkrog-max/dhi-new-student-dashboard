@@ -16,7 +16,7 @@ const COMPARE = /\b(other (students|children|kids)|classmates|class average|than
 const strip = (s: string) => s.replace(/never a rank/gi, "").replace(/kabhi rank nahi hai/gi, "").replace(/not a grade/gi, "").replace(/grade nahi hai/gi, "");
 
 test("covers AC-9: the words are drafts until the owner approves them", () => {
-  assert.equal(PARENT_WORDS_APPROVED, false);
+  assert.equal(PARENT_WORDS_APPROVED, true); // approved by the owner, 2026-10-28
 });
 
 test("covers AC-9: both languages have every line, and every lamp and room the server can send has a name", () => {

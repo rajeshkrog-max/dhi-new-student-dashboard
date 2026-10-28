@@ -165,7 +165,7 @@ describe("the gate (AC-1, AC-2, AC-18)", () => {
     const w = await world();
     const s = await fresh(w, "n@alpha.test");
     const n = await s.as.query(api.consent.notice, {});
-    expect(n).toEqual({ version: HOUSE_NOTICE_VERSION, lines: [...HOUSE_NOTICE_LINES], hash: await hash(), approved: false });
+    expect(n).toEqual({ version: HOUSE_NOTICE_VERSION, lines: [...HOUSE_NOTICE_LINES], hash: await hash(), approved: true });
     expect(CONSENT_KINDS[HOUSE_NOTICE_VERSION]).toBe("house");
     expect(CONSENT_KINDS[HOUSE_PARENT_VERSION]).toBe("house_parent");
     expect(HOUSE_ACCEPTED_VERSIONS).toContain(HOUSE_NOTICE_VERSION);
@@ -199,10 +199,11 @@ describe("the gate (AC-1, AC-2, AC-18)", () => {
     expect(await me(s)).toEqual({ state: "consentNeeded", missing: ["self"] });
   });
 
-  test("covers AC-18: the notice and the parent wording are drafts, marked as not approved, and the notice names where data is stored", async () => {
-    expect(HOUSE_WORDS_APPROVED).toBe(false);
+  test("covers AC-18: the owner approved the notice (house-v3) and the parent wording on 2026-10-28, and the notice names where data is stored", async () => {
+    expect(HOUSE_WORDS_APPROVED).toBe(true);
+    expect(HOUSE_NOTICE_VERSION).toBe("house-v3");
     const w = await world();
-    expect((await w.A.admin.as.query(api.consent.parentNotice, {})).approved).toBe(false);
+    expect((await w.A.admin.as.query(api.consent.parentNotice, {})).approved).toBe(true);
     expect(HOUSE_NOTICE_LINES.join(" ")).toMatch(/Convex/);
     expect(HOUSE_NOTICE_LINES.join(" ")).toMatch(/privacy@dhirise\.com/);
   });
@@ -1044,5 +1045,20 @@ describe("the house notice versions (spec house/0005, AC-2 and AC-18)", () => {
     // The first draft's promises that are no longer true are gone.
     expect(text).not.toMatch(/cannot read what you write in any room/);
     expect(text).not.toMatch(/Only you can see[^.]*writing/);
+  });
+
+  test("covers AC-18: house-v3 names the desk and its model provider, counseling and the study hour call, and an agreement to house-v2 no longer counts", async () => {
+    const text = HOUSE_NOTICE_LINES.join(" ");
+    expect(text).toMatch(/DHI desk[^.]*\. What you type to it is sent to an outside model provider, OpenAI/);
+    expect(text).toMatch(/book a counselor, the call is recorded and written out as text by Stream/);
+    expect(text).toMatch(/study hour you can join a video call[^.]*\. The call is recorded by Stream and kept for 30 days/);
+    expect(text).toMatch(/a teacher of your class may mark it instead, and sees the answer but not your name/);
+    const w = await world();
+    await w.t.run(async (ctx) => {
+      const member = await ctx.db.get(w.adult.memberId);
+      for (const row of await ctx.db.query("consentRecords").withIndex("by_memberId_and_kind", (q) => q.eq("memberId", w.adult.memberId).eq("kind", "self")).collect()) await ctx.db.delete(row._id);
+      await ctx.db.insert("consentRecords", { memberId: w.adult.memberId, instituteId: member!.instituteId, kind: "self", by: "self", byMemberId: w.adult.memberId, textVersion: "house-v2", under18AtTime: false });
+    });
+    expect((await me(w.adult)).state).toBe("consentNeeded");
   });
 });

@@ -21,7 +21,7 @@ test("spec house/0007 AC-12: the new words carry no clinical word and no label, 
     assert.ok(!CLINICAL.test(line), line);
     assert.ok(!LABELS.test(line), line);
   }
-  assert.equal(HABIT_WORDS_APPROVED, false);
+  assert.equal(HABIT_WORDS_APPROVED, true); // approved by the owner, 2026-10-28
 });
 
 test("spec house/0007 AC-12: every refusal of a habit call has plain words, and an unknown one falls back to the house's words", () => {

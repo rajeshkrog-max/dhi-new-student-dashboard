@@ -87,8 +87,8 @@ function everySentence(lang: Lang): string[] {
   return out;
 }
 
-test("spec house/0020: the words are drafts until the owner approves them", () => {
-  assert.equal(BRAIN_WORDS_APPROVED, false);
+test("spec house/0020: the owner approved the words on 2026-10-28", () => {
+  assert.equal(BRAIN_WORDS_APPROVED, true);
 });
 
 test("spec house/0020: every code the server names has a line in both languages, and the screen says the same number of days the server hides for", () => {

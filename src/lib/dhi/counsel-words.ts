@@ -2,7 +2,8 @@ import { codeOf, refusalWords } from "./house-words.ts";
 
 // The words of counseling (spec house/0024). Drafts until the owner approves them: the screens say so while COUNSEL_WORDS_APPROVED is false. Every
 // call is recorded and transcribed (owner, 2026-10-27), and the words say so before anyone joins. No word labels or ranks a student.
-export const COUNSEL_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const COUNSEL_WORDS_APPROVED = true;
 
 export const COUNSEL_WORDS = {
   draft: "These words are drafts and may change.",

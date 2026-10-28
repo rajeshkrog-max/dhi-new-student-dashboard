@@ -6,7 +6,8 @@ import { THOUGHTS, type MoodKey } from "./mood-lines.ts";
 // of the two it got. The guna lines and the rhythm tips are NEW and are drafts until the owner approves them: the screen says so while
 // MOOD_WORDS_APPROVED is false. They are never stored, so changing a word changes how past days read, and that is accepted. No clinical words,
 // and no label on the student: a day leans toward a guna, a student is never called one.
-export const MOOD_WORDS_APPROVED = false;
+// Approved by the owner on 2026-10-28 ("approve all the words gates"). A change of the words after this is the owner's to approve again.
+export const MOOD_WORDS_APPROVED = true;
 
 export const GUNA_WORDS: Record<Guna, { name: string; line: string; tip: string }> = {
   sattva: {

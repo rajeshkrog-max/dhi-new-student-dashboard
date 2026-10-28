@@ -65,11 +65,11 @@ try {
     expect((await page.getByTestId("score-value").innerText()).includes("Not yet"), "a new student has a score");
   });
 
-  await step("a new student sees the empty state with the days needed, the draft notes, and a way into each room", async () => {
+  await step("a new student sees the empty state with the days needed, the sources note (the words are approved, so no words note), and a way into each room", async () => {
     await openProgress();
     expect((await page.getByTestId("brain-empty").innerText()).includes("at least 5 days"), "the empty state does not say how many days are needed");
-    await page.getByTestId("brain-draft-words").waitFor({ timeout: 10_000 });
     await page.getByTestId("brain-draft-sources").waitFor({ timeout: 10_000 });
+    expect((await page.getByTestId("brain-draft-words").count()) === 0, "the words draft note still shows");
     expect((await page.getByTestId("pattern").count()) === 0, "a pattern shows with nothing logged");
     expect((await page.getByTestId("brain-score").innerText()).includes("Not yet"), "a score shows with nothing logged");
     await page.getByTestId("open-mood").click();

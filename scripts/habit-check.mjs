@@ -58,10 +58,10 @@ try {
   const page = await context.newPage();
   const second = await (await browser.newContext({ baseURL: base.origin, storageState: state })).newPage();
 
-  await step("a new student starts with no habits and the new words are marked as drafts", async () => {
+  await step("a new student starts with no habits and no draft mark shows (approved 2026-10-28)", async () => {
     await openHabits(page);
     await page.getByText("No habit yet").first().waitFor({ timeout: 20_000 });
-    expect(await page.getByTestId("habit-draft").isVisible(), "the draft mark is missing");
+    expect((await page.getByTestId("habit-draft").count()) === 0, "the draft mark still shows");
     expect(!/depress|disorder|diagnos|therap|medicat/i.test(await page.locator("body").innerText()), "a clinical word shows in the habits room");
   });
 
