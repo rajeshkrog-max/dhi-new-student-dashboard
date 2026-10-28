@@ -24,7 +24,8 @@ async function step(label, run) {
     console.log(`  ok   ${label}`);
   } catch (error) {
     failures.push(label);
-    console.log(`  FAIL ${label}\n       ${String(error?.message ?? error).split("\n")[0]}`);
+    console.log(`  FAIL ${label}\n       ${String(error?.message ?? error).split("\n").slice(0, process.env.PROOF_DEBUG ? 12 : 1).join("\n       ")}`);
+    if (process.env.PROOF_DEBUG) await globalThis.proofPage?.screenshot({ path: `${process.env.PROOF_DEBUG}/step-${steps}.png` }).catch(() => {});
   }
 }
 function expect(condition, message) {
@@ -93,6 +94,7 @@ try {
   const studentState = await signInMember(browser, base, PEOPLE.student);
   const studentContext = await browser.newContext({ baseURL: base.origin, storageState: studentState });
   const student = await studentContext.newPage();
+  globalThis.proofPage = student;
 
   await step("the bell shows the open paper, and its button opens the Exams room", async () => {
     await student.goto("/dashboard");
@@ -111,7 +113,9 @@ try {
     await student.locator('[data-room="papers"]:visible').click();
     const row = student.getByTestId("exam-row").filter({ hasText: title });
     await row.waitFor({ timeout: 25_000 });
-    await row.getByRole("button", { name: "Start paper" }).click();
+    await row.getByRole("button", { name: "Open sitting" }).click();
+    await student.getByTestId("exam-ready").getByText("A quiet pariksha").waitFor({ timeout: 20_000 });
+    await student.getByRole("button", { name: "I am ready to sit" }).click();
     await student.getByTestId("sitting").waitFor({ timeout: 20_000 });
   });
 
@@ -125,27 +129,36 @@ try {
 
   await step("the student asks for a hint, which helps and does not name the answer", async () => {
     await student.getByTestId("hint-button-0").click();
-    const text = await student.getByTestId("hint-0").innerText({ timeout: 15_000 });
+    await student.getByTestId("hint-0").filter({ hasText: /\w/ }).waitFor({ timeout: 15_000 });
+    const text = await student.getByTestId("hint-0").innerText();
     expect(text.includes("Share four things equally."), "the hint text did not show");
     expect(!/\btwo\b/i.test(text), "the hint names the right option");
+    // The hint is a side panel; closing it goes back to the question.
+    await student.keyboard.press("Escape");
+    await student.getByTestId("hint-0").waitFor({ state: "detached", timeout: 10_000 });
   });
 
   await step("the student answers both questions, and what was typed survives a reload", async () => {
-    await student.getByLabel("two").click();
+    // The radio itself is visually hidden inside its big option card, so the card (its label) is what the student presses.
+    await student.locator("label").filter({ has: student.getByLabel("two") }).click();
     await student.waitForFunction(() => document.querySelector('input[type="radio"]:checked')?.parentElement?.textContent?.includes("two"), null, { timeout: 15_000 });
-    // The long answer is kept a few seconds after the student pauses, with no click away from the box.
+    // The long answer is in the Writing lane, and it is kept a few seconds after the student pauses, with no click away from the box.
+    await student.getByRole("button", { name: /^Writing/ }).click();
     await student.getByLabel("Tell a short story.").fill(story);
     await student.waitForTimeout(6_000);
     await student.reload();
     await student.locator('[data-room="papers"]:visible').click();
-    await student.getByRole("button", { name: "Continue paper" }).first().click();
+    await student.getByRole("button", { name: "Continue sitting" }).first().click();
     await student.getByTestId("sitting").waitFor({ timeout: 20_000 });
     expect(await student.getByLabel("two").isChecked(), "the saved choice did not come back after a reload");
+    await student.getByRole("button", { name: /^Writing/ }).click();
     expect((await student.getByLabel("Tell a short story.").inputValue()) === story, "the typed answer did not come back after a reload");
   });
 
   await step("the student submits the paper and it shows as submitted", async () => {
     await student.getByTestId("sitting-submit").click();
+    await student.getByTestId("sitting-confirm").getByText("Good sitting.").waitFor({ timeout: 10_000 });
+    await student.getByTestId("sitting-offer").click();
     const row = student.getByTestId("exam-row").filter({ hasText: title });
     await row.getByText("Submitted").waitFor({ timeout: 20_000 });
     expect(!(await student.locator('[data-room="blog"]:visible').isDisabled()), "the house stayed locked after submitting");
@@ -195,13 +208,19 @@ try {
 
   await step("the student posts to the blog and it waits for a teacher", async () => {
     await student.locator('[data-room="blog"]:visible').click();
+    await student.getByTestId("blog-write").click();
     await student.getByTestId("blog-form").waitFor({ timeout: 20_000 });
     await student.getByLabel("Title").fill(post);
-    await student.getByLabel(/Body/).fill("<b>Hello</b> class");
+    // The body is a small editor: bold is turned on with the toolbar, then off again.
+    await student.getByRole("textbox", { name: "Body" }).click();
+    await student.getByRole("button", { name: "Bold" }).click();
+    await student.keyboard.type("Hello");
+    await student.getByRole("button", { name: "Bold" }).click();
+    await student.keyboard.type(" class");
     // A picture is chosen, shown as a preview, and sent with the post.
     await student.getByTestId("blog-photo").setInputFiles({ name: "proof.png", mimeType: "image/png", buffer: Buffer.from(TINY_PNG, "base64") });
     await student.getByTestId("blog-photo-preview").waitFor({ timeout: 20_000 });
-    await student.getByRole("button", { name: "Post" }).click();
+    await student.getByRole("button", { name: "Put it in the house" }).click();
     await student.getByText("Your post is in").waitFor({ timeout: 20_000 });
     const card = student.getByTestId("blog-post").filter({ hasText: post });
     await card.waitFor({ timeout: 20_000 });

@@ -58,6 +58,8 @@ try {
   });
 
   await step("A's chat message reaches B, and every message is kept (the page says so)", async () => {
+    // The chat is a side panel, opened from the last line under the student's own tile.
+    for (const page of [a, b]) await page.getByTestId("chat-strip").click();
     await a.getByTestId("chat-input").fill(message);
     await a.getByTestId("chat-send").click();
     await b.getByTestId("chat-messages").getByText(message).waitFor({ timeout: 20_000 });
@@ -65,6 +67,7 @@ try {
   });
 
   await step("B moves to Do not disturb: B has no chat and sees no one, and A no longer sees B", async () => {
+    for (const page of [a, b]) await page.keyboard.press("Escape");
     await b.getByTestId("mode-dnd").click();
     await b.getByTestId("chat-closed").waitFor({ timeout: 20_000 });
     expect((await b.getByTestId("seat-other").count()) === 0, "B still sees someone");

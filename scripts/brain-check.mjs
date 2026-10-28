@@ -54,14 +54,15 @@ try {
     await page.getByTestId("brain-lamps").waitFor({ timeout: 30_000 });
   }
 
-  await step("Home shows the real score card and recent exams, and none of the old sample data", async () => {
+  await step("Home shows the real lamps, recent exams and house board, and none of the old sample data", async () => {
     await visitDashboard();
     await page.getByTestId("home-score").waitFor({ timeout: 30_000 });
     await page.getByTestId("recent-exams").waitFor({ timeout: 20_000 });
     // The card is drawn before its numbers arrive ("…"), so wait for the real value.
     await page.getByTestId("score-value").filter({ hasText: /Not yet|\d/ }).waitFor({ timeout: 20_000 });
     const text = await page.locator("section[aria-label=House]").innerText();
-    for (const old of ["House board", "Lamps matrix", "sample data"]) expect(!text.includes(old), `Home still shows "${old}"`);
+    // The board and the lamps came back on real rows; the old sample people and numbers must not.
+    for (const old of ["Ms Iyer", "Physics — torque", "Shubham Raj", "sample data"]) expect(!text.includes(old), `Home still shows "${old}"`);
     expect((await page.getByTestId("score-value").innerText()).includes("Not yet"), "a new student has a score");
   });
 

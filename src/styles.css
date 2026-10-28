@@ -8,7 +8,8 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2") format("woff2-variations");
+  src: url("@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2")
+    format("woff2-variations");
 }
 
 @font-face {
@@ -16,7 +17,8 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2") format("woff2-variations");
+  src: url("@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2")
+    format("woff2-variations");
 }
 
 /* The faces shown until the real fonts arrive: Arial and Georgia stretched to the same size and line height, so nothing moves when the swap
@@ -149,7 +151,16 @@
 /* One focus ring for every page (spec house/0003, AC-8): a 2 px line in the house ink with a 2 px paper gap, so it shows on light and dark
    surfaces alike. It is unlayered on purpose, so a utility such as outline-none on a button cannot hide it. Mouse and touch do not show it.
    A field that sits inside a drawn box marks itself data-in-field and the box shows the ring instead (has-[:focus-visible]:focus-ring). */
-:is(a[href], button, input, select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+:is(
+  a[href],
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
   outline: 2px solid var(--color-home);
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--color-paper);
@@ -175,10 +186,14 @@
 @keyframes lamp-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(232, 195, 106, 0.2), 0 4px 18px rgba(246, 241, 232, 0.25);
+    box-shadow:
+      0 0 0 0 rgba(232, 195, 106, 0.2),
+      0 4px 18px rgba(246, 241, 232, 0.25);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(232, 195, 106, 0), 0 6px 28px rgba(246, 241, 232, 0.55);
+    box-shadow:
+      0 0 0 10px rgba(232, 195, 106, 0),
+      0 6px 28px rgba(246, 241, 232, 0.55);
   }
 }
 
@@ -268,4 +283,10 @@
 .dhi-call .str-video__participant-details,
 .dhi-call .str-video__video-placeholder {
   color: var(--str-video__text-color1);
+}
+
+/* A blog body keeps its numbered list and its paragraphs (the server allows bold, italic and a numbered list only). */
+.blog-body ol {
+  list-style: decimal;
+  margin: 0.4rem 0 0.4rem 1.25rem;
 }

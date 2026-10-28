@@ -30,7 +30,8 @@ try {
   await page.locator('[data-room="day"]:visible').click();
   await page.getByTestId("meals-room").waitFor({ timeout: 30_000 });
 
-  await step("a student adds a dish of their own with its numbers", async () => {
+  await step("a student opens Log a plate and adds a dish of their own", async () => {
+    await page.getByTestId("meal-open").click();
     await page.getByRole("button", { name: "Add a dish that is not listed" }).click();
     const form = page.getByTestId("custom-dish");
     await form.locator("input").first().fill(dishName);
@@ -40,19 +41,25 @@ try {
     await page.getByText("Your dish is saved").waitFor({ timeout: 20_000 });
   });
 
-  await step("the student finds the dish and logs one plate", async () => {
-    await page.getByLabel("Find a food (English or Hindi)").fill(dishName);
-    const value = await page.locator("select[aria-label='Food'] option", { hasText: dishName }).first().getAttribute("value");
-    await page.getByLabel("Food", { exact: true }).selectOption(value);
+  await step("the new dish is on the plate with a count of one, and the student logs it", async () => {
+    await page.getByLabel("On the plate").getByText(`1 × ${dishName}`).waitFor({ timeout: 10_000 });
     await page.getByRole("button", { name: "Log it" }).click();
     await page.getByText("Logged.").waitFor({ timeout: 20_000 });
     const plate = page.getByTestId("meal-plates").getByText(dishName);
     await plate.waitFor({ timeout: 20_000 });
   });
 
+  await step("the student finds the dish by search next time", async () => {
+    await page.getByTestId("meal-open").click();
+    await page.getByLabel("Find a food (English or Hindi)").fill(dishName);
+    await page.getByTestId("meal-found").getByText(dishName).waitFor({ timeout: 20_000 });
+    await page.keyboard.press("Escape");
+  });
+
   await step("the day shows the food group count, and no calorie or protein total", async () => {
+    const groups = await page.getByTestId("meal-groups").innerText();
+    expect(/Dal or protein\s+1/.test(groups), "the dal count is not shown");
     const text = await page.getByTestId("meals-room").innerText();
-    expect(/Dal or protein 1/.test(text), "the dal count is not shown");
     const bad = text.replace(/Dal or protein/g, "").match(/kcal|calorie|protein \d|energy/i);
     expect(!bad, `a calorie or protein total shows (matched "${bad?.[0]}")`);
   });

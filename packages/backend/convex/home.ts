@@ -5,7 +5,7 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { windowRows } from "./brainDay";
 import { LAMP_WINDOW, lampsOf, type LampInput } from "./brainRules";
-import { dayOf } from "./dayRules";
+import { dayBounds, dayOf } from "./dayRules";
 import { fail } from "./helpers";
 import { requireMember } from "./houseAuth";
 
@@ -58,5 +58,41 @@ export const summary = query({
       lamps: lamps.map((l) => ({ name: NAMES[l.lamp], value: l.value, inputs: l.inputs.map(inputView) })),
       presence: { moodDays: rows.filter((r) => r.v.E01 !== undefined).length, mealDays: rows.filter((r) => r.v.H02 !== undefined).length },
     };
+  },
+});
+
+// The home board's calendar (the house mockup): the days in one month that hold a study hour, and the days a paper of the student's own closes, with
+// the hour open now or next. It reads the hours (one list for every school) and the student's own attempts only. Days follow the house day rule.
+export const board = query({
+  args: { month: v.string() },
+  returns: v.object({
+    hourDays: v.array(v.string()),
+    paperDays: v.array(v.object({ day: v.string(), title: v.string() })),
+    nextHour: v.union(v.object({ opensAt: v.number(), closesAt: v.number() }), v.null()),
+  }),
+  handler: async (ctx, args) => {
+    const mc = await requireMember(ctx);
+    if (mc.role !== "student") fail("forbidden");
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(args.month)) fail("bad_month");
+    const [y, m] = args.month.split("-").map(Number);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const from = dayBounds(`${args.month}-01`).start;
+    const to = dayBounds(`${args.month}-${String(last).padStart(2, "0")}`).end;
+    const now = Date.now();
+
+    const hours = await ctx.db.query("studyHours").withIndex("by_opensAt", (q) => q.gte("opensAt", from).lt("opensAt", to)).take(100);
+    const hourDays = [...new Set(hours.map((h) => dayOf(h.opensAt)))];
+
+    const attempts = await ctx.db.query("paperAttempts").withIndex("by_memberId_and_dueAt", (q) => q.eq("memberId", mc.member._id).gte("dueAt", from).lt("dueAt", to)).take(100);
+    const paperDays = [];
+    for (const a of attempts) {
+      const paper = await ctx.db.get(a.paperId);
+      if (paper) paperDays.push({ day: dayOf(a.dueAt), title: paper.title });
+    }
+
+    const recent = await ctx.db.query("studyHours").withIndex("by_opensAt", (q) => q.lte("opensAt", now)).order("desc").take(3);
+    const open = recent.find((h) => now < h.closesAt);
+    const next = open ?? (await ctx.db.query("studyHours").withIndex("by_opensAt", (q) => q.gt("opensAt", now)).first());
+    return { hourDays, paperDays, nextHour: next ? { opensAt: next.opensAt, closesAt: next.closesAt } : null };
   },
 });

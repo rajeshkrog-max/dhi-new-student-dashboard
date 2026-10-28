@@ -1,13 +1,29 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { Heart, Sparkles } from "lucide-react";
+import { Clock, Heart, Sparkles } from "lucide-react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@dhi/backend/api";
 import { dayBounds, shiftDay, todayOf } from "@dhi/backend/dayRules";
 import { isMood } from "@dhi/backend/moodRules";
-import { MONTHS, MOODS, daysInMonth, inkOn, moodOf, prettyDate, type MoodKey } from "@/lib/dhi/mood-demo";
-import { GUNA_WORDS, MOOD_WORDS_APPROVED, dhiLine, gunaOf, moodRefusal } from "@/lib/dhi/mood-words";
+import {
+  MONTHS,
+  MOODS,
+  daysInMonth,
+  inkOn,
+  moodOf,
+  prettyDate,
+  type MoodKey,
+} from "@/lib/dhi/mood-demo";
+import {
+  GUNA_WORDS,
+  MOOD_WORDS_APPROVED,
+  dhiLine,
+  gunaOf,
+  moodRefusal,
+} from "@/lib/dhi/mood-words";
 import { Notice } from "@/components/dhi/ui/notice";
+import { counselRefusal } from "@/lib/dhi/counsel-words";
+import type { GenericId } from "convex/values";
 import { Sheet } from "@/components/dhi/sheet";
 import { useTouch } from "@/lib/use-touch";
 import { cn } from "@/lib/utils";
@@ -28,6 +44,8 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
   const [fail, setFail] = useState("");
   const [dayChanged, setDayChanged] = useState(false);
   const [confirmHelp, setConfirmHelp] = useState(false);
+  const [helpDesk, setHelpDesk] = useState(false);
+  const [booked, setBooked] = useState(false);
   // The day the screen shows as today comes from the shared day rule on the device clock, and moves on at the next 04:00. The save result carries
   // the server's day, which wins.
   const [today, setToday] = useState(() => todayOf(Date.now()));
@@ -46,11 +64,15 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
   const yearRows = useQuery(api.moods.year, { year: String(year) });
 
   useEffect(() => {
-    const t = window.setTimeout(() => setToday(todayOf(Date.now())), Math.max(1000, dayBounds(today).end - Date.now()) + 50);
+    const t = window.setTimeout(
+      () => setToday(todayOf(Date.now())),
+      Math.max(1000, dayBounds(today).end - Date.now()) + 50,
+    );
     return () => window.clearTimeout(t);
   }, [today]);
 
-  const asCell = (r: { mood: string; note: string; lineIx: number }): DayCell | null => (isMood(r.mood) ? { mood: r.mood, note: r.note, lineIx: r.lineIx } : null);
+  const asCell = (r: { mood: string; note: string; lineIx: number }): DayCell | null =>
+    isMood(r.mood) ? { mood: r.mood, note: r.note, lineIx: r.lineIx } : null;
   const todayEntry = useMemo(() => {
     const row = currentRows?.find((r) => r.day === today);
     return row ? asCell(row) : null;
@@ -155,7 +177,9 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                   className={cn(
                     "group flex h-[4.6rem] flex-col items-center justify-center gap-1 rounded-control border text-[11px] touch:text-xs transition duration-200 hover:-translate-y-1 hover:shadow-md",
                     inkOn(m.color).hover,
-                    on ? `border-transparent shadow-md ${inkOn(m.color).ink}` : "border-white/80 bg-white text-home",
+                    on
+                      ? `border-transparent shadow-md ${inkOn(m.color).ink}`
+                      : "border-white/80 bg-white text-home",
                   )}
                   style={{ backgroundColor: on ? m.color : undefined }}
                   onMouseEnter={(e) => {
@@ -165,7 +189,9 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                     e.currentTarget.style.backgroundColor = on ? m.color : "";
                   }}
                 >
-                  <span className="text-lg leading-none transition duration-200 group-hover:-translate-y-0.5">{m.glyph}</span>
+                  <span className="text-lg leading-none transition duration-200 group-hover:-translate-y-0.5">
+                    {m.glyph}
+                  </span>
                   <span className="font-medium">{m.label}</span>
                 </button>
               );
@@ -190,7 +216,12 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
           </label>
           <p className="mt-1 text-right text-xs text-mute">{[...note].length} of 500</p>
           {fail && (
-            <Notice tone="danger" role="alert" data-testid="mood-error" className="mt-3 px-4 py-3 text-sm">
+            <Notice
+              tone="danger"
+              role="alert"
+              data-testid="mood-error"
+              className="mt-3 px-4 py-3 text-sm"
+            >
               {fail}
             </Notice>
           )}
@@ -207,7 +238,15 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
               data-testid="mood-save"
               className="h-12 rounded-full bg-grove px-7 text-sm font-medium text-paper disabled:opacity-50"
             >
-              {saving ? "Saving…" : currentRows === undefined ? "Loading…" : todayEntry ? (dirty ? "Change today" : "Saved for today") : "Colour today"}
+              {saving
+                ? "Saving…"
+                : currentRows === undefined
+                  ? "Loading…"
+                  : todayEntry
+                    ? dirty
+                      ? "Change today"
+                      : "Saved for today"
+                    : "Colour today"}
             </button>
             {todayEntry && !dirty && (
               <span className="text-xs text-mute touch:text-sm" data-testid="mood-saved">
@@ -238,7 +277,10 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                   key={s}
                   type="button"
                   onClick={() => setScope(s)}
-                  className={cn("rounded-full px-3 py-1.5 capitalize touch:min-h-11 touch:px-4", scope === s && "bg-home text-paper")}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 capitalize touch:min-h-11 touch:px-4",
+                    scope === s && "bg-home text-paper",
+                  )}
                 >
                   {s}
                 </button>
@@ -252,7 +294,11 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                 <PieChart accessibilityLayer={false}>
                   <Pie
                     rootTabIndex={-1}
-                    data={pie.slices.length ? pie.slices : [{ key: "empty", value: 1, color: "var(--color-sand-deep)" }]}
+                    data={
+                      pie.slices.length
+                        ? pie.slices
+                        : [{ key: "empty", value: 1, color: "var(--color-sand-deep)" }]
+                    }
                     dataKey="value"
                     innerRadius={58}
                     outerRadius={78}
@@ -260,9 +306,11 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                     stroke="none"
                     isAnimationActive={false}
                   >
-                    {(pie.slices.length ? pie.slices : [{ color: "var(--color-sand-deep)" }]).map((s, i) => (
-                      <Cell key={i} fill={s.color} />
-                    ))}
+                    {(pie.slices.length ? pie.slices : [{ color: "var(--color-sand-deep)" }]).map(
+                      (s, i) => (
+                        <Cell key={i} fill={s.color} />
+                      ),
+                    )}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -286,7 +334,9 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 className="font-display text-2xl">Year in colour</h3>
-            <p className="text-sm text-mute">This month is the sitting. The year is the river behind it. Tap a filled lamp.</p>
+            <p className="text-sm text-mute">
+              This month is the sitting. The year is the river behind it. Tap a filled lamp.
+            </p>
           </div>
           <p className="text-xs text-mute">{year}</p>
         </div>
@@ -294,13 +344,22 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
           <MonthBoard year={year} month={month} days={viewDays} today={today} onPick={setPick} />
         </div>
         <div className="mt-8">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">The year</p>
+          <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-mute touch:text-xs">
+            The year
+          </p>
           <div className="space-y-2">
             {MONTHS.map((name, mi) => {
               const dim = daysInMonth(year, mi);
               const isNow = mi === Number(today.slice(5, 7)) - 1;
               const label = (
-                <span className={cn("w-20 shrink-0 text-xs", isNow ? "font-medium text-home" : "text-mute")}>{name}</span>
+                <span
+                  className={cn(
+                    "w-20 shrink-0 text-xs",
+                    isNow ? "font-medium text-home" : "text-mute",
+                  )}
+                >
+                  {name}
+                </span>
               );
               // On touch the 18 pixel dots are only a picture. The whole row is one 44 pixel button
               // that opens the month in the calendar above, so every past day stays reachable.
@@ -315,7 +374,10 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                       setMonth(mi);
                       board.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
-                    className={cn("flex min-h-11 w-full items-center gap-3 rounded-control px-2 py-2 text-left", mi === month && "bg-white/80")}
+                    className={cn(
+                      "flex min-h-11 w-full items-center gap-3 rounded-control px-2 py-2 text-left",
+                      mi === month && "bg-white/80",
+                    )}
                   >
                     {label}
                     <span aria-hidden className="flex flex-wrap gap-1">
@@ -326,7 +388,9 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                           <span
                             key={di}
                             className="size-[18px] rounded-md"
-                            style={{ backgroundColor: cell ? moodOf(cell).color : "var(--color-sand)" }}
+                            style={{
+                              backgroundColor: cell ? moodOf(cell).color : "var(--color-sand)",
+                            }}
                           />
                         );
                       })}
@@ -355,7 +419,9 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                           }}
                           title={cell ? `${key} · ${moodOf(cell).label}` : key}
                           className="size-[18px] rounded-md disabled:cursor-default"
-                          style={{ backgroundColor: cell ? moodOf(cell).color : "var(--color-sand)" }}
+                          style={{
+                            backgroundColor: cell ? moodOf(cell).color : "var(--color-sand)",
+                          }}
                         />
                       );
                     })}
@@ -383,10 +449,18 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
       )}
 
       {confirmHelp && (
-        <Modal title="Talk to a counselor?" onClose={() => setConfirmHelp(false)}>
-          <p className="text-sm text-mute">A counselor from the DHI team can talk with you in a video call inside the house. You pick a free time in Counseling.</p>
+        <Modal title="Sit with a counselor?" onClose={() => setConfirmHelp(false)}>
+          <p className="text-sm text-mute">
+            In-house, human. A counselor from the DHI team talks with you in a video call inside the
+            house, and the call is recorded. They see your first name, class, school and the note
+            you write, never your moods and never a diagnosis.
+          </p>
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={() => setConfirmHelp(false)} className="h-11 rounded-control bg-white px-4 text-sm">
+            <button
+              type="button"
+              onClick={() => setConfirmHelp(false)}
+              className="h-11 rounded-control bg-white px-4 text-sm"
+            >
               Not now
             </button>
             <button
@@ -394,11 +468,49 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
               data-testid="mood-to-counsel"
               onClick={() => {
                 setConfirmHelp(false);
+                setHelpDesk(true);
+              }}
+              className="h-11 rounded-control bg-home px-4 text-sm text-paper"
+            >
+              Yes, write to them
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {helpDesk && (
+        <HelpDesk
+          onClose={() => setHelpDesk(false)}
+          onBooked={() => {
+            setHelpDesk(false);
+            setBooked(true);
+          }}
+        />
+      )}
+
+      {booked && (
+        <Modal title="The door is open" onClose={() => setBooked(false)}>
+          <p className="text-sm text-mute">
+            Your time is held and your words went to the counselor. You join the call from
+            Counseling when it starts.
+          </p>
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setBooked(false)}
+              className="h-11 rounded-control bg-white px-4 text-sm"
+            >
+              Stay in the house
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setBooked(false);
                 onCounsel?.();
               }}
               className="h-11 rounded-control bg-home px-4 text-sm text-paper"
             >
-              Go to Counseling
+              Open Counseling
             </button>
           </div>
         </Modal>
@@ -422,7 +534,10 @@ function MonthBoard({
 }) {
   const dim = daysInMonth(year, month);
   const start = new Date(year, month, 1).getDay();
-  const cells: (number | null)[] = [...Array(start).fill(null), ...Array.from({ length: dim }, (_, i) => i + 1)];
+  const cells: (number | null)[] = [
+    ...Array(start).fill(null),
+    ...Array.from({ length: dim }, (_, i) => i + 1),
+  ];
   while (cells.length % 7) cells.push(null);
   const names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -492,7 +607,10 @@ function DaySlide({
       title={prettyDate(date)}
       backdrop={
         <>
-          <div className="pointer-events-none absolute inset-0 bg-cover bg-[center_40%]" style={{ backgroundImage: "url(/mood/thought.jpg)" }} />
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-[center_40%]"
+            style={{ backgroundImage: "url(/mood/thought.jpg)" }}
+          />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-gold-ink/80 via-gold-ink/25 to-transparent" />
         </>
       }
@@ -507,8 +625,12 @@ function DaySlide({
       </div>
       <div className="mt-auto space-y-3 pb-2 pt-16">
         <div className="rounded-card border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">What you wrote</p>
-          <p className="font-display mt-2 text-2xl leading-snug">{note || "This day was coloured, but no line was left."}</p>
+          <p className="text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">
+            What you wrote
+          </p>
+          <p className="font-display mt-2 text-2xl leading-snug">
+            {note || "This day was coloured, but no line was left."}
+          </p>
         </div>
         <div className="rounded-card border border-white/25 bg-white/15 p-5 backdrop-blur-xl">
           <p className="flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-paper/70 touch:text-xs">
@@ -518,18 +640,152 @@ function DaySlide({
           <p className="mt-3 text-sm leading-relaxed text-paper/80">{guna.line}</p>
           <p className="mt-1 text-sm leading-relaxed text-paper/80">{guna.tip}</p>
         </div>
-        <button type="button" onClick={onHelp} className="lamp-glow flex h-12 w-full items-center justify-center gap-2 rounded-full bg-paper text-sm font-medium text-home">
-          <Heart className="size-4" aria-hidden /> Talk to a counselor
+        <button
+          type="button"
+          onClick={onHelp}
+          className="lamp-glow flex h-12 w-full items-center justify-center gap-2 rounded-full bg-paper text-sm font-medium text-home"
+        >
+          <Heart className="size-4" aria-hidden /> Ask DHI for a sitting
         </button>
       </div>
     </Sheet>
   );
 }
 
-function Modal({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
+function Modal({
+  children,
+  onClose,
+  title,
+}: {
+  children: ReactNode;
+  onClose: () => void;
+  title: string;
+}) {
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()} side="bottom" title={title}>
       {children}
     </Sheet>
+  );
+}
+
+// Writing to a counselor from the mood room (the house mockup's help desk), on the real counseling slots (house spec 0024): a note, then an open time
+// in the next days. The booking is the same one the Counseling room makes; the counselor sees the first name, class, school and the note only.
+function HelpDesk({ onClose, onBooked }: { onClose: () => void; onBooked: () => void }) {
+  const [now] = useState(() => Date.now());
+  const free = useQuery(api.counsel.freeSlots, { now });
+  const book = useMutation(api.counsel.book);
+  const [note, setNote] = useState("");
+  const [day, setDay] = useState("");
+  const [slotId, setSlotId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const dayOfSlot = (ms: number) =>
+    new Date(ms).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const days = [...new Set((free ?? []).map((s) => dayOfSlot(s.startsAt)))];
+  const shownDay = day || days[0] || "";
+  const ofDay = (free ?? []).filter((s) => dayOfSlot(s.startsAt) === shownDay);
+
+  async function send() {
+    if (!slotId) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await book({ slotId: slotId as GenericId<"counselSlots">, note });
+      if (r.ok) onBooked();
+      else setError(counselRefusal(r.code));
+    } catch (e) {
+      setError(counselRefusal(e));
+    }
+    setBusy(false);
+  }
+
+  return (
+    <Modal title="Write to a counselor" onClose={onClose}>
+      <p className="text-xs text-mute">
+        A human sitting. Pick an open time and leave a line if you want them to know something
+        first.
+      </p>
+      <textarea
+        value={note}
+        maxLength={300}
+        onChange={(e) => setNote(e.target.value)}
+        rows={4}
+        placeholder="What do you need them to know before the sitting?"
+        aria-label="A note for the counselor"
+        className="mt-4 w-full resize-none rounded-control bg-white p-3 text-sm outline-none focus-visible:focus-ring"
+      />
+      <p className="mt-4 text-[11px] uppercase tracking-wide text-mute touch:text-xs">Open times</p>
+      {free === undefined ? (
+        <p className="mt-2 text-sm text-mute">Loading…</p>
+      ) : free.length === 0 ? (
+        <p className="mt-2 text-sm text-mute">
+          No open times in the next days. Counseling shows new times as soon as a counselor opens
+          them.
+        </p>
+      ) : (
+        <>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {days.map((d) => (
+              <button
+                key={d}
+                type="button"
+                aria-pressed={shownDay === d}
+                onClick={() => {
+                  setDay(d);
+                  setSlotId(null);
+                }}
+                className={cn(
+                  "h-9 rounded-full px-3 text-xs touch:h-11",
+                  shownDay === d ? "bg-home text-paper" : "bg-white",
+                )}
+              >
+                {new Date(`${d}T12:00:00+05:30`).toLocaleDateString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {ofDay.map((s) => (
+              <button
+                key={s.slotId}
+                type="button"
+                aria-pressed={slotId === s.slotId}
+                onClick={() => setSlotId(slotId === s.slotId ? null : s.slotId)}
+                className={cn(
+                  "flex min-h-12 flex-col items-center justify-center rounded-control text-xs",
+                  slotId === s.slotId ? "bg-grove text-paper" : "bg-white",
+                )}
+              >
+                <Clock className="mb-0.5 size-3" aria-hidden />
+                {new Date(s.startsAt).toLocaleTimeString("en-IN", {
+                  timeZone: "Asia/Kolkata",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+                <span className="opacity-80">{s.counselor}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {error && (
+        <Notice tone="danger" role="alert" className="mt-3 px-4 py-3 text-sm">
+          {error}
+        </Notice>
+      )}
+      <button
+        type="button"
+        disabled={!slotId || busy}
+        onClick={() => void send()}
+        className="mt-5 h-11 w-full rounded-control bg-home text-sm font-medium text-paper disabled:opacity-40"
+        data-testid="mood-help-send"
+      >
+        {busy ? "Sending…" : "Send to the counselor desk"}
+      </button>
+    </Modal>
   );
 }

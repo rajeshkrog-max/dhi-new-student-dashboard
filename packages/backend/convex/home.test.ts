@@ -129,3 +129,29 @@ describe("the score rules", () => {
     expect(scoreOf({ sadhana: null, niyam: null, viveka: null })).toBeNull();
   });
 });
+
+describe("the home board", () => {
+  test("lists the month's study hour days and the student's own paper days, and the hour coming next", async () => {
+    const { t, teacher, a1, s, other } = await world();
+    const paperId = await teacher.as.mutation(api.papers.create, {
+      title: "Board paper",
+      questions: [{ kind: "long", subject: "English", topic: "Story", text: "Tell a story.", maxMarks: 5, rubric: "x" }],
+    });
+    await teacher.as.mutation(api.papers.send, { paperId, target: { kind: "class", classId: a1 }, opensAt: NOW - HOUR, dueAt: NOW + 2 * 24 * HOUR });
+    await t.run(async (ctx) => {
+      await ctx.db.insert("studyHours", { opensAt: NOW + 24 * HOUR, closesAt: NOW + 25 * HOUR, setBy: s.memberId, createdAt: NOW });
+      await ctx.db.insert("studyHours", { opensAt: at("2026-11-03T17:00:00+05:30"), closesAt: at("2026-11-03T18:00:00+05:30"), setBy: s.memberId, createdAt: NOW });
+    });
+    const r = await s.as.query(api.home.board, { month: "2026-10" });
+    expect(r.hourDays).toEqual(["2026-10-21"]);
+    expect(r.paperDays).toEqual([{ day: "2026-10-22", title: "Board paper" }]);
+    expect(r.nextHour).toEqual({ opensAt: NOW + 24 * HOUR, closesAt: NOW + 25 * HOUR });
+    const november = await s.as.query(api.home.board, { month: "2026-11" });
+    expect(november.hourDays).toEqual(["2026-11-03"]);
+    expect(november.paperDays).toEqual([]);
+    // Another student sees their own paper only through their own attempt.
+    const theirs = await other.as.query(api.home.board, { month: "2026-10" });
+    expect(theirs.paperDays).toEqual([{ day: "2026-10-22", title: "Board paper" }]);
+    expect(await refusal(s.as.query(api.home.board, { month: "October" }))).toBe("bad_month");
+  });
+});

@@ -62,7 +62,7 @@ export const log = mutation({
   },
 });
 
-type Plate = { plateId: Id<"mealPlates">; meal: string; group: string; count: number; foodName: string; eatenAt: number };
+type Plate = { plateId: Id<"mealPlates">; foodId: Id<"foods">; meal: string; group: string; count: number; foodName: string; eatenAt: number };
 
 async function platesOf(ctx: QueryCtx | MutationCtx, memberId: Id<"members">, day: string): Promise<Plate[]> {
   // 500 is the event log's cap of a day, so every plate of a day is read, removed ones included, before they are skipped.
@@ -71,7 +71,7 @@ async function platesOf(ctx: QueryCtx | MutationCtx, memberId: Id<"members">, da
   for (const r of rows) {
     if (r.removedAt !== undefined) continue;
     const food: Doc<"foods"> | null = await ctx.db.get(r.foodId);
-    out.push({ plateId: r._id, meal: r.meal, group: r.group, count: r.count, foodName: food?.nameEn ?? "", eatenAt: r.eatenAt });
+    out.push({ plateId: r._id, foodId: r.foodId, meal: r.meal, group: r.group, count: r.count, foodName: food?.nameEn ?? "", eatenAt: r.eatenAt });
   }
   return out.sort((a, b) => a.eatenAt - b.eatenAt);
 }
@@ -83,9 +83,9 @@ export const day = query({
   args: { today: v.optional(v.string()) },
   returns: v.object({
     day: v.string(),
-    plates: v.array(v.object({ plateId: v.id("mealPlates"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
+    plates: v.array(v.object({ plateId: v.id("mealPlates"), foodId: v.id("foods"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
     groups: v.object({ grain: v.number(), dal: v.number(), vegetable: v.number(), dairy: v.number(), fruit: v.number() }),
-    yesterday: v.array(v.object({ plateId: v.id("mealPlates"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
+    yesterday: v.array(v.object({ plateId: v.id("mealPlates"), foodId: v.id("foods"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
   }),
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
@@ -100,7 +100,14 @@ export const day = query({
 // The food group counts of each of the last 7 house days, oldest first. The week does not reset when the day does. `today` as in `day`.
 export const week = query({
   args: { today: v.optional(v.string()) },
-  returns: v.array(v.object({ day: v.string(), groups: v.object({ grain: v.number(), dal: v.number(), vegetable: v.number(), dairy: v.number(), fruit: v.number() }) })),
+  returns: v.array(
+    v.object({
+      day: v.string(),
+      groups: v.object({ grain: v.number(), dal: v.number(), vegetable: v.number(), dairy: v.number(), fruit: v.number() }),
+      // The day's own plates, so the room can show the usual time of each meal and the dishes of the week. The student's own rows only.
+      plates: v.array(v.object({ foodId: v.id("foods"), meal: v.string(), group: v.string(), count: v.number(), foodName: v.string(), eatenAt: v.number() })),
+    }),
+  ),
   handler: async (ctx) => {
     const mc = await requireMember(ctx);
     if (mc.role !== "student") fail("forbidden");
@@ -108,7 +115,8 @@ export const week = query({
     const out = [];
     for (let i = 6; i >= 0; i -= 1) {
       const d = shiftDay(today, -i);
-      out.push({ day: d, groups: groupCounts(await platesOf(ctx, mc.member._id, d)) });
+      const plates = await platesOf(ctx, mc.member._id, d);
+      out.push({ day: d, groups: groupCounts(plates), plates: plates.map((p) => ({ foodId: p.foodId, meal: p.meal, group: p.group, count: p.count, foodName: p.foodName, eatenAt: p.eatenAt })) });
     }
     return out;
   },

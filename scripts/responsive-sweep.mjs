@@ -385,7 +385,13 @@ async function sitInMode(page, mode) {
 async function sitExam(page) {
   const paper = page.getByTestId("exam-row").filter({ hasText: "Sweep paper" });
   await paper.waitFor({ timeout: 30_000 });
-  await paper.getByRole("button", { name: /Start paper|Continue paper/ }).click();
+  const open = paper.getByRole("button", { name: "Open sitting" });
+  if (await open.count()) {
+    await open.click();
+    await page.getByRole("button", { name: "I am ready to sit" }).click();
+  } else {
+    await paper.getByRole("button", { name: "Continue sitting" }).click();
+  }
   await page.getByTestId("sitting").waitFor({ timeout: 20_000 });
 }
 

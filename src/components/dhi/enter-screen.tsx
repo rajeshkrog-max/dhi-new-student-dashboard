@@ -47,14 +47,21 @@ export function EnterScreen({
     const { ok } = await testSignIn(email.trim(), password);
     setBusy(false);
     if (ok) onSignedIn();
-    else setError("The test sign in did not work. Please check the email and password (8 letters or more).");
+    else
+      setError(
+        "The test sign in did not work. Please check the email and password (8 letters or more).",
+      );
   }
 
   const message = error || notice || "";
   const muted = day ? "text-home/80" : "text-paper/85";
   // The chosen tab is a solid pill in the opposite tone, so it reads over any frame of the video.
   const tab = (active: boolean) =>
-    active ? (day ? "border-home bg-home text-paper hover:bg-home" : "border-paper bg-paper text-home hover:bg-paper") : "";
+    active
+      ? day
+        ? "border-home bg-home text-paper hover:bg-home"
+        : "border-paper bg-paper text-home hover:bg-paper"
+      : "";
 
   return (
     <DoorScene
@@ -84,14 +91,28 @@ export function EnterScreen({
       <section data-testid="landing-signin" className={doorCardClass(day)}>
         <h1 className="font-display text-4xl font-medium">Enter</h1>
         <p className={cn("mt-1.5 text-sm", muted)}>
-          {pane === "signin" ? "Welcome back. Your house is waiting." : "Invite letters are not open yet."}
+          {pane === "signin"
+            ? "Welcome back. Your house is waiting."
+            : "Your school sent the letter to your email."}
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <Button variant="quiet" onDark={!day} aria-pressed={pane === "signin"} className={cn("px-2", tab(pane === "signin"))} onClick={() => setPane("signin")}>
+          <Button
+            variant="quiet"
+            onDark={!day}
+            aria-pressed={pane === "signin"}
+            className={cn("px-2", tab(pane === "signin"))}
+            onClick={() => setPane("signin")}
+          >
             I have a seat
           </Button>
-          <Button variant="quiet" onDark={!day} aria-pressed={pane === "invite"} className={cn("px-2", tab(pane === "invite"))} onClick={() => setPane("invite")}>
+          <Button
+            variant="quiet"
+            onDark={!day}
+            aria-pressed={pane === "invite"}
+            className={cn("px-2", tab(pane === "invite"))}
+            onClick={() => setPane("invite")}
+          >
             Invite letter
           </Button>
         </div>
@@ -103,18 +124,36 @@ export function EnterScreen({
         ) : null}
 
         {pane === "invite" ? (
-          <p className={cn("mt-5 text-sm leading-relaxed", muted)}>
-            If you already have a seat, choose I have a seat and sign in with Google.
-          </p>
+          <>
+            <p className={cn("mt-5 text-sm leading-relaxed", muted)}>
+              Sign in with Google using the email the invite went to. The house finds your letter
+              and shows your school and class before you join.
+            </p>
+            <Button
+              variant={day ? "solid" : "gold"}
+              data-testid="landing-invite-google"
+              onClick={google}
+              className="mt-5 w-full"
+            >
+              Continue with Google
+            </Button>
+          </>
         ) : (
           <>
-            <Button variant={day ? "solid" : "gold"} data-testid="landing-google" onClick={google} className="mt-5 w-full">
+            <Button
+              variant={day ? "solid" : "gold"}
+              data-testid="landing-google"
+              onClick={google}
+              className="mt-5 w-full"
+            >
               Continue with Google
             </Button>
 
             {testSignInOffered && (
               <form className="mt-2" onSubmit={testForm} data-testid="landing-test-form">
-                <p className={cn("mt-5 text-center text-xs tracking-[0.12em] uppercase", muted)}>Test sign in (this build only)</p>
+                <p className={cn("mt-5 text-center text-xs tracking-[0.12em] uppercase", muted)}>
+                  Test sign in (this build only)
+                </p>
                 <Field label="Email" onDark={!day}>
                   <Mail className="size-4 opacity-70" aria-hidden />
                   <FieldInput
@@ -146,11 +185,22 @@ export function EnterScreen({
                     className="rounded-full opacity-80 touch:-mr-2 touch:grid touch:size-11 touch:place-items-center"
                     aria-label={showPw ? "Hide password" : "Show password"}
                   >
-                    {showPw ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+                    {showPw ? (
+                      <EyeOff className="size-4" aria-hidden />
+                    ) : (
+                      <Eye className="size-4" aria-hidden />
+                    )}
                   </button>
                 </Field>
 
-                <Button type="submit" variant="quiet" onDark={!day} data-testid="landing-submit" disabled={busy} className="mt-4 w-full">
+                <Button
+                  type="submit"
+                  variant="quiet"
+                  onDark={!day}
+                  data-testid="landing-submit"
+                  disabled={busy}
+                  className="mt-4 w-full"
+                >
                   {busy ? "Signing in…" : "Sign in"}
                 </Button>
               </form>
@@ -160,7 +210,12 @@ export function EnterScreen({
 
         {onDemo && (
           <p className={cn("mt-5 text-center text-xs leading-relaxed", muted)}>
-            <button type="button" data-testid="landing-demo" onClick={onDemo} className="tap underline underline-offset-4">
+            <button
+              type="button"
+              data-testid="landing-demo"
+              onClick={onDemo}
+              className="tap underline underline-offset-4"
+            >
               Look around the demo house
             </button>
           </p>

@@ -9,7 +9,11 @@ import { api } from "@dhi/backend/api";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["All", "Academic", "Self help", "Mental health", "Kept"] as const;
-const CATEGORY_WORDS: Record<string, string> = { academic: "Academic", self_help: "Self help", mental_health: "Mental health" };
+const CATEGORY_WORDS: Record<string, string> = {
+  academic: "Academic",
+  self_help: "Self help",
+  mental_health: "Mental health",
+};
 const REPORT_EVERY_MS = 5000;
 const FINISH_RETRIES = 3;
 const FINISH_RETRY_MS = 4500;
@@ -34,7 +38,13 @@ export function ModulesReal() {
   const [open, setOpen] = useState<Film | null>(null);
 
   if (data === undefined) return <p className="text-sm text-mute">Loading films…</p>;
-  if (open) return <Player film={data.films.find((f) => f.filmId === open.filmId) ?? open} onBack={() => setOpen(null)} />;
+  if (open)
+    return (
+      <Player
+        film={data.films.find((f) => f.filmId === open.filmId) ?? open}
+        onBack={() => setOpen(null)}
+      />
+    );
 
   const list = data.films.filter((f) => {
     if (filter === "All") return true;
@@ -50,7 +60,10 @@ export function ModulesReal() {
             key={f}
             type="button"
             onClick={() => setFilter(f)}
-            className={cn("h-9 rounded-full px-3 text-sm touch:h-11 touch:min-w-11", filter === f ? "bg-home text-paper" : "bg-white/70 text-home")}
+            className={cn(
+              "h-9 rounded-full px-3 text-sm touch:h-11 touch:min-w-11",
+              filter === f ? "bg-home text-paper" : "bg-white/70 text-home",
+            )}
           >
             {f}
             {f === "Kept" && <span className="ml-1 text-xs opacity-70">{data.keptCount}</span>}
@@ -75,28 +88,51 @@ export function ModulesReal() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {list.map((f) => (
-          <button key={f.filmId} type="button" onClick={() => setOpen(f)} className="overflow-hidden rounded-card bg-white/80 text-left shadow-sm" data-testid="film-card">
+          <button
+            key={f.filmId}
+            type="button"
+            onClick={() => setOpen(f)}
+            className="overflow-hidden rounded-card bg-white/80 text-left shadow-sm"
+            data-testid="film-card"
+          >
             <span className="relative block aspect-[16/10]">
               <img src={f.cover} alt="" className="size-full object-cover" />
-              <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-xs">{CATEGORY_WORDS[f.category] ?? f.category}</span>
+              <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-0.5 text-xs">
+                {CATEGORY_WORDS[f.category] ?? f.category}
+              </span>
               {f.kept && (
-                <span className="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-mint text-grove" data-decorative>
+                <span
+                  className="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-mint text-grove"
+                  data-decorative
+                >
                   <Check className="size-4" />
                 </span>
               )}
             </span>
             <span className="block px-4 py-3">
               <span className="block font-medium">{f.title}</span>
-              <span className="mt-1 block text-xs text-mute">DHI house</span>
+              <span className="mt-1 block text-xs text-mute">
+                DHI house
+                {f.durationSec > 0 ? ` · ${Math.max(1, Math.round(f.durationSec / 60))} min` : ""}
+              </span>
               <span className="mt-3 block h-1 overflow-hidden rounded-full bg-home/10">
-                <span className="block h-full rounded-full bg-grove" style={{ width: `${Math.round(f.ratio * 100)}%` }} />
+                <span
+                  className="block h-full rounded-full bg-grove"
+                  style={{ width: `${Math.round(f.ratio * 100)}%` }}
+                />
               </span>
             </span>
           </button>
         ))}
       </div>
-      {data.films.length === 0 && <p className="text-sm text-mute">No films are open yet. DHI adds them here once they are ready.</p>}
-      {data.films.length > 0 && list.length === 0 && <p className="text-sm text-mute">Nothing in this tag yet.</p>}
+      {data.films.length === 0 && (
+        <p className="text-sm text-mute">
+          No films are open yet. DHI adds them here once they are ready.
+        </p>
+      )}
+      {data.films.length > 0 && list.length === 0 && (
+        <p className="text-sm text-mute">Nothing in this tag yet.</p>
+      )}
     </div>
   );
 }
@@ -120,7 +156,11 @@ function Player({ film, onBack }: { film: Film; onBack: () => void }) {
       .then((r) => {
         if (!live) return;
         if (!r.ok) {
-          setError(r.code === "host_not_ready" ? "This film is not ready to play yet." : "We could not open this film.");
+          setError(
+            r.code === "host_not_ready"
+              ? "This film is not ready to play yet."
+              : "We could not open this film.",
+          );
           return;
         }
         max.current = Math.max(max.current, r.furthestSec);
@@ -183,7 +223,11 @@ function Player({ film, onBack }: { film: Film; onBack: () => void }) {
 
   return (
     <div className="flex flex-col gap-4" data-testid="film-player">
-      <button type="button" onClick={onBack} className="flex h-9 w-fit items-center gap-2 rounded-full bg-white/80 px-3 text-sm touch:h-11">
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex h-9 w-fit items-center gap-2 rounded-full bg-white/80 px-3 text-sm touch:h-11"
+      >
         <ArrowLeft className="size-4" /> Modules
       </button>
       <article className="overflow-hidden rounded-panel bg-night-panel text-paper">
@@ -204,11 +248,15 @@ function Player({ film, onBack }: { film: Film; onBack: () => void }) {
             data-testid="film-video"
           />
         ) : (
-          <div className="grid aspect-video w-full place-items-center bg-black text-sm text-paper/70">{error || "Opening the film…"}</div>
+          <div className="grid aspect-video w-full place-items-center bg-black text-sm text-paper/70">
+            {error || "Opening the film…"}
+          </div>
         )}
         <div className="flex flex-wrap items-end justify-between gap-3 px-5 py-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.14em] text-gold">{CATEGORY_WORDS[film.category] ?? film.category}</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-gold">
+              {CATEGORY_WORDS[film.category] ?? film.category}
+            </p>
             <h2 className="font-display mt-1 text-2xl">{film.title}</h2>
             <p className="mt-1 max-w-lg text-sm text-paper/70">{film.blurb}</p>
           </div>
@@ -222,8 +270,13 @@ function Player({ film, onBack }: { film: Film; onBack: () => void }) {
           {error}
         </p>
       )}
-      {kept && film.category === "academic" && <FilmChecks key={`${film.filmId}-${film.checks?.length ?? 0}`} film={film} />}
-      <p className="text-xs text-mute">The house owns this film. You cannot upload here. It plays from where you stopped. The score lands when it ends.</p>
+      {kept && film.category === "academic" && (
+        <FilmChecks key={`${film.filmId}-${film.checks?.length ?? 0}`} film={film} />
+      )}
+      <p className="text-xs text-mute">
+        The house owns this film. You cannot upload here. It plays from where you stopped. The score
+        lands when it ends.
+      </p>
     </div>
   );
 }
@@ -240,7 +293,8 @@ function FilmChecks({ film }: { film: Film }) {
     const right = result?.right ?? film.checkRight ?? 0;
     return (
       <p className="rounded-control bg-white/80 px-4 py-3 text-sm" data-testid="film-checks-done">
-        Check questions: {right} of {result?.rightOptions.length ?? 2} right. This counts only on your own Progress page.
+        Check questions: {right} of {result?.rightOptions.length ?? 2} right. This counts only on
+        your own Progress page.
       </p>
     );
   }
@@ -248,7 +302,12 @@ function FilmChecks({ film }: { film: Film }) {
     setError("");
     try {
       const r = await answer({ filmId: film.filmId, answers: picks as number[] });
-      if (!r.ok) setError(r.code === "already_answered" ? "You have answered these already." : "We could not save your answers. Please try again.");
+      if (!r.ok)
+        setError(
+          r.code === "already_answered"
+            ? "You have answered these already."
+            : "We could not save your answers. Please try again.",
+        );
       else setResult({ right: r.right, rightOptions: r.rightOptions });
     } catch {
       setError("We could not save your answers. Please try again.");
@@ -257,19 +316,36 @@ function FilmChecks({ film }: { film: Film }) {
   return (
     <section className="space-y-3 rounded-card bg-white/80 p-4" data-testid="film-checks">
       <h3 className="text-sm font-semibold">Two quick check questions</h3>
-      <p className="text-xs text-mute">They help you see what stayed with you. Only you see the result, on Progress.</p>
+      <p className="text-xs text-mute">
+        They help you see what stayed with you. Only you see the result, on Progress.
+      </p>
       {checks.map((c, i) => (
         <fieldset key={i} className="space-y-2">
           <legend className="text-sm font-medium">{c.question}</legend>
           {c.options.map((o, k) => (
-            <label key={k} className="tap flex items-center gap-3 rounded-control border border-home/15 bg-white/70 px-3 py-2 text-sm">
-              <input type="radio" name={`check-${i}`} checked={picks[i] === k} onChange={() => setPicks((xs) => xs.map((x, j) => (j === i ? k : x)))} data-testid="film-check-option" />
+            <label
+              key={k}
+              className="tap flex items-center gap-3 rounded-control border border-home/15 bg-white/70 px-3 py-2 text-sm"
+            >
+              <input
+                type="radio"
+                name={`check-${i}`}
+                checked={picks[i] === k}
+                onChange={() => setPicks((xs) => xs.map((x, j) => (j === i ? k : x)))}
+                data-testid="film-check-option"
+              />
               <span>{o}</span>
             </label>
           ))}
         </fieldset>
       ))}
-      <button type="button" onClick={() => void send()} disabled={picks.some((x) => x === null)} className="h-11 rounded-full bg-grove px-4 text-sm font-medium text-paper disabled:opacity-40" data-testid="film-checks-send">
+      <button
+        type="button"
+        onClick={() => void send()}
+        disabled={picks.some((x) => x === null)}
+        className="h-11 rounded-full bg-grove px-4 text-sm font-medium text-paper disabled:opacity-40"
+        data-testid="film-checks-send"
+      >
         Check my answers
       </button>
       {error && (
