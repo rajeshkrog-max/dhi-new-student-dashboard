@@ -44,6 +44,7 @@ pnpm responsive:sweep    # visits every room at 360, 768, 1024 and 1280 px; exit
 - Do not set `viewport-fit=cover`. Revisit it only if the house is installed to the home screen.
 - Rooms are not routes yet, so the Android back button leaves the page instead of closing the drawer.
 - Stream's prebuilt call buttons have no accessible name, so both calls draw the house's own (`call/device-buttons.tsx`: microphone, camera, share screen; and leave) from Stream's hooks, hide the tile menu, and give the tile names and initials Stream's light text (`.dhi-call` in `styles.css`). Keep it that way when the SDK is upgraded, and rerun axe on the calls.
+- The desk room waits for its after session card's query with the coins and the talks, so the card never arrives late and pushes the desk down (house spec 0028; the sweep scene `dhi-card`). The topic row of the card holds its height while it loads.
 - A call screen leaves its call in one place only, the cleanup that ends its client. A second leave on unmount leaves the call React's development mode just joined (house spec 0027).
 
 ## Related specs

@@ -46,6 +46,8 @@ Erase class: **erased** (deleted when the person is erased), **kept** (stays: id
 | `papers` | kept | Kept. The teacher's paper: its title and questions, which hold no student's words. |
 | `paperQuestions` | kept | Kept with the paper. The right answers and tags are the teacher's own material, and hold no student's words. |
 | `paperSends` | kept | Kept. Ids, codes and times only; the student's link is the attempt row, which is erased with them. |
+| `paperTopics` | kept | Kept. The topics of an institute's papers in the teachers' words; no person in it. A student's tap names a topic by its id, and is erased with the student (house spec 0028). |
+| `classTopics` | kept | Kept. Which topics were sent to a class and when; no person in it (house spec 0028). |
 | `paperAttempts` | erased | Deleted when the student is erased. Their marks and remarks, and the paper they belong to. |
 | `blogPosts` | erased | Deleted when the student is erased. Their own writing: the title, the tag, the cleaned body and the photo, and the photo's file is deleted with the post. |
 | `blogComments` | erased | Deleted when the student is erased. Their own comments. |

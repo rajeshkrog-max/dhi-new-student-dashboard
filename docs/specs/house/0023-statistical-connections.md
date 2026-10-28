@@ -17,7 +17,7 @@ The Brain can now show a connection: two things in the student's own days that t
 - `bedtime_mood` (P3): the share of days with a light mood after an early bedtime, against a later one.
 - `late_room_feeling` (P5): how the next day's session felt after a study room day that ran 30 minutes or more past 23:00, against one that did not.
 
-Not built: P4 (a desk day and the next paper on the same topic) and P6 (a subject and the feeling after it). They need topic and subject tags the rooms do not capture yet. They still count as untested pairs in the correction, which only makes it stricter.
+P4 (a desk day and the next paper on the same topic) and P6 (a subject and the feeling after it) waited for topic and subject tags; they are built in spec [0028](0028-topic-and-subject-tags.md) (owner, 2026-10-28) and use the same test over the same six pairs.
 
 **Acceptance criteria**:
 - **AC-1**: Each side of a pair needs at least 14 finished days. Today is never read. A day the pair's rule does not name is in neither side.
@@ -35,4 +35,4 @@ Not built: P4 (a desk day and the next paper on the same topic) and P6 (a subjec
 
 ## Still open
 
-P4 and P6 once topic and subject tags exist. Whether to widen the list is the owner's call, and every pair added makes the correction stricter.
+Whether to widen the list past the six pairs is the owner's call, and every pair added makes the correction stricter. P4 and P6: spec 0028.

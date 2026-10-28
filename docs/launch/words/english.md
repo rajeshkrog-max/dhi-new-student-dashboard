@@ -172,10 +172,13 @@ Switch: `DESK_WORDS_APPROVED` (a draft). File: `src/lib/dhi/desk-words.ts`.
 - `SUBJECT_WORDS.hindi`: Hindi
 - `SUBJECT_WORDS.other`: Other
 - `TALKS_TITLE`: Your talks
+- `TOPIC_LABEL`: Topic from your class's papers (you can leave this out)
+- `TOPIC_NONE`: No topics from your class's papers in this subject yet.
 - `WRITE_BUTTON`: Get feedback (2 coins)
 - `WRITE_LABEL`: Your writing
 - `WRITE_NOTE`: The desk tells you what works and what to improve. It does not rewrite your piece, so try the rewrite yourself.
 - `WRITE_PLACEHOLDER`: Paste or type a short piece you wrote
+- `subjectWord(…)(…)`: {name}
 
 ## DHI desk: the instructions given to the model
 
@@ -427,6 +430,12 @@ Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
 - `CONNECTION_COPY.late_room_feeling.en.title`: Late study room and the next day
 - `CONNECTION_COPY.late_room_feeling.en.text(…)`: On days you stayed in the study room half an hour or more after eleven at night, you felt okay or better after 7% of the next day's sessions. On other study room days it was 7%. Based on 7 days. In your own days, these tend to go together.
 - `CONNECTION_COPY.late_room_feeling.en.note`: This is only about your own days. It does not say why, and it is not a judgement.
+- `CONNECTION_COPY.topic_desk_papers.en.title`: A desk sitting and the next paper
+- `CONNECTION_COPY.topic_desk_papers.en.text(…)`: When you sat at the desk on a topic the day before a paper, 7% of your answers on that topic were right. On topics with no desk sitting the day before it was 7%. Based on 7 topic days. In your own days, these tend to go together.
+- `CONNECTION_COPY.topic_desk_papers.en.note`: This is only about your own days, and only about the topics you tapped on the desk card. It does not say why, and it is not a judgement.
+- `CONNECTION_COPY.subject_feeling.en.title`: A subject and how you felt
+- `CONNECTION_COPY.subject_feeling.en.text(…)`: After your other subject sessions you felt drained 7% of the time. After your other sessions it was 7%. Based on 7 sessions. In your own days, these tend to go together.
+- `CONNECTION_COPY.subject_feeling.en.note`: This is only about the sessions you tagged with a subject. It does not say why, and it is not a judgement of you or the subject.
 - `EXPRESSION_COPY.en.title`: You put it into words
 - `EXPRESSION_COPY.en.text(…)`: After {name} days in a row marked sad or heavy, a post of yours was shared on Invalid Date. Some people find that putting a feeling into words helps. Nothing more is asked of you.
 - `EXPRESSION_COPY.en.note`: This is only about your own days.
@@ -471,6 +480,12 @@ Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
 - `ROOM_COPY.sleep.en`: Sleep
 - `ROOM_COPY.modules.en`: Modules
 - `ROOM_COPY.blog.en`: Blog
+- `SUBJECT_NAME.en.maths`: maths
+- `SUBJECT_NAME.en.science`: science
+- `SUBJECT_NAME.en.english`: English
+- `SUBJECT_NAME.en.social`: social studies
+- `SUBJECT_NAME.en.hindi`: Hindi
+- `SUBJECT_NAME.en.other`: other subject
 - `SUPPORT_COPY.en.title`: Support is there for you
 - `SUPPORT_COPY.en.text(…)`: This week {name} of your days were marked sad or heavy, and your habit and meal logs have been quieter than last week. You are not alone in this. Talking to a parent, a teacher or someone you trust can help. You can also call Tele-MANAS on 14416. It is free, open all day and night, and answers in many languages.
 - `SUPPORT_COPY.en.note`: Only you can see this in the house. It is not sent to your school.

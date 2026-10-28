@@ -18,6 +18,12 @@ Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
 - `CONNECTION_COPY.late_room_feeling.hi.title`: Der raat study room aur agla din
 - `CONNECTION_COPY.late_room_feeling.hi.text(…)`: Jin dinon aap raat gyarah baje ke baad aadha ghanta ya zyada study room mein rahe, agle din ke 7% sessions ke baad aapne theek ya usse achha mehsoos kiya. Baaki study room ke dinon mein ye 7% tha. 7 dinon par aadharit. Aapke apne dinon mein ye ek saath dikhte hain.
 - `CONNECTION_COPY.late_room_feeling.hi.note`: Ye sirf aapke apne dinon ki baat hai. Isse ye nahi pata chalta ki aisa kyun hua, aur ye koi faisla nahi hai.
+- `CONNECTION_COPY.topic_desk_papers.hi.title`: Desk par baithna aur agla paper
+- `CONNECTION_COPY.topic_desk_papers.hi.text(…)`: Jab aap paper se ek din pehle kisi topic par desk par baithe, us topic par aapke 7% jawab sahi the. Jin topics par ek din pehle desk par baithna nahi hua, un par ye 7% tha. 7 topic dinon par aadharit. Aapke apne dinon mein ye ek saath dikhte hain.
+- `CONNECTION_COPY.topic_desk_papers.hi.note`: Ye sirf aapke apne dinon ki baat hai, aur sirf un topics ki jo aapne desk card par chune. Isse ye nahi pata chalta ki aisa kyun hua, aur ye koi faisla nahi hai.
+- `CONNECTION_COPY.subject_feeling.hi.title`: Ek vishay aur aapka mehsoos karna
+- `CONNECTION_COPY.subject_feeling.hi.text(…)`: Aapke doosre vishay sessions ke baad aapne 7% baar thakaan mehsoos ki. Baaki sessions ke baad ye 7% tha. 7 sessions par aadharit. Aapke apne dinon mein ye ek saath dikhte hain.
+- `CONNECTION_COPY.subject_feeling.hi.note`: Ye sirf un sessions ki baat hai jin par aapne vishay chuna. Isse ye nahi pata chalta ki aisa kyun hua, aur ye na aapke baare mein faisla hai na vishay ke.
 - `EXPRESSION_COPY.hi.title`: Aapne ise shabdon mein likha
 - `EXPRESSION_COPY.hi.text(…)`: Lagatar {name} din sad ya heavy mark karne ke baad aapki ek post Invalid Date ko share hui. Kuch log maante hain ki feelings ko shabdon mein likhna madad karta hai. Isse zyada kuch nahi poocha ja raha.
 - `EXPRESSION_COPY.hi.note`: Ye sirf aapke apne dinon ki baat hai.
@@ -62,6 +68,12 @@ Switch: `BRAIN_WORDS_APPROVED` (a draft). File: `src/lib/dhi/brain-words.ts`.
 - `ROOM_COPY.sleep.hi`: Sleep
 - `ROOM_COPY.modules.hi`: Modules
 - `ROOM_COPY.blog.hi`: Blog
+- `SUBJECT_NAME.hi.maths`: maths
+- `SUBJECT_NAME.hi.science`: science
+- `SUBJECT_NAME.hi.english`: English
+- `SUBJECT_NAME.hi.social`: social studies
+- `SUBJECT_NAME.hi.hindi`: Hindi
+- `SUBJECT_NAME.hi.other`: doosre vishay
 - `SUPPORT_COPY.hi.title`: Madad aapke saath hai
 - `SUPPORT_COPY.hi.text(…)`: Is hafte aapke {name} din sad ya heavy mark hue, aur aapki habit aur meal logs pichhle hafte se kam rahi hain. Aap ismein akele nahi hain. Kisi parent, teacher ya apne bharose ke vyakti se baat karna madad kar sakta hai. Aap Tele-MANAS ko 14416 par bhi call kar sakte hain. Ye muft hai, din-raat khula rehta hai, aur kai bhashaon mein baat hoti hai.
 - `SUPPORT_COPY.hi.note`: Ise ghar mein sirf aap dekh sakte hain. Ye aapke school ko nahi bheja jata.
