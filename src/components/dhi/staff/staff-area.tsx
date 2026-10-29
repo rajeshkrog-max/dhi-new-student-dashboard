@@ -91,12 +91,30 @@ function NothingHere() {
   );
 }
 
+const OPENED_KEY = "dhi.staff.openInstitute";
+
 export function StaffArea({ role, instituteName }: { role: HouseRole; instituteName: string | null }) {
   const person = useStudent();
   const items = navFor(role);
   const [tab, setTab] = useState<Tab>(items[0]?.id ?? "classes");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [opened, setOpened] = useState<{ id: InstituteId; name: string } | undefined>(undefined);
+  // A DHI admin's open institute is kept in this browser, so a reload does not drop it. The server still checks every call.
+  const [opened, setOpenedState] = useState<{ id: InstituteId; name: string } | undefined>(() => {
+    try {
+      const kept = JSON.parse(window.localStorage.getItem(OPENED_KEY) ?? "null") as { id?: unknown; name?: unknown } | null;
+      return typeof kept?.id === "string" && typeof kept.name === "string" ? { id: kept.id as InstituteId, name: kept.name } : undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  const setOpened = (next: { id: InstituteId; name: string }) => {
+    setOpenedState(next);
+    try {
+      window.localStorage.setItem(OPENED_KEY, JSON.stringify(next));
+    } catch {
+      // Storage may be blocked; the institute stays open until the page reloads.
+    }
+  };
   const menuButton = useRef<HTMLButtonElement>(null);
 
   // The drawer only exists below 1024. Rotating or resizing past it closes the drawer.
