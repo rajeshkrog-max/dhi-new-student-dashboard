@@ -139,6 +139,12 @@ export function InvitesSection({ onAddClass }: { onAddClass?: () => void }) {
               </Label>
             </>
           )}
+          {needsClass && under18 === "yes" && (
+            <p className="text-xs text-mute touch:text-sm sm:col-span-2" data-testid="invite-under18-note">
+              A student under 18 enters only after an institute admin records a parent's consent under Parent consent.
+              {scope.role === "dhi_admin" ? " A DHI admin cannot record it, so this institute needs an institute admin." : ""}
+            </p>
+          )}
           {noClass && (
             <div className="flex flex-wrap items-center gap-2 sm:col-span-2" data-testid="invite-no-class">
               <p className="text-sm text-mute">

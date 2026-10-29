@@ -64,6 +64,27 @@ function nightBars(bedMin: number, lengthMin: number): { top: number; height: nu
   ];
 }
 
+// A clock on the form that also takes a typed time: tapping it opens the device's own time picker. The time is rounded to the nearest 15 minutes,
+// the step the room stores.
+function ClockTap({ text, label, testId, onPick }: { text: string; label: string; testId: string; onPick: (clock: number) => void }) {
+  return (
+    <label className="relative min-w-14 cursor-pointer text-center font-medium tabular-nums" data-testid={testId}>
+      {text}
+      <input
+        type="time"
+        step={STEP_MIN * 60}
+        value={text}
+        aria-label={label}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        onChange={(e) => {
+          const [h, m] = e.target.value.split(":").map(Number);
+          if (Number.isFinite(h) && Number.isFinite(m)) onPick(wrap(Math.round((h * 60 + m) / STEP_MIN) * STEP_MIN));
+        }}
+      />
+    </label>
+  );
+}
+
 export function SleepTracker() {
   const nights = useQuery(api.sleep.recent, {});
   const saveNight = useMutation(api.sleep.save);
@@ -174,9 +195,19 @@ export function SleepTracker() {
               >
                 −15
               </Button>
-              <span className="min-w-14 text-center font-medium tabular-nums" data-testid="sleep-bed">
-                {bed}
-              </span>
+              <ClockTap
+                text={bed}
+                label="Type the bed time"
+                testId="sleep-bed"
+                onPick={(clock) => {
+                  // A typed bed time keeps the wake time as it is, so the night's length follows.
+                  const wakeClock = wakeClockOf(bedMin, lengthMin);
+                  const nextBed = wrap(clock - 720);
+                  setDirty(true);
+                  setBedMin(nextBed);
+                  setLengthMin(clamp(wrap(wakeClock - 720 - nextBed)));
+                }}
+              />
               <Button
                 variant="quiet"
                 aria-label={BED_LATER}
@@ -202,9 +233,15 @@ export function SleepTracker() {
               >
                 −15
               </Button>
-              <span className="min-w-14 text-center font-medium tabular-nums" data-testid="sleep-wake">
-                {wake}
-              </span>
+              <ClockTap
+                text={wake}
+                label="Type the wake time"
+                testId="sleep-wake"
+                onPick={(clock) => {
+                  setDirty(true);
+                  setLengthMin(clamp(wrap(clock - 720 - bedMin)));
+                }}
+              />
               <Button
                 variant="quiet"
                 aria-label={WAKE_LATER}
@@ -219,7 +256,7 @@ export function SleepTracker() {
           </div>
         </div>
         <p className="text-sm" data-testid="sleep-length">
-          {tonight ? hm(tonight.lengthMin) : nights === undefined ? LOADING : NOT_LOGGED}
+          {nights === undefined ? LOADING : hm(lengthMin)}
         </p>
 
         {fail && (

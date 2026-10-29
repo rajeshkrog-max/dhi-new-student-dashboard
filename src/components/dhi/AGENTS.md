@@ -11,6 +11,7 @@ The screens of the student house: one component per room, plus the shared frame 
 | `house-menu.tsx` | The room list, Leave and the exam lock. Rendered in the side menu and in the phone drawer, so both read the same `NAV` list (in `src/routes/home.tsx`) and the same `locked` state |
 | `sheet.tsx` | The one pop up and side panel, on Radix Dialog. `side` is `left` (menu drawer), `right` (room side panels, full width below 640 px) or `bottom` (forms below 640 px, a centred dialog from 640). Caps at 90dvh and scrolls inside |
 | `notification-bell.tsx` | The bell and its dot. One component, shown in the top bar below 1024 px and in the page header from 1024 px |
+| `house-search.tsx` | The search box in the header and the phone drawer: lists the rooms that match (`searchRooms`), Enter or a tap opens one. The dashboard keeps the open room in the address (`/dashboard#mood`), so a reload stays and Back goes to the room before |
 | `room-actions.tsx` | Slot for a room's header actions (`ROOM_ACTIONS_ID`) |
 | `enter-screen.tsx` | The Enter screen (Google, the dev only test form, the demo link), used by `/` and the front door `/enter` (spec 0008) |
 | `notification-bell.tsx` | The bell in the top bar and the wide screen header (it is drawn twice, so a browser proof must use `:visible`). It lists what `waiting.mine` returns, each with a button into its room (house spec 0017) |

@@ -39,12 +39,27 @@ const dhiTodo = v.object({
   deskToday: v.number(),
   institutesPaused: v.number(),
   counselorInvitesPending: v.number(),
+  // Active institutes with a student but no active institute admin: only an institute admin records a parent's consent (house spec 0005), so an
+  // under 18 student there cannot enter.
+  institutesWithoutAdmin: v.number(),
 });
 
 // A student of these classes who stands in the house: a withdrawn or removed author does not make work for a teacher.
 async function activeIn(ctx: QueryCtx, memberId: Id<"members">, classIds: Id<"classes">[]): Promise<boolean> {
   const m = await ctx.db.get(memberId);
   return !!m && m.status === "active" && m.erasedAt === undefined && m.classId !== undefined && classIds.includes(m.classId);
+}
+
+async function withoutAdmin(ctx: QueryCtx, institutes: { _id: Id<"institutes">; status: string }[]): Promise<number> {
+  let count = 0;
+  for (const i of institutes) {
+    if (i.status === "suspended") continue;
+    const admins = await ctx.db.query("members").withIndex("by_instituteId_and_role", (q) => q.eq("instituteId", i._id).eq("role", "institute_admin")).take(20);
+    if (admins.some((m) => m.status === "active" && m.erasedAt === undefined)) continue;
+    const student = await ctx.db.query("members").withIndex("by_instituteId_and_role", (q) => q.eq("instituteId", i._id).eq("role", "student")).first();
+    if (student) count += 1;
+  }
+  return count;
 }
 
 // What waits for the signed in staff member. `now` is the screen's clock, used only for "closing soon" and "expiring" (a query does not rerun by
@@ -118,6 +133,7 @@ export const todo = query({
         deskToday: daily?.questions ?? 0,
         institutesPaused: institutes.filter((i) => i.status === "suspended").length,
         counselorInvitesPending: invites.filter((i) => i.role === "counselor" && pendingInvite(i, now)).length,
+        institutesWithoutAdmin: await withoutAdmin(ctx, institutes),
       };
     }
     return null;

@@ -541,7 +541,7 @@ function LampsCard({ home, onOpen }: { home: HomeSummary | undefined; onOpen: Op
                 nameKey="key"
                 innerRadius={38}
                 outerRadius={52}
-                paddingAngle={3}
+                paddingAngle={ring.filter((s) => s.value > 0).length > 1 ? 3 : 0}
                 stroke="none"
                 isAnimationActive={false}
               >

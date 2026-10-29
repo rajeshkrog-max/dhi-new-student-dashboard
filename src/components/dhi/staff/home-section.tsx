@@ -43,6 +43,7 @@ export function StaffHomeSection({ onGo }: { onGo: (tab: string) => void }) {
   } else if (todo?.role === "dhi_admin") {
     const w = STAFF_WORDS.dhi;
     items = [
+      { key: "noAdmin", count: todo.institutesWithoutAdmin, text: w.institutesWithoutAdmin(todo.institutesWithoutAdmin), tab: "invites" },
       { key: "films", count: todo.filmsWaiting, text: w.filmsWaiting(todo.filmsWaiting), tab: "films" },
       { key: "dishes", count: todo.dishesWaiting, text: w.dishesWaiting(todo.dishesWaiting), tab: "foods" },
       { key: "counselors", count: todo.counselorInvitesPending, text: w.counselorInvitesPending(todo.counselorInvitesPending), tab: "counselors" },

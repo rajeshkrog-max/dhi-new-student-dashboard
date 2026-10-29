@@ -76,7 +76,26 @@ describe("the staff home", () => {
     await dhi.as.mutation(api.invites.create, { role: "counselor", email: "counsel@example.test", name: "Made Counselor" });
     await dhi.as.mutation(api.institutes.update, { instituteId: B.instituteId, status: "suspended" });
     await t.run((ctx) => ctx.db.insert("deskDaily", { day: "2026-10-20", questions: 7 }));
-    expect(await dhi.as.query(api.staffHome.todo, { now: NOW })).toEqual({ role: "dhi_admin", filmsWaiting: 0, dishesWaiting: 0, deskToday: 7, institutesPaused: 1, counselorInvitesPending: 1 });
+    expect(await dhi.as.query(api.staffHome.todo, { now: NOW })).toEqual({ role: "dhi_admin", filmsWaiting: 0, dishesWaiting: 0, deskToday: 7, institutesPaused: 1, counselorInvitesPending: 1, institutesWithoutAdmin: 0 });
+  });
+
+  test("a DHI admin is told when an institute has students but no institute admin, since only one can record a parent's consent", async () => {
+    const { t, dhi, A } = await world();
+    expect(await dhi.as.query(api.staffHome.todo, { now: NOW })).toMatchObject({ institutesWithoutAdmin: 0 });
+    await t.run((ctx) => ctx.db.patch(A.admin.memberId, { status: "removed" }));
+    expect(await dhi.as.query(api.staffHome.todo, { now: NOW })).toMatchObject({ institutesWithoutAdmin: 1 });
+    // An institute with no student yet (Beta) is not counted, and a paused one is not either.
+    await dhi.as.mutation(api.institutes.update, { instituteId: A.instituteId, status: "suspended" });
+    expect(await dhi.as.query(api.staffHome.todo, { now: NOW })).toMatchObject({ institutesWithoutAdmin: 0 });
+  });
+
+  test("People tells an admin which students cannot enter yet and why, and tells a teacher nothing", async () => {
+    const { A, a1, teacher, minor, s1 } = await world();
+    const rows = (await A.admin.as.query(api.members.list, { paginationOpts: { numItems: 25, cursor: null }, instituteId: A.instituteId, role: "student" })).page;
+    expect(rows.find((r) => r._id === minor.memberId)?.waiting).toBe("parent");
+    expect(rows.find((r) => r._id === s1.memberId)?.waiting).toBeUndefined();
+    const seen = (await teacher.as.query(api.members.list, { paginationOpts: { numItems: 25, cursor: null }, classId: a1 })).page;
+    expect(seen.every((r) => r.waiting === undefined)).toBe(true);
   });
 
   test("covers AC-1: a student gets nothing", async () => {

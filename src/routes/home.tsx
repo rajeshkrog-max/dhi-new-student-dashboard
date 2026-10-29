@@ -15,7 +15,6 @@ import {
   Lock,
   Menu,
   MessageCircle,
-  Search,
   Sparkles,
   UtensilsCrossed,
   BedDouble,
@@ -28,6 +27,7 @@ import { SleepTracker } from "@/components/dhi/sleep-tracker";
 import { MealsRoom } from "@/components/dhi/meals/meals-real";
 import { MoodTracker } from "@/components/dhi/mood-tracker";
 import { HouseMenu } from "@/components/dhi/house-menu";
+import { HouseSearch } from "@/components/dhi/house-search";
 import { EXAM_LOCKED_ROOMS } from "@/lib/dhi/exam-lock";
 import { NotificationBell } from "@/components/dhi/notification-bell";
 import { ROOM_ACTIONS_ID } from "@/components/dhi/room-actions";
@@ -69,9 +69,11 @@ const NAV = [
   { id: "data", label: "Your data", icon: ShieldCheck },
 ];
 
+const roomOf = (hash: string) => (NAV.some((n) => n.id === hash.slice(1)) ? hash.slice(1) : "home");
+
 export function StudentHome() {
   const student = useStudent();
-  const [tab, setTab] = useState("home");
+  const [tab, setTab] = useState(() => (typeof window === "undefined" ? "home" : roomOf(window.location.hash)));
   // True while an exam sitting is open (house spec 0012, AC-7): the exams room says so while the sitting is on screen, and the server says so from
   // Start until the student hands in or the window closes, also after a reload (owner, 2026-10-26). Both menus read it.
   const [sittingOnScreen, setSittingOnScreen] = useState(false);
@@ -82,6 +84,23 @@ export function StudentHome() {
     if (sitting?.open === true) setTab((t) => (EXAM_LOCKED_ROOMS.includes(t) ? "papers" : t));
   }, [sitting?.open]);
   const mayOpen = (room: string) => !(locked && EXAM_LOCKED_ROOMS.includes(room));
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
+
+  // The address follows the room, and the browser's back and forward move between rooms. A room the open paper closes is never reached that way.
+  useEffect(() => {
+    if (roomOf(window.location.hash) === tab) return;
+    const { pathname, search } = window.location;
+    window.history.pushState(null, "", tab === "home" ? `${pathname}${search}` : `${pathname}${search}#${tab}`);
+  }, [tab]);
+  useEffect(() => {
+    const back = () => {
+      const room = roomOf(window.location.hash);
+      setTab(lockedRef.current && EXAM_LOCKED_ROOMS.includes(room) ? "papers" : room);
+    };
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
 
@@ -149,16 +168,7 @@ export function StudentHome() {
                   <span className="truncate">Search banned in exam</span>
                 </div>
               ) : (
-                <label className="mb-3 flex h-11 items-center gap-2 rounded-full border border-white/80 bg-white/70 px-4 text-sm text-mute has-[:focus-visible]:focus-ring">
-                  <Search className="size-4 shrink-0" aria-hidden />
-                  <input
-                    data-in-field
-                    type="search"
-                    placeholder="Search the house…"
-                    className="min-w-0 flex-1 bg-transparent text-home outline-none placeholder:text-mute"
-                    aria-label="Search the house"
-                  />
-                </label>
+                <HouseSearch rooms={NAV} onOpen={(id) => mayOpen(id) && pick(id)} className="mb-3" />
               )}
             </div>
             <HouseMenu
@@ -250,16 +260,7 @@ export function StudentHome() {
               </span>
             </div>
           ) : (
-            <label className="hidden h-11 w-56 items-center gap-2 rounded-full border border-white/80 bg-white/70 px-4 text-sm text-mute backdrop-blur-md has-[:focus-visible]:focus-ring md:flex">
-              <Search className="size-4 shrink-0" aria-hidden />
-              <input
-                data-in-field
-                type="search"
-                placeholder="Search the house…"
-                className="min-w-0 flex-1 bg-transparent text-home outline-none placeholder:text-mute"
-                aria-label="Search the house"
-              />
-            </label>
+            <HouseSearch rooms={NAV} onOpen={(id) => mayOpen(id) && setTab(id)} className="hidden w-56 md:block" />
           )}
           <NotificationBell
             className="hidden lg:grid"

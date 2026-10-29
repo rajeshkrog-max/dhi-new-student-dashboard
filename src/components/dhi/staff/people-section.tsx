@@ -109,6 +109,8 @@ export function PeopleSection() {
                     </p>
                   </div>
                   {m.under18 === true && <Chip tone="lilac">Under 18</Chip>}
+                  {m.waiting === "parent" && <Chip tone="gold">Waits for parent consent</Chip>}
+                  {m.waiting === "self" && <Chip tone="gold">Has not agreed yet</Chip>}
                   {m.status === "removed" && <Chip tone="gold">Paused</Chip>}
                   {scope.role === "teacher" && m.role === "student" && m.status === "active" && (
                     <Button variant="quiet" onClick={() => setPapersOf({ id: m._id as MemberId, name: m.name })} aria-label={`Papers of ${m.name}`} data-testid="student-papers-open">

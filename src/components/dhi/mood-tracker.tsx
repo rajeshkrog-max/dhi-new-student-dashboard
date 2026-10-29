@@ -302,7 +302,7 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                     dataKey="value"
                     innerRadius={58}
                     outerRadius={78}
-                    paddingAngle={3}
+                    paddingAngle={pie.slices.length > 1 ? 3 : 0}
                     stroke="none"
                     isAnimationActive={false}
                   >
@@ -315,6 +315,11 @@ export function MoodTracker({ onCounsel }: { onCounsel?: () => void } = {}) {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            {pie.slices.length === 0 && (
+              <p className="mt-3 text-center text-sm text-mute" data-testid="mood-ring-empty">
+                No colour in this {scope} yet. Colour today and it shows here.
+              </p>
+            )}
             <ul className="mt-3 grid w-full grid-cols-2 gap-x-4 gap-y-2 text-xs">
               {pie.slices.map((s) => (
                 <li key={s.key} className="flex items-center justify-between gap-2">

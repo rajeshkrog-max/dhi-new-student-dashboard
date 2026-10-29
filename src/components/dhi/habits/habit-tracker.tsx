@@ -178,7 +178,7 @@ export function HabitTracker() {
     <div className="flex flex-col gap-4 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <p className="max-w-xl text-sm text-mute">
-          Five habits. Colour them. Tick today. Watch the streak walk to the next flag.
+          {MAX_HABITS - remaining} of {MAX_HABITS} habits in use. Tick a circle to keep today.
         </p>
         <button
           type="button"
@@ -335,7 +335,7 @@ export function HabitTracker() {
                         dataKey={weekScores.every((s) => !s.done) ? "pct" : "value"}
                         innerRadius={62}
                         outerRadius={86}
-                        paddingAngle={3}
+                        paddingAngle={weekScores.length > 1 && weekScores.some((s) => s.done) ? 3 : 0}
                         stroke="none"
                       >
                         {(weekScores.every((s) => !s.done)

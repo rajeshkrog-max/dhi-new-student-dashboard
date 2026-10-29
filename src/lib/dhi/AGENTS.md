@@ -24,6 +24,7 @@ The words and small pure helpers of the house screens. Every room runs on the sh
 | `habits/` | `schema.ts` (table comments, `STORE_KEY`, limits), `store.ts` (mutations), `catalog.ts`, `words.ts` (drafted failure lines and the day moved on notice, house spec 0007) |
 | `your-data.ts` | The pure pieces of Your data: the India date label and the join of the download's pages into one file (house spec 0005) |
 | `home-line.ts`, `meals-board.ts` | Fixed rules behind the mockup screens, each with a test: the line under the name on Home (an open paper, a mark to read, the hour, recalls, in that order), and the meals room's plate line, usual meal times, dishes of the week and the kitchen lamp order. Food groups only, never a total or a judging word |
+| `house-search.ts` | `searchRooms`: room names and everyday English and Hinglish words to rooms, best match first, never anyone's content. Tested in `house-search.test.ts` |
 | `id.ts` | `uid()`, a safe id helper (`crypto.randomUUID` is missing in some preview iframes) |
 
 ## Conventions

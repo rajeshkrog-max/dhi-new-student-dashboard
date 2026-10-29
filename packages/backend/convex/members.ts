@@ -135,9 +135,12 @@ const memberRow = v.object({
   className: v.union(v.string(), v.null()),
   under18: v.union(v.boolean(), v.null()),
   status: v.union(v.literal("active"), v.literal("removed")),
+  // For an institute admin or a DHI admin only: a student who cannot enter yet, and why ("parent": the school has not recorded a parent's consent;
+  // "self": the student has not agreed). Never set for a teacher, and never says that a student withdrew.
+  waiting: v.optional(v.union(v.literal("parent"), v.literal("self"))),
 });
 
-async function toRow(ctx: QueryCtx, m: Doc<"members">) {
+async function toRow(ctx: QueryCtx, m: Doc<"members">, admin = false) {
   const cls = m.classId ? await ctx.db.get(m.classId) : null;
   return {
     _id: m._id,
@@ -148,7 +151,14 @@ async function toRow(ctx: QueryCtx, m: Doc<"members">) {
     className: className(cls),
     under18: m.under18 ?? null,
     status: m.status,
+    ...(admin && m.role === "student" && m.status === "active" ? await waitingOf(ctx, m) : {}),
   };
+}
+
+async function waitingOf(ctx: QueryCtx, m: Doc<"members">): Promise<{ waiting?: "parent" | "self" }> {
+  const gate = await gateOf(ctx, m);
+  if (gate.state !== "consentNeeded") return {};
+  return { waiting: gate.missing.includes("parent") ? "parent" : "self" };
 }
 
 // Members in the caller's scope, 25 a page. A teacher must name one of their own classes (re read on every call) and sees its students. An
@@ -185,7 +195,7 @@ export const list = query({
       const cls = await ctx.db.get(args.classId);
       if (!cls || (instituteId !== undefined && cls.instituteId !== instituteId)) fail("class_not_in_scope");
       const page = await ctx.db.query("members").withIndex("by_classId", (q) => q.eq("classId", args.classId)).paginate(opts);
-      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
+      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m, true))) };
     }
     if (instituteId !== undefined) {
       const id = instituteId;
@@ -193,12 +203,12 @@ export const list = query({
       const page = role
         ? await ctx.db.query("members").withIndex("by_instituteId_and_role", (q) => q.eq("instituteId", id).eq("role", role)).paginate(opts)
         : await ctx.db.query("members").withIndex("by_instituteId_and_role", (q) => q.eq("instituteId", id)).paginate(opts);
-      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
+      return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m, true))) };
     }
     // A DHI admin looking at everyone.
     const all = ctx.db.query("members").order("desc");
     const page = await (args.role ? all.filter((q) => q.eq(q.field("role"), args.role)) : all).paginate(opts);
-    return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m))) };
+    return { ...page, page: await Promise.all(page.page.filter((m) => m.erasedAt === undefined).map((m) => toRow(ctx, m, true))) };
   },
 });
 

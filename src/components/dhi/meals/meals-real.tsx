@@ -197,7 +197,7 @@ export function MealsRoom() {
                     dataKey="value"
                     innerRadius={42}
                     outerRadius={58}
-                    paddingAngle={3}
+                    paddingAngle={items && GROUPS.filter((g) => groups[g] > 0).length > 1 ? 3 : 0}
                     stroke="none"
                     isAnimationActive={false}
                   >
@@ -210,7 +210,7 @@ export function MealsRoom() {
             </div>
             <div>
               <p className="font-display text-3xl tabular-nums">{today ? items : "…"}</p>
-              <p className="text-xs text-mute">items · {day}</p>
+              <p className="text-xs text-mute">{items === 1 ? "item" : "items"} today</p>
             </div>
           </div>
           <p className="mt-3 rounded-control bg-lilac/25 px-3 py-2 text-sm" data-testid="meal-line">
@@ -612,6 +612,7 @@ function PlateForm({
 
       {custom ? (
         <CustomDish
+          startName={text.trim()}
           onClose={() => setCustom(false)}
           onSaved={(id, name, group) => {
             setCustom(false);
@@ -639,7 +640,7 @@ function PlateForm({
       )}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-home/5 pt-3">
         <p className="text-xs text-mute">
-          {chosen.reduce((s, [, p]) => s + p.count, 0)} items · {MEAL_WORDS[meal]} ·{" "}
+          {plural(chosen.reduce((s, [, p]) => s + p.count, 0), "item")} · {MEAL_WORDS[meal]} ·{" "}
           {when === "today" ? "today" : "yesterday"} {time}
         </p>
         <Button type="submit" disabled={busy || chosen.length === 0}>
@@ -696,16 +697,21 @@ function Counter({
 
 // A dish the house kitchen does not list. The group and the serving are needed so it counts; the numbers are optional and stay the student's own
 // until the DHI team checks and publishes the dish.
+const plural = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`;
+
+// What the student searched for is the likely name of the dish they could not find, so the form starts with it.
 function CustomDish({
+  startName,
   onClose,
   onSaved,
 }: {
+  startName: string;
   onClose: () => void;
   onSaved: (id: string, name: string, group: string) => void;
 }) {
   const add = useMutation(api.foods.addCustom);
   const [f, setF] = useState({
-    nameEn: "",
+    nameEn: startName.slice(0, 60),
     nameHi: "",
     group: FOOD_GROUPS[0] as string,
     processing: PROCESSING[0] as string,

@@ -32,6 +32,8 @@ export const STAFF_WORDS = {
     deskToday: (c: number) => `${n(c, "desk question", "desk questions")} reached the model today`,
     institutesPaused: (c: number) => n(c, "institute is paused", "institutes are paused"),
     counselorInvitesPending: (c: number) => n(c, "counselor invite not yet claimed", "counselor invites not yet claimed"),
+    institutesWithoutAdmin: (c: number) =>
+      `${n(c, "institute has", "institutes have")} students but no institute admin. Only an institute admin records a parent's consent, so students under 18 there cannot enter yet`,
   },
   // The DHI admin's overview
   overviewTitle: "Institutes at a glance",
