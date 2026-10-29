@@ -133,6 +133,7 @@ Phase 1, groups A, B and C closed 2026-10-26 (fixes not yet committed: the owner
 | 2026-10-26 | 2 | D | Built early: the desk daily cap (`deskDaily`, `DESK_DAILY_CAP` default 300, `desk_day_full`), today's count on the DHI admin's desk screen. `DESK_LIVE=false` is the off switch with no deploy. 4 new tests | pass |
 | 2026-10-29 | 17 | robust | Owner asked for the edge cases and a robust student house. Commits 9da7249 and 8fabfb0 (the empty class list says to add a class; a DHI admin's open institute kept over a reload; Worker 8578903d, then 596e0121) and 6296bcd (house search, the room kept in the address, ring notch, empty mood week, sleep typed times, meals wording and the searched dish name, Progress counts today when it ends; People shows who waits for parent consent or has not agreed, admins only; the DHI admin's Home names institutes with students and no institute admin), pushed. Backend: snapshot `prod-2026-10-29-before-robust.zip`, dry run deleted no index, `deploy:convex` done, funnel rebuilt for development. Worker e75b481b (rollback: 596e0121). Live: the owner's own student account opens every room with no page error; search and the room address work | done |
 
+| 2026-10-29 | 17 | foods | Owner chose the starter catalog: names and groups only, no numbers. Commit 5f0916e, pushed. Backend: snapshot `prod-2026-10-29-before-foods.zip`, dry run deleted no index, `deploy:convex` done, funnel rebuilt for development; `foods:loadStarter --prod` added 85 dishes. Live: roti, दही, chaas and idli are found in Log a plate | done |
 
 ## Open
 
