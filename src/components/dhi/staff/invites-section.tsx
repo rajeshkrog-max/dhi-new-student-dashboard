@@ -21,7 +21,7 @@ function rolesFor(role: HouseRole): HouseRole[] {
 
 // Invites (spec house/0002). Make one, and extend, fix or clear the pending ones. A person joins by signing in with the invited Google email
 // and pressing Join. A DHI admin's invites for counselors and other DHI admins belong to no institute.
-export function InvitesSection() {
+export function InvitesSection({ onAddClass }: { onAddClass?: () => void }) {
   const scope = useScope();
   const roles = rolesFor(scope.role);
   const classArgs = scope.needsInstitute ? "skip" : { instituteId: scope.instituteId };
@@ -58,6 +58,9 @@ export function InvitesSection() {
 
   const needsClass = role === "student";
   const needsInstitute = scope.role === "dhi_admin" && role !== "counselor" && role !== "dhi_admin" && !scope.instituteId;
+  const openClasses = classes.results.filter((c) => !c.archived);
+  // A student joins into a class, so with no class yet the form says where to make one instead of showing an empty list.
+  const noClass = needsClass && !needsInstitute && classes.status !== "LoadingFirstPage" && openClasses.length === 0;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -120,13 +123,11 @@ export function InvitesSection() {
               <Label text="Class">
                 <SelectInput value={classId} onChange={(e) => setClassId(e.target.value as ClassId | "")} required data-testid="invite-class">
                   <option value="">Choose a class</option>
-                  {classes.results
-                    .filter((c) => !c.archived)
-                    .map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.grade} {c.section}
-                      </option>
-                    ))}
+                  {openClasses.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.grade} {c.section}
+                    </option>
+                  ))}
                 </SelectInput>
               </Label>
               <Label text="Under 18?">
@@ -138,8 +139,22 @@ export function InvitesSection() {
               </Label>
             </>
           )}
+          {noClass && (
+            <div className="flex flex-wrap items-center gap-2 sm:col-span-2" data-testid="invite-no-class">
+              <p className="text-sm text-mute">
+                {scope.role === "teacher"
+                  ? "You have no class yet. Your institute admin gives you one, then you can invite its students."
+                  : "This institute has no class yet. Add one first, then invite its students."}
+              </p>
+              {scope.role !== "teacher" && onAddClass && (
+                <Button type="button" variant="quiet" onClick={onAddClass} data-testid="invite-add-class">
+                  Add a class
+                </Button>
+              )}
+            </div>
+          )}
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={needsInstitute} data-testid="invite-create" className="max-sm:w-full">
+            <Button type="submit" disabled={needsInstitute || noClass} data-testid="invite-create" className="max-sm:w-full">
               Make invite
             </Button>
           </div>

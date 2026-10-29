@@ -213,7 +213,7 @@ export function StaffArea({ role, instituteName }: { role: HouseRole; instituteN
         ) : current.id === "people" ? (
           <PeopleSection />
         ) : current.id === "invites" ? (
-          <InvitesSection />
+          <InvitesSection onAddClass={items.some((n) => n.id === "classes") ? () => setTab("classes") : undefined} />
         ) : current.id === "parent" ? (
           <ParentConsentSection />
         ) : current.id === "results" ? (

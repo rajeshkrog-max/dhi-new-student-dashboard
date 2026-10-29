@@ -9,7 +9,7 @@ import { api } from "@dhi/backend/api";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
-import { Label, SelectInput, useScope } from "@/components/dhi/staff/staff-parts";
+import { Label, NoClassYet, SelectInput, useScope } from "@/components/dhi/staff/staff-parts";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
 
 export function ResultsSection() {
@@ -29,6 +29,7 @@ export function ResultsSection() {
               </option>
             ))}
           </SelectInput>
+          <NoClassYet status={classes.status} count={classes.results.length} />
         </Label>
       </Card>
       {/* Keyed by the class, so choosing another class starts from its first page instead of asking for the old page number of the new class. */}

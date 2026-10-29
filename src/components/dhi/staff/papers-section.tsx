@@ -9,7 +9,7 @@ import { api } from "@dhi/backend/api";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
-import { Label, SelectInput, TextInput, useScope } from "@/components/dhi/staff/staff-parts";
+import { Label, NoClassYet, SelectInput, TextInput, useScope } from "@/components/dhi/staff/staff-parts";
 import { HourReview } from "@/components/dhi/staff/hour-section";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
 import { SUBJECTS } from "@dhi/backend/sessionRules";
@@ -241,6 +241,7 @@ export function PapersSection() {
                 </option>
               ))}
             </SelectInput>
+            <NoClassYet status={classes.status} count={classes.results.length} />
           </Label>
           <Label text="Opens">
             <TextInput data-testid="send-opens" type="datetime-local" value={opens} onChange={(e) => setOpens(e.target.value)} required />

@@ -10,7 +10,7 @@ import { api } from "@dhi/backend/api";
 import { Button } from "@/components/dhi/ui/button";
 import { Card } from "@/components/dhi/ui/card";
 import { Notice } from "@/components/dhi/ui/notice";
-import { Label, SelectInput, TextInput, useScope } from "@/components/dhi/staff/staff-parts";
+import { Label, NoClassYet, SelectInput, TextInput, useScope } from "@/components/dhi/staff/staff-parts";
 import { codeOf, refusalWords } from "@/lib/dhi/house-words";
 import { SCHOOL_WORDS, SCHOOL_WORDS_APPROVED } from "@/lib/dhi/school-words";
 import { subjectWord } from "@/lib/dhi/desk-words";
@@ -82,6 +82,7 @@ export function SchoolReportSection({ role }: { role: string }) {
                 </option>
               ))}
             </SelectInput>
+            <NoClassYet status={classes.status} count={classes.results.length} />
           </Label>
           <Label text={SCHOOL_WORDS.from}>
             <TextInput type="date" value={fromDay} max={toDay} onChange={(e) => setFromDay(e.target.value)} data-testid="school-from" />

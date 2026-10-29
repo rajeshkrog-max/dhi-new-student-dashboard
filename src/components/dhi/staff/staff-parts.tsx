@@ -40,6 +40,16 @@ export function ListEmpty({ children }: { children: ReactNode }) {
   return <p className="rounded-control bg-white/60 px-4 py-6 text-center text-sm text-mute">{children}</p>;
 }
 
+// Said under a class picker when the institute has no class yet, so an empty list is never left unexplained.
+export function NoClassYet({ status, count }: { status: string; count: number }) {
+  if (status === "LoadingFirstPage" || count > 0) return null;
+  return (
+    <p className="text-xs text-mute touch:text-sm" data-testid="no-class-yet">
+      No class yet. An institute admin adds classes under Classes.
+    </p>
+  );
+}
+
 // Said when a screen needs an institute and a DHI admin has not chosen one yet.
 export function ChooseInstitute() {
   return (
