@@ -1,6 +1,6 @@
 // The pure rules of the food table and the meals room (spec house/0009, house/0010). No database and no clock, and no imports.
 // The numbers of a food are per serving. A student may enter the numbers of their own custom dish (owner's answer, 2026-10-20); the catalog
-// starts empty until the licence checks are done, and no screen shows a calorie total.
+// starts with names and groups only (`foodStarter.ts`), numbers wait for the licence checks, and no screen shows a calorie total.
 
 export const FOOD_GROUPS = ["grain", "dal", "vegetable", "dairy", "fruit"] as const;
 export type FoodGroup = (typeof FOOD_GROUPS)[number];

@@ -80,6 +80,7 @@ import type * as filmRoom from "../filmRoom.js";
 import type * as films from "../films.js";
 import type * as filmsProof from "../filmsProof.js";
 import type * as foodRules from "../foodRules.js";
+import type * as foodStarter from "../foodStarter.js";
 import type * as foods from "../foods.js";
 import type * as funnelLink from "../funnelLink.js";
 import type * as habitCodes from "../habitCodes.js";
@@ -255,6 +256,7 @@ declare const fullApi: ApiFromModules<{
   films: typeof films;
   filmsProof: typeof filmsProof;
   foodRules: typeof foodRules;
+  foodStarter: typeof foodStarter;
   foods: typeof foods;
   funnelLink: typeof funnelLink;
   habitCodes: typeof habitCodes;

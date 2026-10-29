@@ -1,14 +1,15 @@
 // The food table (spec house/0009). Students search the catalog and their own custom dishes by name, and add a custom dish with the numbers they
 // give. A custom dish counts straight away for the student. DHI publishes a custom dish into the catalog with the source "DHI checked". The
-// catalog starts empty until the licence checks are done. No student function returns another student's dish or its owner. Every function
+// catalog starts with the starter list of names and groups (`foodStarter.ts`, owner 2026-10-29); numbers wait for the licence checks. No student function returns another student's dish or its owner. Every function
 // starts with `requireMember`, so the consent gate applies.
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import { fail } from "./helpers";
 import { requireMember, requireDhiAdmin } from "./houseAuth";
 import { FOOD_GROUPS, MAX_ALIASES, MAX_NAME, MAX_SERVING, cleanName, isFoodGroup, isProcessing, matches, nutritionProblem } from "./foodRules";
 import { rateLimiter } from "./limits";
+import { STARTER_FOODS, STARTER_LICENCE, STARTER_SOURCE } from "./foodStarter";
 
 const foodView = (f: Doc<"foods">) => ({
   foodId: f._id,
@@ -134,4 +135,39 @@ export const groups = query({
   args: {},
   returns: v.array(v.string()),
   handler: async () => [...FOOD_GROUPS],
+});
+
+// Loads the starter list into the catalog (run once a deployment: `npx convex run foods:loadStarter`). A name already in the catalog is left as
+// it is, so running it again adds only what is missing. The rows have no numbers: the room counts food groups.
+export const loadStarter = internalMutation({
+  args: {},
+  returns: v.object({ added: v.number(), kept: v.number() }),
+  handler: async (ctx) => {
+    const have = new Set(
+      (await ctx.db.query("foods").withIndex("by_status", (q) => q.eq("status", "catalog")).take(2000)).map((f) => f.nameEn.trim().toLowerCase()),
+    );
+    let added = 0;
+    for (const f of STARTER_FOODS) {
+      if (have.has(f.nameEn.toLowerCase())) continue;
+      await ctx.db.insert("foods", {
+        status: "catalog",
+        nameEn: f.nameEn,
+        nameHi: f.nameHi,
+        aliases: f.aliases ?? [],
+        group: f.group,
+        processing: f.processing ?? "home_cooked",
+        energyKcal: 0,
+        carbsG: 0,
+        proteinG: 0,
+        fatG: 0,
+        serving: f.serving,
+        source: STARTER_SOURCE,
+        licence: STARTER_LICENCE,
+        createdAt: Date.now(),
+      });
+      have.add(f.nameEn.toLowerCase());
+      added += 1;
+    }
+    return { added, kept: STARTER_FOODS.length - added };
+  },
 });

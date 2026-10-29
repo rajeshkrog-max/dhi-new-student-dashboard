@@ -1,8 +1,9 @@
 // The food table (spec house/0009) and the meals room (spec house/0010). Each test names the criterion it covers. Time is fixed with a fake clock.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { mealsRoom } from "./mealsRoom";
-import { groupCounts, matches, nutritionProblem } from "./foodRules";
+import { groupCounts, isFoodGroup, isProcessing, matches, nutritionProblem } from "./foodRules";
+import { STARTER_FOODS } from "./foodStarter";
 import { makeBackend } from "../tests/convexTestUtils";
 import { makeClass, makeDhiAdmin, makeInstitute, makeStudent, makeTeacher, refusal } from "../tests/houseTestUtils";
 
@@ -37,6 +38,20 @@ describe("the food table", () => {
   test("covers AC-2: the catalog starts empty, so a student's search finds nothing yet", async () => {
     const { s } = await world();
     expect(await s.as.query(api.foods.search, { text: "dal" })).toEqual([]);
+  });
+
+  test("the starter list loads names and groups only, every row names its source and licence, and a second run adds nothing", async () => {
+    const { t, s } = await world();
+    const first = await t.mutation(internal.foods.loadStarter, {});
+    expect(first.added).toBe(STARTER_FOODS.length);
+    expect(await t.mutation(internal.foods.loadStarter, {})).toEqual({ added: 0, kept: STARTER_FOODS.length });
+    const rows = await t.run((ctx) => ctx.db.query("foods").withIndex("by_status", (q) => q.eq("status", "catalog")).collect());
+    expect(rows.every((r) => r.source.length > 0 && r.licence.length > 0 && r.energyKcal === 0 && r.proteinG === 0 && isFoodGroup(r.group) && isProcessing(r.processing))).toBe(true);
+    expect(new Set(rows.map((r) => r.nameEn.toLowerCase())).size).toBe(rows.length);
+    // Found by English name, Hindi name and an everyday alias.
+    expect((await s.as.query(api.foods.search, { text: "roti" }))[0]).toMatchObject({ nameEn: "Roti", group: "grain", status: "catalog" });
+    expect((await s.as.query(api.foods.search, { text: "दही" })).map((f) => f.nameEn)).toContain("Curd");
+    expect((await s.as.query(api.foods.search, { text: "chaas" })).map((f) => f.nameEn)).toContain("Buttermilk");
   });
 
   test("covers AC-4 and AC-3: a student adds a custom dish with the numbers, and finds it by name, alias or Hindi spelling", async () => {
